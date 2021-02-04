@@ -8,18 +8,30 @@ import ply.lex as lex
 
 # add reserved keywords to this list. Expand as needed
 reserved_keywords = {
+    #basic keywords
     'if' : 'IF',
     'then' : 'THEN',
     'else' : 'ELSE',
     'for' : 'FOR',
     'while' : 'WHILE',
     'do' : 'DO',
+    'return' : 'RETURN',
+    'include' : 'INCLUDE'
+
+    #advanced keywords
+    'switch': 'SWITCH',
+    'case': 'CASE',
+    'default' : 'DEFAULT'
+    'break' : 'BREAK',
+    'continue' : 'CONTINUE',
+    'static' : 'STATIC',
+
+    #data types
     'int' : 'INT'.
     'bool' : 'BOOL',
     'char' : 'CHAR',
-    'struct' : 'STRUCT',
-    'printf' : 'PRINTF',
-    'scanf' : 'SCANF'
+    'void' : 'VOID',
+    'struct' : 'STRUCT'
 }
 
 tokens = list(reserved_keywords.values()) + [

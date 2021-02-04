@@ -1,7 +1,11 @@
 # Compiler Project
 
-## Intstructions:
-* Create a virtual environment and activate it. (Preferrably keep the name `venvcompiler` as it is already added in `.gitignore`)
+**Source Language :-** `C`
+**Implementation Language:-** `Python 3`
+**Target Language:-** `X86-Assembly`
+
+## Instructions:
+* Create a virtual environment and activate it. (Preferrably keep the name `venvcompiler` as it is already added in `.gitignore`
 * Run `pip install -r requirements.txt` 
 * Go to the `src` directory......
 
