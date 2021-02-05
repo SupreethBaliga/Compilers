@@ -107,6 +107,15 @@ def t_NUMBER(t):
     t.value = int(t.value)    
     return t
 
+def t_INLINE_COMMENT(t):
+    r'//.*'
+    pass                #Ignore
+
+def t_BLOCK_COMMENT(t):
+    r'/\*(.|\n)*?\*/'
+    t.lexer.lineno += t.value.count('\n')
+    pass                #Ignore
+
 # Identifiers
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
