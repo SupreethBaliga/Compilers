@@ -5,6 +5,7 @@
 #
 #--------------------------------------------
 import ply.lex as lex
+from ply.lex import TOKEN
 import sys
 
 # add reserved keywords to this list. Expand as needed
@@ -47,7 +48,13 @@ tokens = list(reserved_keywords.values()) + [
     'ID',       # identifier
     # 'WS',     # denotes whitespace // may have to modify this 
                 # to keep newline, space and tab separate to keep track of col no.
-    'NUMBER',
+    'HEXA_CONSTANT',
+    'OCTAL_CONSTANT',
+    'CHAR_CONSTANT',
+    'FLOAT_CONSTANT',
+    'INT_CONSTANT',
+    'STRING_LITERAL',
+    'CONSTANT',
     
     # Operators
     'ELLIPSIS',      # "..."
@@ -101,10 +108,56 @@ t_NE_OP         = r'!='
 
 literals = [';','{','}',',',':','=','(',')','[',']','.','&','!','~','-','+','*','/','%','<','>','^','|','?']
 
-# Integers
-def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)    
+digit = r'([0-9])'
+letter = r'([a-zA-Z_])'
+hexa = r'([a-fA-F0-9])'
+exponent = r'([Ee][+-]?' + digit + r'+)'
+
+# Character Constants 
+char_const = r'(' + letter + r'?\'(\\.|[^\\\'])+\')'
+@TOKEN(char_const)
+def t_CHAR_CONSTANT(t):
+    t.type = 'CONSTANT'
+    return t
+
+# Floating Numbers
+exponent_const = r'(' + digit + r'+' + exponent + r')'
+dec_constant = r'(' + digit + r'*[.]' + digit + r'+' + exponent + r'?)'
+float_constant = r'(' + exponent_const + r'|' + dec_constant + r')'
+@TOKEN(float_constant)
+def t_FLOAT_CONSTANT(t):
+    t.value = float(t.value)
+    t.type = 'CONSTANT'
+    return t
+
+# Hexadecimal Numbers
+hexa_const = r'(0[xX]' + hexa + '+' + r')'
+@TOKEN(hexa_const)
+def t_HEXA_CONSTANT(t):
+    t.value = int(t.value, 16)
+    t.type = 'CONSTANT'
+    return t
+
+# Octal Numbers
+octal_const = r'(0' + digit + '+' + r')'
+@TOKEN(octal_const)
+def t_OCTAL_CONSTANT(t):
+    t.value = int(t.value, 8)
+    t.type = 'CONSTANT'
+    return t
+
+# Integer Numbers
+integer_const = r'(' + digit + '+' + r')'
+@TOKEN(integer_const)
+def t_INT_CONSTANT(t):
+    t.value = int(t.value)
+    t.type = 'CONSTANT'
+    return t
+
+# String Literals
+string_literal = r'(' + letter + r'?\"(\\.|[^\\"])*\")'
+@TOKEN(string_literal)
+def t_STRING_LITERAL(t):
     return t
 
 def t_INLINE_COMMENT(t):
