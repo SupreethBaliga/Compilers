@@ -20,6 +20,7 @@ reserved_keywords = {
     'do' : 'DO',
     'return' : 'RETURN',
     'include' : 'INCLUDE',
+    'define' : 'DEFINE',
 
     #advanced keywords
     'switch': 'SWITCH',
