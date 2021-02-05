@@ -7,6 +7,7 @@
 import ply.lex as lex
 from ply.lex import TOKEN
 import sys
+from tabulate import tabulate
 
 # add reserved keywords to this list. Expand as needed
 reserved_keywords = {
@@ -126,7 +127,8 @@ dec_constant = r'(' + digit + r'*[.]' + digit + r'+' + exponent + r'?)'
 float_constant = r'(' + exponent_const + r'|' + dec_constant + r')'
 @TOKEN(float_constant)
 def t_FLOAT_CONSTANT(t):
-    t.value = float(t.value)
+    # For future use, to convert lexemes to appropriate values
+    # t.value = float(t.value)
     t.type = 'CONSTANT'
     return t
 
@@ -134,7 +136,8 @@ def t_FLOAT_CONSTANT(t):
 hexa_const = r'(0[xX]' + hexa + '+' + r')'
 @TOKEN(hexa_const)
 def t_HEXA_CONSTANT(t):
-    t.value = int(t.value, 16)
+    # For future use, to convert lexemes to appropriate values
+    # t.value = int(t.value, 16)
     t.type = 'CONSTANT'
     return t
 
@@ -142,7 +145,8 @@ def t_HEXA_CONSTANT(t):
 octal_const = r'(0' + digit + '+' + r')'
 @TOKEN(octal_const)
 def t_OCTAL_CONSTANT(t):
-    t.value = int(t.value, 8)
+    # For future use, to convert lexemes to appropriate values
+    # t.value = int(t.value, 8) 
     t.type = 'CONSTANT'
     return t
 
@@ -150,7 +154,8 @@ def t_OCTAL_CONSTANT(t):
 integer_const = r'(' + digit + '+' + r')'
 @TOKEN(integer_const)
 def t_INT_CONSTANT(t):
-    t.value = int(t.value)
+    # For future use, to convert lexemes to appropriate values
+    # t.value = int(t.value)
     t.type = 'CONSTANT'
     return t
 
@@ -184,6 +189,9 @@ def t_newline(t):
 # A string containing ignored characters (spaces and tabs)
 t_ignore  = ' \t'
 
+# Error handling: Ignore bad characters, as in ANSI specification
+def t_error(t):
+    t.lexer.skip(1)
 
 ###############################################################
 # END OF TOKENS
@@ -197,8 +205,15 @@ if len(sys.argv) == 1:
 file = open(sys.argv[1],'r')
 data = file.read()
 
-lexer = lex.lex()
-lexer.input(data)
+lexers = lex.lex()
+lexers.input(data)
 
-for tok in lexer:
-    print(tok)
+def find_column(input, token):
+    line_start = input.rfind('\n', 0, token.lexpos) + 1
+    return (token.lexpos - line_start) + 1
+
+table_list = []
+for tok in lexers:
+    row = [tok.type, tok.value, tok.lineno, find_column(data, tok)]
+    table_list.append(row)
+print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
