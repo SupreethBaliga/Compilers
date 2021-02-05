@@ -3,3 +3,5 @@ bin/
 
 #ignore the files for virutal environment
 venvcompiler/
+
+.vscode/
