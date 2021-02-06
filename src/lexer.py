@@ -57,6 +57,7 @@ tokens = list(reserved_keywords.values()) + [
     'INT_CONSTANT',
     'STRING_LITERAL',
     'CONSTANT',
+    'ERROR',        #to denote any kind of scanning error
     
     # Operators
     'ELLIPSIS',      # "..."
@@ -185,23 +186,24 @@ def t_ID(t):
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    # return t
+    pass
 
 # A string containing ignored characters (spaces and tabs)
 t_ignore  = ' \t'
 
 # Error handling: Ignore bad characters, as in ANSI specification
 def t_error(t):
-    t.lexer.skip(1)
+    print(f'Error found while scanning line number {t.lexer.lineno}. Aborting the program...')
+    sys.exit()
+    
 
 ###############################################################
 # END OF TOKENS
 
-
-
+# DRIVER CODE
 if len(sys.argv) == 1:
     print("No file given as input")    
-    exit()
+    sys.exit()
 
 file = open(sys.argv[1],'r')
 data = file.read()
@@ -215,6 +217,7 @@ def find_column(input, token):
 
 table_list = []
 for tok in lexers:
-    row = [tok.type, tok.value, tok.lineno, find_column(data, tok)]
+    row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
     table_list.append(row)
+
 print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
