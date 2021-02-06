@@ -1,12 +1,14 @@
-// This is an inline comment
+/********************************* Test ******************************************************************/
+/*
+* This test program tests nested whteher various forms of comments work in the lexer.
+* This itself is a block comment
+*/
+int main() {// A single line comment
+// Another single line comment
+    printf("Hello World!\n");/* Another block comment
+    **
+    **
 
-/* This is a block comment
-... and it goes on
-.... till here */
-
-int main() {
-
-    printf("Hello World!\n");
-    return 0;
-
+    **
+    */ return /*Final comment*/ 0;
 }
