@@ -2,6 +2,6 @@
 for i in "$@"
 do
    echo $i
-   python3 lexer.py $i
+   python3 ./src/lexer.py $i
    echo "<----------------------------------------------------------------------->"
 done
