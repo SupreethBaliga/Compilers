@@ -33,6 +33,7 @@ reserved_keywords = {
     'enum' : 'ENUM',
     'extern' : 'EXTERN',
     'goto' : 'GOTO',
+    'union' : 'UNION',
 
     #data types
     'int' : 'INT',
@@ -117,7 +118,7 @@ hexa = r'([a-fA-F0-9])'
 exponent = r'([Ee][+-]?' + digit + r'+)'
 
 # Character Constants 
-char_const = r'(' + letter + r'?\'(\\.|[^\\\'])+\')'
+char_const = r'(\'(\\.|[^\\\'])+\')'
 @TOKEN(char_const)
 def t_CHAR_CONSTANT(t):
     t.type = 'CONSTANT'
@@ -162,7 +163,7 @@ def t_INT_CONSTANT(t):
     return t
 
 # String Literals
-string_literal = r'(' + letter + r'?\"(\\.|[^\\"])*\")'
+string_literal = r'(\"(\\.|[^\\"])*\")'
 @TOKEN(string_literal)
 def t_STRING_LITERAL(t):
     return t

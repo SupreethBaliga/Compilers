@@ -1,6 +1,6 @@
 /********************************* Test ******************************************************************/
 /*
-* This test program tests structures, enumerations, external variables, static variables and pointer operator.
+* This test program tests structures, union, enumerations, external variables, static variables and pointer operator.
 */
 
 enum week{Mon, Tue, Wed, Thur, Fri, Sat, Sun}; 
@@ -10,6 +10,10 @@ int a = 10;
 struct Date{
 	int time = Mon;
 } today;
+
+union Node{
+	int a[20];
+};
 
 int main(){
 
@@ -25,7 +29,8 @@ int main(){
 	tom = (struct Date*) malloc(sizeof(struct Date)); 
 	tom->time = Tue;
 
-
+	union Node head;
+	printf("Memory occupied by union : %d\n", sizeof(head));
 
 	return 0;
 }
