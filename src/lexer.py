@@ -193,13 +193,16 @@ t_ignore  = ' \t'
 
 # Error handling: Ignore bad characters, as in ANSI specification
 def t_error(t):
-    print(f'Error found while scanning line number {t.lexer.lineno}. Aborting the program...')
-    sys.exit()
+    print(f'Error found while scanning line number {t.lexer.lineno}')
+    global isError
+    isError = 1
+    t.lexer.skip(1)
     
 
 ###############################################################
 # END OF TOKENS
 
+isError = 0
 # DRIVER CODE
 if len(sys.argv) == 1:
     print("No file given as input")    
@@ -219,5 +222,9 @@ table_list = []
 for tok in lexers:
     row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
     table_list.append(row)
+
+if isError == 1:
+    print(f'Errors found. Aborting scanning of {sys.argv[1]}....')
+    sys.exit()
 
 print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
