@@ -11,46 +11,45 @@ from tabulate import tabulate
 
 # add reserved keywords to this list. Expand as needed
 reserved_keywords = {
-    #basic keywords
-    'if' : 'IF',
-    'then' : 'THEN',
-    'else' : 'ELSE',
-    'for' : 'FOR',
-    'while' : 'WHILE',
-    'do' : 'DO',
-    'return' : 'RETURN',
-    'include' : 'INCLUDE',
-    'define' : 'DEFINE',
-
-    #advanced keywords
-    'switch': 'SWITCH',
-    'case': 'CASE',
-    'default' : 'DEFAULT',
-    'break' : 'BREAK',
-    'continue' : 'CONTINUE',
-    'static' : 'STATIC',
-    'auto' : 'AUTO',
-    'enum' : 'ENUM',
-    'extern' : 'EXTERN',
-    'goto' : 'GOTO',
-    'union' : 'UNION',
-
-    #data types
-    'int' : 'INT',
-    'bool' : 'BOOL',
-    'char' : 'CHAR',
-    'void' : 'VOID',
-    'struct' : 'STRUCT',
-    'double' : 'DOUBLE',
-    'float' : 'FLOAT',
-    'const' : 'CONST',
-    'long' : 'LONG'
+    'auto'      : 'AUTO',
+    'bool'      : 'BOOL',
+    'break'     : 'BREAK',
+    'case'      : 'CASE',
+    'char'      : 'CHAR',
+    'const'     : 'CONST',
+    'continue'  : 'CONTINUE',
+    'default'   : 'DEFAULT',
+    'do'        : 'DO',
+    'double'    : 'DOUBLE',
+    'else'      : 'ELSE',
+    'enum'      : 'ENUM',
+    'extern'    : 'EXTERN',
+    'float'     : 'FLOAT',
+    'for'       : 'FOR',
+    'goto'      : 'GOTO',
+    'if'        : 'IF',
+    'int'       : 'INT',
+    'long'      : 'LONG',
+    'register'  : 'REGISTER',
+    'return'    : 'RETURN',
+    'short'     : 'SHORT',
+    'signed'    : 'SIGNED',
+    'sizeof'    : 'SIZEOF',
+    'static'    : 'STATIC',
+    'struct'    : 'STRUCT',
+    'switch'    : 'SWITCH',
+    'typedef'   : 'TYPEDEF',
+    'union'     : 'UNION',
+    'unsigned'  : 'UNSIGNED',
+    'void'      : 'VOID',
+    'volatile'  : 'VOLATILE',
+    'while'     : 'WHILE'
 }
 
 tokens = list(reserved_keywords.values()) + [
-    'ID',       # identifier
-    # 'WS',     # denotes whitespace // may have to modify this 
-                # to keep newline, space and tab separate to keep track of col no.
+    'ID',            # identifier
+    #'WS',           # denotes whitespace // may have to modify this 
+                     # to keep newline, space and tab separate to keep track of col no.
     'HEXA_CONSTANT',
     'OCTAL_CONSTANT',
     'CHAR_CONSTANT',
@@ -58,7 +57,7 @@ tokens = list(reserved_keywords.values()) + [
     'INT_CONSTANT',
     'STRING_LITERAL',
     'CONSTANT',
-    'ERROR',        #to denote any kind of scanning error
+    'ERROR',         #to denote any kind of scanning error
     
     # Operators
     'ELLIPSIS',      # "..."
@@ -82,7 +81,7 @@ tokens = list(reserved_keywords.values()) + [
     'LE_OP',         # "<="
     'GE_OP',         # ">="
     'EQ_OP',         # "=="
-    'NE_OP'         # "!="
+    'NE_OP'          # "!="
 ]
 
 # Regular expression rules for simple tokens
@@ -117,6 +116,8 @@ letter = r'([a-zA-Z_])'
 hexa = r'([a-fA-F0-9])'
 exponent = r'([Ee][+-]?' + digit + r'+)'
 
+# Regular expression rules for complex tokens
+
 # Character Constants 
 char_const = r'(\'(\\.|[^\\\'])+\')'
 @TOKEN(char_const)
@@ -124,7 +125,7 @@ def t_CHAR_CONSTANT(t):
     t.type = 'CONSTANT'
     return t
 
-# Floating Numbers
+# Floating constants
 exponent_const = r'(' + digit + r'+' + exponent + r')'
 dec_constant = r'(' + digit + r'*[.]' + digit + r'+' + exponent + r'?)'
 float_constant = r'(' + exponent_const + r'|' + dec_constant + r')'
@@ -135,7 +136,7 @@ def t_FLOAT_CONSTANT(t):
     t.type = 'CONSTANT'
     return t
 
-# Hexadecimal Numbers
+# Hexadecimal Constants
 hexa_const = r'(0[xX]' + hexa + '+' + r')'
 @TOKEN(hexa_const)
 def t_HEXA_CONSTANT(t):
@@ -144,7 +145,7 @@ def t_HEXA_CONSTANT(t):
     t.type = 'CONSTANT'
     return t
 
-# Octal Numbers
+# Octal Constants
 octal_const = r'(0' + digit + '+' + r')'
 @TOKEN(octal_const)
 def t_OCTAL_CONSTANT(t):
@@ -153,7 +154,7 @@ def t_OCTAL_CONSTANT(t):
     t.type = 'CONSTANT'
     return t
 
-# Integer Numbers
+# Decimal Constants
 integer_const = r'(' + digit + '+' + r')'
 @TOKEN(integer_const)
 def t_INT_CONSTANT(t):
@@ -201,7 +202,7 @@ def t_error(t):
     
 
 ###############################################################
-# END OF TOKENS
+# END OF TOKENIZING RULES
 
 isError = 0
 # DRIVER CODE
@@ -226,6 +227,6 @@ for tok in lexers:
 
 if isError == 1:
     print(f'Errors found. Aborting scanning of {sys.argv[1]}....')
-    sys.exit()
-
-print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
+    sys.exit(1)
+else:
+    print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
