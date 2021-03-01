@@ -25,8 +25,8 @@ def p_postfix_expression(p):
                        | postfix_expression '[' expression ']'
                        | postfix_expression '(' ')'
                        | postfix_expression '(' argument_expression_list ')'
-                       | postfix_expression '.' IDENTIFIER
-                       | postfix_expression PTR_OP IDENTIFIER
+                       | postfix_expression '.' ID
+                       | postfix_expression PTR_OP ID
                        | postfix_expression INC_OP
                        | postfix_expression DEC_OP
     '''
@@ -173,8 +173,323 @@ def p_constant_expression(p):
     constant_expression : conditional_expression
     '''
 
-# grammar for all expressions done
+## grammar for all expressions done
+
+def p_declaration(p):
+    '''
+    declaration : declaration_specifiers ';'
+	            | declaration_specifiers init_declarator_list ';'
+    '''
+
+def p_declaration_specifiers(p):
+    '''
+    declaration_specifiers : storage_class_specifier
+	                       | storage_class_specifier declaration_specifiers
+	                       | type_specifier
+	                       | type_specifier declaration_specifiers
+	                       | type_qualifier
+	                       | type_qualifier declaration_specifiers
+    '''
+
+def p_init_declarator_list(p):
+    '''
+    init_declarator_list : init_declarator
+	                     | init_declarator_list ',' init_declarator
+    '''
+
+def p_init_declarator(p):
+    '''
+    init_declarator : declarator
+	                | declarator '=' initializer
+    '''
+
+def p_storage_class_specifier(p):
+    '''
+    storage_class_specifier : TYPEDEF
+	                        | EXTERN
+	                        | STATIC
+	                        | AUTO
+	                        | REGISTER
+    '''
+
+def p_type_specifier(p):
+    '''
+    type_specifier : VOID
+	               | CHAR
+	               | SHORT
+	               | INT
+	               | LONG
+	               | FLOAT
+	               | DOUBLE
+	               | SIGNED
+	               | UNSIGNED
+	               | struct_or_union_specifier
+	               | enum_specifier
+	               | TYPE_NAME
+    '''
+
+def p_struct_or_union_specifier(p):
+    '''
+    struct_or_union_specifier : struct_or_union ID '{' struct_declaration_list '}'
+	                          | struct_or_union '{' struct_declaration_list '}'
+	                          | struct_or_union ID
+    '''
+
+def p_struct_or_union(p):
+    '''
+    struct_or_union : STRUCT
+	                | UNION
+    '''
+
+def p_struct_declaration_list(p):
+    '''
+    struct_declaration_list : struct_declaration
+	                        | struct_declaration_list struct_declaration
+    '''
+
+def p_struct_declaration(p):
+    '''
+    struct_declaration : specifier_qualifier_list struct_declarator_list ';'
+    '''
+
+def p_specifier_qualifier_list(p):
+    '''
+    specifier_qualifier_list : type_specifier specifier_qualifier_list
+	                         | type_specifier
+	                         | type_qualifier specifier_qualifier_list
+	                         | type_qualifier
+    '''
+
+def p_struct_declarator_list(p):
+    '''
+    struct_declarator_list : struct_declarator
+	                       | struct_declarator_list ',' struct_declarator
+    '''
+
+def p_struct_declarator(p):
+    '''
+    struct_declarator : declarator
+	                  | ':' constant_expression
+	                  | declarator ':' constant_expression
+    '''
+# correct till here
+
+def p_enum_specifier(p):
+    '''
+    enum_specifier : ENUM '{' enumerator_list '}'
+	               | ENUM ID '{' enumerator_list '}'
+	               | ENUM ID
+    '''
+
+def p_enumerator_list(p):
+    '''
+    enumerator_list : enumerator
+	                | enumerator_list ',' enumerator
+    '''
+
+def p_enumerator(p):
+    '''
+    enumerator : ID
+	           | ID '=' constant_expression
+    '''
+
+def p_type_qualifier(p):
+    '''
+    type_qualifier : CONST
+	               | VOLATILE
+    '''
+
+def p_declarator(p):
+    '''
+    declarator : pointer direct_declarator
+	           | direct_declarator
+    '''
+
+def p_direct_declarator(p):
+    '''
+    direct_declarator : ID
+	                  | '(' declarator ')'
+	                  | direct_declarator '[' constant_expression ']'
+	                  | direct_declarator '[' ']'
+	                  | direct_declarator '(' parameter_type_list ')'
+	                  | direct_declarator '(' identifier_list ')'
+	                  | direct_declarator '(' ')'
+    '''
+
+# correct till here
+
+def p_pointer(p):
+    '''
+    pointer : '*'
+	        | '*' type_qualifier_list
+	        | '*' pointer
+	        | '*' type_qualifier_list pointer
+    '''
+
+def p_type_qualifier_list(p):
+    '''
+    type_qualifier_list : type_qualifier
+	                    | type_qualifier_list type_qualifier
+    '''
+
+def p_parameter_type_list(p):
+    '''
+    parameter_type_list : parameter_list
+	                    | parameter_list ',' ELLIPSIS
+    '''
+
+def p_parameter_list(p):
+    '''
+    parameter_list : parameter_declaration
+	               | parameter_list ',' parameter_declaration
+    '''
+
+def p_parameter_declaration(p):
+    '''
+    parameter_declaration : declaration_specifiers declarator
+	                      | declaration_specifiers abstract_declarator
+	                      | declaration_specifiers
+    '''
+
+def p_identifier_list(p):
+    '''
+    identifier_list : ID
+	                | identifier_list ',' ID
+    '''
+
+def p_type_name(p):
+    '''
+    type_name : specifier_qualifier_list
+	          | specifier_qualifier_list abstract_declarator
+    '''
+
+def p_abstract_declarator(p):
+    '''
+    abstract_declarator : pointer
+	                    | direct_abstract_declarator
+	                    | pointer direct_abstract_declarator
+    '''
+
+def p_direct_abstract_declarator(p):
+    '''
+    direct_abstract_declarator : '(' abstract_declarator ')'
+	                           | '[' ']'
+	                           | '[' constant_expression ']'
+	                           | direct_abstract_declarator '[' ']'
+	                           | direct_abstract_declarator '[' constant_expression ']'
+	                           | '(' ')'
+	                           | '(' parameter_type_list ')'
+	                           | direct_abstract_declarator '(' ')'
+	                           | direct_abstract_declarator '(' parameter_type_list ')'
+    '''
+
+#correct till here
+
+def p_initializer(p):
+    '''
+    initializer : assignment_expression
+	            | '{' initializer_list '}'
+	            | '{' initializer_list ',' '}'
+    '''
+
+def p_initializer_list(p):
+    '''
+    initializer_list : initializer
+	                 | initializer_list ',' initializer
+    '''
+
+def p_statement(p):
+    '''
+    statement : labeled_statement
+	          | compound_statement
+	          | expression_statement
+	          | selection_statement
+	          | iteration_statement
+	          | jump_statement
+    '''
+
+def p_labeled_statement(p):
+    '''
+    labeled_statement : ID ':' statement
+	                  | CASE constant_expression ':' statement
+	                  | DEFAULT ':' statement
+    '''
+
+def p_compound_statement(p):
+    '''
+    compound_statement : '{' '}'
+	                   | '{' statement_list '}'
+	                   | '{' declaration_list '}'
+	                   | '{' declaration_list statement_list '}'
+    '''
+
+def p_declaration_list(p):
+    '''
+    declaration_list : declaration
+	                 | declaration_list declaration
+    '''
+
+def p_statement_list(p):
+    '''
+    statement_list : statement
+	               | statement_list statement
+    '''
+
+def p_expression_statement(p):
+    '''
+    expression_statement : ';'
+	                     | expression ';'
+    '''
+
+def p_selection_statement(p):
+    '''
+    selection_statement : IF '(' expression ')' statement
+	                    | IF '(' expression ')' statement ELSE statement
+	                    | SWITCH '(' expression ')' statement
+    '''
+
+# Correct till here
+
+def p_iteration_statement(p):
+    '''
+    iteration_statement : WHILE '(' expression ')' statement
+	                    | DO statement WHILE '(' expression ')' ';'
+	                    | FOR '(' expression_statement expression_statement ')' statement
+	                    | FOR '(' expression_statement expression_statement expression ')' statement
+    '''
+
+def p_jump_statement(p):
+    '''
+    jump_statement : GOTO IDENTIFIER ';'
+	               | CONTINUE ';'
+	               | BREAK ';'
+	               | RETURN ';'
+	               | RETURN expression ';'
+    '''
+
+def p_translation_unit(p):
+    '''
+    translation_unit : external_declaration
+	                 | translation_unit external_declaration
+    '''
+
+def p_external_declaration(p):
+    '''
+    external_declaration : function_definition
+	                     | declaration
+    '''
+
+def p_function_definition(p):
+    '''
+    function_definition : declaration_specifiers declarator declaration_list compound_statement
+	                    | declaration_specifiers declarator compound_statement
+	                    | declarator declaration_list compound_statement
+	                    | declarator compound_statement
+    '''
 
 def p_empty(p):
     'empty :'
     pass
+
+# add precedence and associativity of operators
+parser = yacc.yacc(start='translation_unit')
