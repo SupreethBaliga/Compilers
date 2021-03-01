@@ -5,3 +5,6 @@ bin/
 venvcompiler/
 
 .vscode/
+
+#extras
+todolist.txt

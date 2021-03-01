@@ -131,8 +131,7 @@ dec_constant = r'(' + digit + r'*[.]' + digit + r'+' + exponent + r'?)'
 float_constant = r'(' + exponent_const + r'|' + dec_constant + r')'
 @TOKEN(float_constant)
 def t_FLOAT_CONSTANT(t):
-    # For future use, to convert lexemes to appropriate values
-    # t.value = float(t.value)
+    t.value = float(t.value) # converting the lexeme to float value
     t.type = 'CONSTANT'
     return t
 
@@ -140,8 +139,7 @@ def t_FLOAT_CONSTANT(t):
 hexa_const = r'(0[xX]' + hexa + '+' + r')'
 @TOKEN(hexa_const)
 def t_HEXA_CONSTANT(t):
-    # For future use, to convert lexemes to appropriate values
-    # t.value = int(t.value, 16)
+    t.value = int(t.value, 16) # converting the lexeme to integer value
     t.type = 'CONSTANT'
     return t
 
@@ -149,8 +147,7 @@ def t_HEXA_CONSTANT(t):
 octal_const = r'(0' + digit + '+' + r')'
 @TOKEN(octal_const)
 def t_OCTAL_CONSTANT(t):
-    # For future use, to convert lexemes to appropriate values
-    # t.value = int(t.value, 8) 
+    t.value = int(t.value, 8) # converting the lexeme to integer value
     t.type = 'CONSTANT'
     return t
 
@@ -158,8 +155,7 @@ def t_OCTAL_CONSTANT(t):
 integer_const = r'(' + digit + '+' + r')'
 @TOKEN(integer_const)
 def t_INT_CONSTANT(t):
-    # For future use, to convert lexemes to appropriate values
-    # t.value = int(t.value)
+    t.value = int(t.value) # converting the lexeme to integer value
     t.type = 'CONSTANT'
     return t
 
