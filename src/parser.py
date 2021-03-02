@@ -491,5 +491,11 @@ def p_empty(p):
     'empty :'
     pass
 
+def p_error(p):
+    print("Error found while parsing!")
+
+
 # add precedence and associativity of operators
 parser = yacc.yacc(start='translation_unit')
+
+# driver code

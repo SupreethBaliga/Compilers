@@ -1,5 +1,6 @@
 # We should not check the binaries into the repository
 bin/
+dot/
 
 #ignore the files for virutal environment
 venvcompiler/
