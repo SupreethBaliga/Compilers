@@ -171,10 +171,61 @@ def p_unary_expression(p):
     unary_expression : postfix_expression
                      | INC_OP unary_expression
                      | DEC_OP unary_expression
-                     | unary_operator cast_expression
                      | SIZEOF unary_expression
+                     | unary_operator cast_expression
                      | SIZEOF '(' type_name ')'
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'unary_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 3):
+        if p[1] == '++' or p[1] == '--':
+            p1val = p[1]
+            p[1] = new_node()
+            p[1].attr['label'] = p1val
+
+            G.add_edge(p[0],p[1])
+            G.add_edge(p[0],p[2])
+
+            G.add_edge(p[1],p[2],style='invis')
+            G.add_subgraph([p[1],p[2]], rank='same')
+        elif p[1] == 'sizeof':
+            p[1] = new_node()
+            p[1].attr['label'] = 'SIZEOF'
+
+            G.add_edge(p[0],p[1])
+            G.add_edge(p[0],p[2])
+
+            G.add_edge(p[1],p[2],style='invis')
+            G.add_subgraph([p[1],p[2]], rank='same')
+        else:
+            G.add_edge(p[0],p[1])
+            G.add_edge(p[0],p[2])
+
+            G.add_edge(p[1],p[2],style='invis')
+            G.add_subgraph([p[1],p[2]], rank='same')
+    elif (len(p) == 5):
+        p[1] = new_node()
+        p[1].attr['label'] = 'SIZEOF'
+
+        p[2] = new_node()
+        p[2].attr['label'] = '('
+
+        p[4] = new_node()
+        p[4].attr['label'] = ')'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+        G.add_edge(p[0],p[4])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_subgraph([p[1],p[2],p[3],p[4]], rank='same')
+
 
 def p_unary_operator(p):
     '''
@@ -185,12 +236,43 @@ def p_unary_operator(p):
                    | '~'
                    | '!'
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'unary_operator'
+
+    p1val = p[1]
+    p[1] = new_node()
+    p[1].attr['label'] = p1val
+
+    G.add_edge(p[0],p[1])
 
 def p_cast_expression(p):
     '''
     cast_expression : unary_expression
 	                | '(' type_name ')' cast_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'cast_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 5):
+        p[1] = new_node()
+        p[1].attr['label'] = '('
+        
+        p[3] = new_node()
+        p[3].attr['label'] = ')'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+        G.add_edge(p[0],p[4])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_subgraph([p[1],p[2],p[3],p[4]], rank='same')
+
+
 
 def p_mulitplicative_expression(p):
     '''
@@ -199,6 +281,26 @@ def p_mulitplicative_expression(p):
 	                          | multiplicative_expression '/' cast_expression
 	                          | multiplicative_expression '%' cast_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'multiplicative_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p2val = p[2]
+        p[2]=new_node()
+        p[2].attr['label'] = p2val
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+
+
 
 def p_additive_expression(p):
     '''
@@ -206,6 +308,24 @@ def p_additive_expression(p):
 	                    | additive_expression '+' multiplicative_expression
 	                    | additive_expression '-' multiplicative_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'additive_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = p2val
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+
 
 def p_shift_expression(p):
     '''
@@ -213,6 +333,23 @@ def p_shift_expression(p):
 	                 | shift_expression LEFT_OP additive_expression
 	                 | shift_expression RIGHT_OP additive_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'shift_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = p2val
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_relational_expression(p):
     '''
@@ -222,6 +359,23 @@ def p_relational_expression(p):
 	                      | relational_expression LE_OP shift_expression
 	                      | relational_expression GE_OP shift_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'relational_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = p2val
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 # 10 rules done till here
 
@@ -231,48 +385,184 @@ def p_equality_expression(p):
 	                    | equality_expression EQ_OP relational_expression
 	                    | equality_expression NE_OP relational_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'equality_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = p2val
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_and_expression(p):
     '''
     and_expression : equality_expression
 	               | and_expression '&' equality_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'and_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = '&'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_exclusive_or_expression(p):
     '''
     exclusive_or_expression : and_expression
 	                        | exclusive_or_expression '^' and_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'exclusive_or_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = '^'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_inclusive_or_expression(p):
     '''
     inclusive_or_expression : exclusive_or_expression
 	                        | inclusive_or_expression '|' exclusive_or_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'inclusive_or_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = '|'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_logical_and_expression(p):
     '''
     logical_and_expression : inclusive_or_expression
 	                       | logical_and_expression AND_OP inclusive_or_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'logical_and_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = '&&'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+    
 
 def p_logical_or_expression(p):
     '''
     logical_or_expression : logical_and_expression
 	                      | logical_or_expression OR_OP logical_and_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'logical_or_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = '||'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+
 
 def p_conditional_expression(p):
     '''
     conditional_expression : logical_or_expression
 	                       | logical_or_expression '?' expression ':' conditional_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'conditional_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 6):
+        p[2] = new_node()
+        p[2].attr['label'] = '?'
+
+        p[4] = new_node()
+        p[4].attr['label'] = ':'
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+        G.add_edge(p[0],p[4])
+        G.add_edge(p[0],p[5])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_edge(p[4],p[5],style='invis')
+        
+        G.add_subgraph([p[1],p[2],p[3],p[4],p[5]], rank='same')
 
 def p_assignment_expression(p):
     '''
     assignment_expression : conditional_expression
 	                      | unary_expression assignment_operator assignment_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'assignment_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_assignment_operator(p):
     '''
@@ -288,12 +578,36 @@ def p_assignment_operator(p):
 	                    | XOR_ASSIGN
 	                    | OR_ASSIGN
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'assignment_operator'
+
+    p1val = p[1]
+    p[1] = new_node()
+    p[1].attr['label'] = str(p1val)
+
+    G.add_edge(p[0],p[1])
 
 def p_expression(p):
     '''
     expression : assignment_expression
 	           | expression ',' assignment_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = ','
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 # 20 done here
 
@@ -301,6 +615,9 @@ def p_constant_expression(p):
     '''
     constant_expression : conditional_expression
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'constant_expression'
+    G.add_edge(p[0],p[1])
 
 ## grammar for all expressions done
 
