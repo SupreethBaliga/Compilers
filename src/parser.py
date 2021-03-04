@@ -1,15 +1,28 @@
 # import necessary libraries
 import ply.yacc as yacc
+import pygraphviz as pgv
+import sys
 
 # Get the token map from lexer
 from lexer import tokens
 
+# This has to be filled
 precedence = (
     ('nonassoc', '<', '>'),
     ('left', '+', '-'),
     ('left', '/', '*'),
     ('right', 'UMINUS') # for the unary minus operator
 )
+
+############## Helper Functions #########################
+def new_node():
+    global itr
+    G.add_node(itr)
+    n = G.get_node(itr)
+    itr += 1
+    return n
+
+######### Grammar Rules ################
 
 def p_primary_expression(p):
     '''
@@ -18,24 +31,140 @@ def p_primary_expression(p):
                        | STRING_LITERAL
                        | '(' expression ')'
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'primary_expression'
+
+    if (len(p) == 2):
+        p1val = p[1]
+        p[1] = new_node()
+        p[1].attr['label'] = str(p1val)
+
+        G.add_edge(p[0],p[1])
+
+    elif (len(p) == 4):
+        p[1] = new_node()
+        p[1].attr['label'] = '('
+        
+        p[3] = new_node()
+        p[3].attr['label'] = ')'
+        
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph(p[1],p[2],p[3],rank='same')
+
 
 def p_postfix_expression(p):
     '''
     postfix_expression : primary_expression
-                       | postfix_expression '[' expression ']'
-                       | postfix_expression '(' ')'
-                       | postfix_expression '(' argument_expression_list ')'
-                       | postfix_expression '.' ID
-                       | postfix_expression PTR_OP ID
                        | postfix_expression INC_OP
                        | postfix_expression DEC_OP
+                       | postfix_expression '.' ID
+                       | postfix_expression '(' ')'
+                       | postfix_expression PTR_OP ID
+                       | postfix_expression '[' expression ']'
+                       | postfix_expression '(' argument_expression_list ')'
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'postfix_expression'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 3):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = str(p2val)
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]],rank='same')
+    elif (len(p) == 4):
+        if p[2] == '.':
+            p[2] = new_node()
+            p[2].attr['label'] = '.'
+
+            p3val = p[3]
+            p[3] = new_node()
+            p[3].attr['label'] = str(p3val)
+        elif p[2] == '(':
+            p[2] = new_node()
+            p[2].attr['label'] = '('
+
+            p[3] = new_node()
+            p[3].attr['label'] = ')'
+
+        elif p[2] == '->':
+            p[2] = new_node()
+            p[2].attr['label'] = '->'
+
+            p3val = p[3]
+            p[3] = new_node()
+            p[3].attr['label'] = str(p3val)
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+    elif (len(p) == 5):
+        if p[2] == '(':
+            p[2] = new_node()
+            p[2].attr['label'] = '('
+            p[4] = new_node()
+            p[4].attr['label'] = ')'
+        elif p[2] == '['
+            p[2] = new_node()
+            p[2].attr['label'] = '['
+            p[4] = new_node()
+            p[4].attr['label'] = ']'
+        
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+        G.add_edge(p[0],p[4])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+
+        G.add_subgraph([p[1],p[2],p[3],p[4]],rank='same')
+
+
+
+
+
 
 def p_argument_expression_list(p):
     '''
     argument_expression_list : assignment_expression
 	                         | argument_expression_list ',' assignment_expression
     '''
+    
+    p[0] = new_node()
+    p[0].attr['label'] = 'argument_expression_list'
+
+    if (len(p) == 2):
+        G.add_edge(p[0],p[1])
+    elif (len(p) == 4):
+        p[2] = new_node()
+        p[2].attr['label'] = ','
+
+        G.add_edge(p[0],p[1])
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
 
 def p_unary_expression(p):
     '''
@@ -499,3 +628,13 @@ def p_error(p):
 parser = yacc.yacc(start='translation_unit')
 
 # driver code
+G = pgv.AGraph(strict=False, directed=True)
+G.layout(prog="circo")
+
+itr = 0 # Global var to give unique IDs to nodes of the graph
+
+file = open(sys.argv[1], 'r')
+data = file.read()
+result = parser.parse(data)
+
+G.write("dot/test1.dot") ## Change this later
