@@ -10,3 +10,6 @@ venvcompiler/
 #extras
 todolist.txt
 src/__pycache__
+src/primitive.py
+src/parser.out
+src/parsetab.py
