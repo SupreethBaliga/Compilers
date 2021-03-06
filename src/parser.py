@@ -610,6 +610,34 @@ def p_enum_specifier(p):
 	               | ENUM ID '{' enumerator_list '}'
 	               | ENUM ID
     '''
+    # AST done
+    if (len(p) == 5):
+        p[0] = new_node()
+        p[0].attr['label'] = 'ENUM'
+
+        G.add_edge(p[0], p[3])
+    elif (len(p) == 6):
+        p[0] = new_node()
+        p[0].attr['label'] = 'ENUM'
+
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = str(p2val)
+
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[0], p[4])
+
+        G.add_edge(p[2], p[4], style='invis')
+        G.add_subgraph([p[2], p[4]], rank='same')
+    elif (len(p) == 3):
+        p[0] = new_node()
+        p[0].attr['label'] = 'ENUM'
+
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = str(p2val)
+
+        G.add_edge(p[0], p[2])
 
 def p_enumerator_list(p):
     '''
@@ -685,6 +713,36 @@ def p_direct_declarator(p):
 	                  | direct_declarator '(' parameter_type_list ')'
 	                  | direct_declarator '(' identifier_list ')'
     '''
+    # AST done
+    if (len(p) == 2):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif (len(p) == 4):
+        if (p[1] == '('):
+            p[0] = p[2]
+        elif (p[2] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = '#[]'
+
+            G.add_edge(p[0], p[1])
+        elif (p[2] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = '#()'
+
+            G.add_edge(p[0], p[1])
+    elif (len(p) == 5):
+        if (p[2] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = '#()'
+        elif (p[2] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = '[]'
+        
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+
+        G.add_edge(p[1], p[3], style='invis')
+        G.add_subgraph([p[1], p[3]], rank='same')
 
 # correct till here
 
