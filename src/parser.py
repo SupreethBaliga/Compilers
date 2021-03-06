@@ -761,6 +761,16 @@ def p_identifier_list(p):
     identifier_list : ID
 	                | identifier_list ',' ID
     '''
+    # AST Done
+    if (len(p) == 2):
+        p[0] = p[1]
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = ','
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1],p[3],style='invis')
+        G.add_subgraph([p[1],p[3]], rank='same')   
 
 def p_type_name(p):
     '''
@@ -821,6 +831,23 @@ def p_labeled_statement(p):
 	                  | CASE constant_expression ':' statement
 	                  | DEFAULT ':' statement
     '''
+    # AST Doubt
+    if (len(p) == 3):
+        if (p[1] == "DEFAULT"):
+            p[0] = new_node()
+            p[0].attr['label'] = 'DEFAULT:'
+            G.add_edge(p[0],p[3])
+        else:
+            p[0] = new_node()
+            p[0].attr['label'] = 'ID:'
+            G.add_edge(p[0],p[3])
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = 'CASE'
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[0], p[4])
+        G.add_edge(p[2],p[4],style='invis')
+        G.add_subgraph([p[2],p[4]], rank='same')
 
 def p_compound_statement(p):
     '''
@@ -847,6 +874,15 @@ def p_expression_statement(p):
     expression_statement : ';'
 	                     | expression ';'
     '''
+    # AST Done
+    if (len(p) == 2):
+        p[0] = new_node()
+        p[0].attr['label'] = ';'
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = ';'
+        G.add_edge(p[0], p[1])
+
 
 def p_selection_statement(p):
     '''
@@ -885,6 +921,8 @@ def p_external_declaration(p):
     external_declaration : function_definition
 	                     | declaration
     '''
+    # AST Done
+    p[0] = p[1]
 
 def p_function_definition(p):
     '''
