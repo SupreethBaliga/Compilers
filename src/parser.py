@@ -821,10 +821,16 @@ def p_identifier_list(p):
     '''
     # AST Done
     if (len(p) == 2):
-        p[0] = p[1]
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])        
     else:
         p[0] = new_node()
         p[0].attr['label'] = ','
+
+        p3val = p[3]
+        p[3] = new_node()
+        p[3].attr['label'] = str(p3val)
+
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[3])
         G.add_edge(p[1],p[3],style='invis')
@@ -890,7 +896,7 @@ def p_labeled_statement(p):
 	                  | DEFAULT ':' statement
     '''
     # AST Doubt
-    if (len(p) == 3):
+    if (len(p) == 4):
         if (p[1] == "DEFAULT"):
             p[0] = new_node()
             p[0].attr['label'] = 'DEFAULT:'
@@ -898,7 +904,13 @@ def p_labeled_statement(p):
         else:
             p[0] = new_node()
             p[0].attr['label'] = 'ID:'
+            p1val = p[1]
+            p[1] = new_node()
+            p[1].attr['label'] = str(p1val)
+            G.add_edge(p[0],p[1])
             G.add_edge(p[0],p[3])
+            G.add_edge(p[1],p[3],style='invis')
+            G.add_subgraph([p[1],p[3]], rank='same')
     else:
         p[0] = new_node()
         p[0].attr['label'] = 'CASE'
