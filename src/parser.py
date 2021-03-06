@@ -10,8 +10,8 @@ from lexer import tokens
 precedence = (
     ('nonassoc', '<', '>'),
     ('left', '+', '-'),
-    ('left', '/', '*'),
-    ('right', 'UMINUS') # for the unary minus operator
+    ('left', '/', '*')
+    # ('right', 'UMINUS') # for the unary minus operator
 )
 
 ############## Helper Functions #########################
@@ -725,12 +725,29 @@ def p_parameter_type_list(p):
     parameter_type_list : parameter_list
 	                    | parameter_list ',' ELLIPSIS
     '''
+    # AST Done
+    if (len(p) == 2):
+        p[0] = p[1]
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = '...'
+        G.add_edge(p[0], p[1])
 
 def p_parameter_list(p):
     '''
     parameter_list : parameter_declaration
 	               | parameter_list ',' parameter_declaration
     '''
+    # AST Done
+    if (len(p) == 2):
+        p[0] = p[1]
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = ','
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1],p[3],style='invis')
+        G.add_subgraph([p[1],p[3]], rank='same')
 
 def p_parameter_declaration(p):
     '''
@@ -795,6 +812,8 @@ def p_statement(p):
 	          | iteration_statement
 	          | jump_statement
     '''
+    # AST Done
+    p[0] = p[1]
 
 def p_labeled_statement(p):
     '''
@@ -848,7 +867,7 @@ def p_iteration_statement(p):
 
 def p_jump_statement(p):
     '''
-    jump_statement : GOTO IDENTIFIER ';'
+    jump_statement : GOTO ID ';'
 	               | CONTINUE ';'
 	               | BREAK ';'
 	               | RETURN ';'
