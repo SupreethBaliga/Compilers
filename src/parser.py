@@ -472,6 +472,18 @@ def p_declaration(p):
     declaration : declaration_specifiers ';'
 	            | declaration_specifiers init_declarator_list ';'
     '''
+    if (len(p) == 3):
+        # Do nothing
+        pass
+
+    elif (len(p) == 4):
+        p[0] = new_node()
+        p[0].attr['label'] = 'declaration'
+
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1], p[2], style='invis')
+        G.add_subgraph([p[1], p[2]], rank='same')
 
 def p_declaration_specifiers(p):
     '''
@@ -483,17 +495,43 @@ def p_declaration_specifiers(p):
 	                       | type_qualifier declaration_specifiers
     '''
 
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = p[1]
+        G.add_edge(p[0], p[2])
+
 def p_init_declarator_list(p):
     '''
     init_declarator_list : init_declarator
 	                     | init_declarator_list ',' init_declarator
     '''
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 4):
+        p[0] = new_node()
+        p[0].attr['label'] = 'init_declarator_list'    
+
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1], p[3], style='invis')
+        G.add_subgraph([p[1], p[3]], rank='same')
 
 def p_init_declarator(p):
     '''
     init_declarator : declarator
 	                | declarator '=' initializer
     '''
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 4):
+        p[0] = new_node()
+        p[0].attr['label'] = '='
+
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1], p[3], style='invis')
+        G.add_subgraph([p[1], p[3]], rank='same')
 
 def p_storage_class_specifier(p):
     '''
@@ -503,6 +541,8 @@ def p_storage_class_specifier(p):
 	                        | AUTO
 	                        | REGISTER
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = str(p[1])
 
 def p_type_specifier(p):
     '''
@@ -518,6 +558,35 @@ def p_type_specifier(p):
 	               | struct_or_union_specifier
 	               | enum_specifier
     '''
+    if(str(p[1])=="VOID"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="CHAR"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="SHORT"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="INT"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="LONG"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="FLOAT"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="DOUBLE"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="SIGNED"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    elif(str(p[1])=="UNSIGNED"):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    else:
+        p[0] = p[1]
 
 def p_struct_or_union_specifier(p):
     '''
@@ -531,6 +600,8 @@ def p_struct_or_union(p):
     struct_or_union : STRUCT
 	                | UNION
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = str(p[1])
 
 def p_struct_declaration_list(p):
     '''
@@ -538,10 +609,24 @@ def p_struct_declaration_list(p):
 	                        | struct_declaration_list struct_declaration
     '''
 
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = p[1]
+        G.add_edge(p[0], p[2])
+
+
 def p_struct_declaration(p):
     '''
     struct_declaration : specifier_qualifier_list struct_declarator_list ';'
     '''
+    p[0] = new_node()
+    p[0].attr['label'] = 'struct_declaration'
+
+    G.add_edge(p[0], p[1])
+    G.add_edge(p[0], p[2])
+    G.add_edge(p[1], p[2], style='invis')
+    G.add_subgraph([p[1], p[2]], rank='same')
 
 def p_specifier_qualifier_list(p):
     '''
@@ -883,16 +968,52 @@ def p_abstract_declarator(p):
 
 def p_direct_abstract_declarator(p):
     '''
-    direct_abstract_declarator : '(' abstract_declarator ')'
-	                           | '[' ']'
-	                           | '[' constant_expression ']'
-	                           | direct_abstract_declarator '[' ']'
+    direct_abstract_declarator : '(' abstract_declarator ')' 
+	                           | '[' ']'  
+	                           | '[' constant_expression ']'   
+	                           | direct_abstract_declarator '[' ']' 
 	                           | direct_abstract_declarator '[' constant_expression ']'
-	                           | '(' ')'
-	                           | '(' parameter_type_list ')'
-	                           | direct_abstract_declarator '(' ')'
+	                           | '(' ')' 
+	                           | '(' parameter_type_list ')' 
+	                           | direct_abstract_declarator '(' ')' 
 	                           | direct_abstract_declarator '(' parameter_type_list ')'
     '''
+    if (len(p) == 3):
+        if(p[1] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = '#()'
+        elif(p[1] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = '#[]'    
+
+    elif (len(p) == 4):
+        if(p[1] == '('):
+            p[0] = p[2]
+        elif(p[1] == '['):
+            p[0] = p[2]
+        elif(p[2] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = '#()'
+            G.add_edge(p[0], p[1])
+        elif(p[2] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = '#[]'
+            G.add_edge(p[0], p[1])
+
+
+    elif (len(p) == 5):
+        if (p[2] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = '#()'
+        elif (p[2] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = '#[]'
+        
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+
+        G.add_edge(p[1], p[3], style='invis')
+        G.add_subgraph([p[1], p[3]], rank='same')
     # AST doubt
 
 #correct till here
@@ -1158,8 +1279,31 @@ def p_function_definition(p):
     function_definition : declaration_specifiers declarator declaration_list compound_statement
 	                    | declaration_specifiers declarator compound_statement
 	                    | declarator declaration_list compound_statement
-	                    | declarator compound_statement
+	                    | declarator p_compound_statement
     '''
+
+    if (len(p) == 3):
+        p[0] = p[2]
+        G.add_edge(p[0], p[1])
+
+
+    elif (len(p) == 4):
+        p[0] = p[3]
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
+
+
+    elif (len(p) == 5):
+        p[0] = p[4]
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[1],p[2],p[3]], rank='same')
+	
     # AST doubt
 def p_empty(p):
     'empty :'
