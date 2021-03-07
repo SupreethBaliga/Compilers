@@ -695,7 +695,7 @@ def p_declarator(p):
     declarator : pointer direct_declarator
 	           | direct_declarator
     '''
-    #AST done
+    #AST doubt
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
@@ -752,13 +752,13 @@ def p_pointer(p):
 	        | '*' pointer
 	        | '*' type_qualifier_list pointer
     '''
-    #AST done
+    # AST done
     if (len(p) == 2):
         p[0] = new_node()
-        p[0].attr['label'] = '*'
+        p[0].attr['label'] = '#*'
     elif (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = '*'
+        p[0].attr['label'] = '#*'
         G.add_edge(p[0], p[2])
     elif (len(p) == 4):
         p[0] = new_node()
@@ -776,6 +776,12 @@ def p_type_qualifier_list(p):
     type_qualifier_list : type_qualifier
 	                    | type_qualifier_list type_qualifier
     '''
+    # AST doubt
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 3:
+        p[0] = p[2]
+        G.add_edge(p[0], p[1])
 
 def p_parameter_type_list(p):
     '''
@@ -786,6 +792,13 @@ def p_parameter_type_list(p):
     if (len(p) == 2):
         p[0] = p[1]
     else:
+        # Current design choice: parent operator : ',...'
+            # Single child : parameter list
+
+        # Alternative design choice: parent operator ','
+            # Left child : parameter_list
+            # Right child : ELLIPSIS 
+
         p[0] = new_node()
         p[0].attr['label'] = '...'
         G.add_edge(p[0], p[1])
@@ -812,7 +825,13 @@ def p_parameter_declaration(p):
 	                      | declaration_specifiers abstract_declarator
 	                      | declaration_specifiers
     '''
-
+    # AST done
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 3:
+        p[0] = p[1]
+        G.add_edge(p[0] , p[2])
+     
 def p_identifier_list(p):
     '''
     identifier_list : ID
@@ -841,12 +860,26 @@ def p_type_name(p):
 	          | specifier_qualifier_list abstract_declarator
     '''
 
+    # AST done
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[1]
+        G.add_edge(p[0] , p[2])
+
 def p_abstract_declarator(p):
     '''
     abstract_declarator : pointer
 	                    | direct_abstract_declarator
 	                    | pointer direct_abstract_declarator
     '''
+
+    # AST done
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[1]
+        G.add_edge(p[0] , p[1])
 
 def p_direct_abstract_declarator(p):
     '''
@@ -860,6 +893,7 @@ def p_direct_abstract_declarator(p):
 	                           | direct_abstract_declarator '(' ')'
 	                           | direct_abstract_declarator '(' parameter_type_list ')'
     '''
+    # AST doubt
 
 #correct till here
 
@@ -869,12 +903,36 @@ def p_initializer(p):
 	            | '{' initializer_list '}'
 	            | '{' initializer_list ',' '}'
     '''
+    # AST done
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4:
+        p[0] = p[2]
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = ','
+        G.add_edge(p[0], p[2])
 
 def p_initializer_list(p):
     '''
     initializer_list : initializer
 	                 | initializer_list ',' initializer
     '''
+    # AST done
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = ','
+
+        p3val = p[3]
+        p[3] = new_node()
+        p[3].attr['label'] = str(p3val)
+
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[1],p[3],style='invis')
+        G.add_subgraph([p[1],p[3]], rank='same')   
 
 def p_statement(p):
     '''
@@ -945,22 +1003,24 @@ def p_declaration_list(p):
     declaration_list : declaration
 	                 | declaration_list declaration
     '''
+    # AST done
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
-        G.add_edge(p[0], p[2]) 
+        p[0] = p[2]
+        G.add_edge(p[0], p[1]) 
 
 def p_statement_list(p):
     '''
     statement_list : statement
 	               | statement_list statement
     '''
+    # AST done
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
-        G.add_edge(p[0], p[2])
+        p[0] = p[2]
+        G.add_edge(p[0], p[1])
 
 def p_expression_statement(p):
     '''
@@ -983,6 +1043,7 @@ def p_selection_statement(p):
 	                    | IF '(' expression ')' statement ELSE statement
 	                    | SWITCH '(' expression ')' statement
     '''
+    # AST done
     if(len(p) == 6):
         p[0] = new_node()
         p[0].attr['label'] = str(p[1])
@@ -1010,14 +1071,15 @@ def p_iteration_statement(p):
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
     '''
-    if(len(p) == 6):
+    # AST done
+    if len(p) == 6:
         p[0] = new_node()
         p[0].attr['label'] = "WHILE"
         G.add_edge(p[0], p[3])
         G.add_edge(p[0], p[5])
         G.add_edge(p[3],p[5],style='invis')
         G.add_subgraph([p[3],p[5]], rank='same')
-    elif ( len(p) == 7):
+    elif len(p) == 7:
         p[0] = new_node()
         p[0].attr['label'] = "FOR"
         G.add_edge(p[0], p[3])
@@ -1054,6 +1116,7 @@ def p_jump_statement(p):
 	               | RETURN ';'
 	               | RETURN expression ';'
     '''
+    # AST done
     if (len(p) == 3):
         p[0] = new_node()
         p[0].attr['label'] = str(p[1])
@@ -1075,11 +1138,12 @@ def p_translation_unit(p):
     translation_unit : external_declaration
 	                 | translation_unit external_declaration
     '''
+    # AST done
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
-        G.add_edge(p[0], p[2])
+        p[0] = p[2]
+        G.add_edge(p[0], p[1])
     
 def p_external_declaration(p):
     '''
@@ -1096,7 +1160,7 @@ def p_function_definition(p):
 	                    | declarator declaration_list compound_statement
 	                    | declarator compound_statement
     '''
-
+    # AST doubt
 def p_empty(p):
     'empty :'
     pass
