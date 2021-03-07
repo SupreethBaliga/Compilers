@@ -879,7 +879,7 @@ def p_abstract_declarator(p):
         p[0] = p[1]
     else:
         p[0] = p[1]
-        G.add_edge(p[0] , p[1])
+        G.add_edge(p[0] , p[2])
 
 def p_direct_abstract_declarator(p):
     '''
