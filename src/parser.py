@@ -1007,6 +1007,8 @@ def p_empty(p):
 
 def p_error(p):
     print("Error found while parsing!")
+    global isError
+    isError = 1
 
 
 # add precedence and associativity of operators
@@ -1018,8 +1020,21 @@ G.layout(prog="circo")
 
 itr = 0 # Global var to give unique IDs to nodes of the graph
 
+isError = 0
+# DRIVER CODE
+if len(sys.argv) == 1:
+    print("No file given as input")    
+    sys.exit()
+
 file = open(sys.argv[1], 'r')
 data = file.read()
 result = parser.parse(data)
 
-G.write("dot/test1.dot") ## Change this later
+count = str(sys.argv[2])
+outputFile = "dot/file" + count + ".dot"
+
+if isError == 1:
+    print(f'Error found. Aborting parsing of {sys.argv[1]}....')
+    sys.exit(1)
+else:
+    G.write(outputFile) ## Change this later
