@@ -517,7 +517,6 @@ def p_type_specifier(p):
 	               | UNSIGNED
 	               | struct_or_union_specifier
 	               | enum_specifier
-	               | TYPE_NAME
     '''
 
 def p_struct_or_union_specifier(p):
@@ -587,7 +586,7 @@ def p_struct_declarator(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
+        p[0] = new_node()
         p[0].attr['label'] = ':'
         G.add_edge(p[0], p[2])
     elif (len(p) == 4):
@@ -613,7 +612,7 @@ def p_enum_specifier(p):
     # AST done
     if (len(p) == 5):
         p[0] = new_node()
-        p[0].attr['label'] = 'ENUM'
+        p[0].attr['label'] = 'ENUM{'
 
         G.add_edge(p[0], p[3])
     elif (len(p) == 6):
@@ -713,7 +712,7 @@ def p_direct_declarator(p):
 	                  | direct_declarator '(' parameter_type_list ')'
 	                  | direct_declarator '(' identifier_list ')'
     '''
-    # AST done
+    # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
     if (len(p) == 2):
         p[0] = new_node()
         p[0].attr['label'] = str(p[1])
@@ -895,7 +894,7 @@ def p_labeled_statement(p):
 	                  | CASE constant_expression ':' statement
 	                  | DEFAULT ':' statement
     '''
-    # AST Doubt
+    # AST Done
     if (len(p) == 4):
         if (p[1] == "DEFAULT"):
             p[0] = new_node()
