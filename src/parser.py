@@ -925,18 +925,42 @@ def p_compound_statement(p):
 	                   | '{' declaration_list '}'
 	                   | '{' declaration_list statement_list '}'
     '''
+    if (len(p) == 3):
+        p[0] = new_node()
+        p[0].attr['label'] = "{}"
+    elif (len(p) == 4):
+        p[0] = new_node()
+        p[0].attr['label'] = "{}"
+        G.add_edge(p[0], p[2])
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = "{}"
+        G.add_edge(p[0],p[2])
+        G.add_edge(p[0],p[3])
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_subgraph([p[2],p[3]], rank='same')
 
 def p_declaration_list(p):
     '''
     declaration_list : declaration
 	                 | declaration_list declaration
     '''
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = p[1]
+        G.add_edge(p[0], p[2]) 
 
 def p_statement_list(p):
     '''
     statement_list : statement
 	               | statement_list statement
     '''
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = p[1]
+        G.add_edge(p[0], p[2])
 
 def p_expression_statement(p):
     '''
@@ -959,6 +983,23 @@ def p_selection_statement(p):
 	                    | IF '(' expression ')' statement ELSE statement
 	                    | SWITCH '(' expression ')' statement
     '''
+    if(len(p) == 6):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[0], p[5])
+        G.add_edge(p[3],p[5],style='invis')
+        G.add_subgraph([p[3],p[5]], rank='same')
+    else:
+        p[0] = new_node()
+        p[0].attr['label'] = "IF-ELSE"
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[0], p[5])
+        G.add_edge(p[0], p[7])
+        G.add_edge(p[3],p[5],style='invis')
+        G.add_edge(p[5],p[7],style='invis')
+        G.add_subgraph([p[3],p[5],p[7]], rank='same')
+
 
 # Correct till here
 
@@ -969,6 +1010,41 @@ def p_iteration_statement(p):
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
     '''
+    if(len(p) == 6):
+        p[0] = new_node()
+        p[0].attr['label'] = "WHILE"
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[0], p[5])
+        G.add_edge(p[3],p[5],style='invis')
+        G.add_subgraph([p[3],p[5]], rank='same')
+    elif ( len(p) == 7):
+        p[0] = new_node()
+        p[0].attr['label'] = "FOR"
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[0], p[4])
+        G.add_edge(p[0], p[6])
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_edge(p[4],p[6],style='invis')
+        G.add_subgraph([p[3],p[4],p[6]], rank='same')
+    else:
+        p[0] = new_node()
+        if (p[1] == "do"):
+            p[0].attr['label'] = "DO-WHILE"
+            G.add_edge(p[0], p[2])
+            G.add_edge(p[0], p[5])
+            G.add_edge(p[2],p[5],style='invis')
+            G.add_subgraph([p[2],p[5]], rank='same')
+        else:
+            p[0].attr['label'] = "FOR"
+            G.add_edge(p[0], p[3])
+            G.add_edge(p[0], p[4])
+            G.add_edge(p[0], p[5])
+            G.add_edge(p[0], p[7])
+            G.add_edge(p[3],p[4],style='invis')
+            G.add_edge(p[4],p[5],style='invis')
+            G.add_edge(p[5],p[7],style='invis')
+            G.add_subgraph([p[3],p[4],p[5],p[7]], rank='same')
+
 
 def p_jump_statement(p):
     '''
@@ -978,13 +1054,33 @@ def p_jump_statement(p):
 	               | RETURN ';'
 	               | RETURN expression ';'
     '''
+    if (len(p) == 3):
+        p[0] = new_node()
+        p[0].attr['label'] = str(p[1])
+    else:
+        if(p[1] == "return"):
+            p[0] = new_node()
+            p[0].attr['label'] = "RETURN"
+            G.add_edge(p[0],p[2])
+        else:
+            p[0] = new_node()
+            p[0].attr['label'] = "GOTO"
+            p2val = p[2]
+            p[2] = new_node()
+            p[2].attr['label'] = str(p2val)
+            G.add_edge(p[0],p[2])
 
 def p_translation_unit(p):
     '''
     translation_unit : external_declaration
 	                 | translation_unit external_declaration
     '''
-
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = p[1]
+        G.add_edge(p[0], p[2])
+    
 def p_external_declaration(p):
     '''
     external_declaration : function_definition
