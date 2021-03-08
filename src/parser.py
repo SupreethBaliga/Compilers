@@ -1249,12 +1249,17 @@ def p_translation_unit(p):
 	                 | translation_unit external_declaration
     '''
     # AST done
+    p[0] = new_node()
+    p[0].attr['label'] = 'SourceNode'
+
     if (len(p) == 2):
-        p[0] = p[1]
+        G.add_edge(p[0] , p[1])
     elif (len(p) == 3):
-        p[0] = p[2]
         G.add_edge(p[0], p[1])
-    
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
+
 def p_external_declaration(p):
     '''
     external_declaration : function_definition
