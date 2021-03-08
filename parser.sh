@@ -24,6 +24,9 @@ else
          echo "Success"
          dot -Tps dot/file$count.dot -o dot/graph$count.ps
       fi;
+      
+      rm src/parsetab.py src/parser.out
+
       echo "<----------------------------------------------------------------------->"
    done
 fi
