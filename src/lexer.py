@@ -7,6 +7,7 @@
 import ply.lex as lex
 from ply.lex import TOKEN
 import sys
+import os
 from tabulate import tabulate
 
 # add reserved keywords to this list. Expand as needed
@@ -221,8 +222,13 @@ for tok in lexers:
     row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
     table_list.append(row)
 
+toPrint = os.environ['lex_env']
+
 if isError == 1:
     print(f'Errors found. Aborting scanning of {sys.argv[1]}....')
     sys.exit(1)
 else:
-    print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
+    if(toPrint != "0"):
+        print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
+    # else:
+    #     print("Not printing lexer table")

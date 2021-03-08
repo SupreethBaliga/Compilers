@@ -1332,4 +1332,5 @@ if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
 else:
+    print("Output file is: graph" + count + ".ps")
     G.write(outputFile) ## Change this later
