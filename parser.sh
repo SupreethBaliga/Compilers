@@ -26,6 +26,10 @@ done
 
 for i in ${files[@]};
 do
+    if [ ! -d "./dot" ];
+    then
+        mkdir dot
+    fi;
     count=$((count+1))
     echo $i
     if [ $lexer = true ]; then
@@ -43,6 +47,9 @@ do
         echo "Success"
         dot -Tps dot/file$count.dot -o dot/graph$count.ps
     fi;
+
+    rm src/parsetab.py src/parser.out
+
     echo "<----------------------------------------------------------------------->"
 done
 exit $STATUS

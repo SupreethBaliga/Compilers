@@ -56,7 +56,7 @@ def p_postfix_expression(p):
         p[0] = p[1]
     elif (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = '#' + str(p[2])
+        p[0].attr['label'] = 'POST' + str(p[2])
         G.add_edge(p[0],p[1])
     elif (len(p) == 4):
         if p[2] == '.':
@@ -74,7 +74,7 @@ def p_postfix_expression(p):
 
         elif p[2] == '(':
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'FuncCall'
 
             G.add_edge(p[0],p[1])
 
@@ -95,10 +95,10 @@ def p_postfix_expression(p):
     elif (len(p) == 5):
         if p[2] == '(':
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'FuncCall'
         elif p[2] == '[':
             p[0] = new_node()
-            p[0].attr['label'] = '[]'
+            p[0].attr['label'] = 'ArrSub'
         
         G.add_edge(p[0],p[1])
         G.add_edge(p[0],p[3])
@@ -1144,6 +1144,9 @@ def p_expression_statement(p):
 	                     | expression ';'
     '''
     # AST Done
+    if len(p) == 2:
+        p[0] = new_node()
+        p[0].attr['label'] = 'EmptyExprStmt'
     if (len(p) == 3):
         p[0] = p[1]
 
@@ -1180,6 +1183,8 @@ def p_iteration_statement(p):
 	                    | DO statement WHILE '(' expression ')' ';'
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
+	                    | FOR '(' declaration_list expression_statement ')' statement
+	                    | FOR '(' declaration_list expression_statement expression ')' statement
     '''
     # AST done
     if len(p) == 6:
@@ -1249,12 +1254,18 @@ def p_translation_unit(p):
 	                 | translation_unit external_declaration
     '''
     # AST done
+    p[0] = 'SourceNode'
+    # p[0] = new_node()
+    # p[0].attr['label'] = 'SourceNode'
+
     if (len(p) == 2):
-        p[0] = p[1]
+        G.add_edge(p[0] , p[1])
     elif (len(p) == 3):
-        p[0] = p[2]
-        G.add_edge(p[0], p[1])
-    
+        # G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        # G.add_edge(p[1],p[2],style='invis')
+        # G.add_subgraph([p[1],p[2]], rank='same')
+
 def p_external_declaration(p):
     '''
     external_declaration : function_definition
