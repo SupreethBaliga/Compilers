@@ -473,17 +473,10 @@ def p_declaration(p):
 	            | declaration_specifiers init_declarator_list ';'
     '''
     if (len(p) == 3):
-        # Do nothing
-        pass
-
+        p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = new_node()
-        p[0].attr['label'] = 'declaration'
-
-        G.add_edge(p[0], p[1])
+        p[0] = p[1]
         G.add_edge(p[0], p[2])
-        G.add_edge(p[1], p[2], style='invis')
-        G.add_subgraph([p[1], p[2]], rank='same')
 
 def p_declaration_specifiers(p):
     '''
@@ -510,7 +503,7 @@ def p_init_declarator_list(p):
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = new_node()
-        p[0].attr['label'] = 'init_declarator_list'    
+        p[0].attr['label'] = ','    
 
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[3])
@@ -595,6 +588,23 @@ def p_struct_or_union_specifier(p):
 	                          | struct_or_union '{' struct_declaration_list '}'
 	                          | struct_or_union ID
     '''
+    p[0] = p[1]
+    if (len(p) == 5):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = str(p2val)
+
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[0], p[4])
+        G.add_edge(p[2], p[4], style='invis')
+        G.add_subgraph([p[2], p[4]], rank='same')
+
+    elif (len(p) == 4):
+        p[0].attr['label'] = p[0].attr['label'] + '{'
+        G.add_edge(p[0], p[3])
+
+    elif (len(p) == 3):
+        G.add_edge(p[0], p[2])
 
 def p_struct_or_union(p):
     '''
@@ -613,8 +623,8 @@ def p_struct_declaration_list(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
-        G.add_edge(p[0], p[2])
+        p[0] = p[2]
+        G.add_edge(p[0], p[1])
 
 
 def p_struct_declaration(p):
@@ -979,15 +989,18 @@ def p_direct_abstract_declarator(p):
 	                           | direct_abstract_declarator '(' ')'
 	                           | direct_abstract_declarator '(' parameter_type_list ')'
     '''
-    if (len(p) == 3):
-        if(p[1] == '('):
-            p[0] = new_node()
-            p[0].attr['label'] = '#()'
-        elif(p[1] == '['):
-            p[0] = new_node()
-            p[0].attr['label'] = '#[]'    
+    # AST doubt
 
-    elif (len(p) == 4):
+    # We may add it
+    # if (len(p) == 3):
+    #     if(p[1] == '('):
+    #         p[0] = new_node()
+    #         p[0].attr['label'] = '#()'
+    #     elif(p[1] == '['):
+    #         p[0] = new_node()
+    #         p[0].attr['label'] = '#[]'    
+
+    if (len(p) == 4):
         if(p[1] == '('):
             p[0] = p[2]
         elif(p[1] == '['):
@@ -1015,7 +1028,6 @@ def p_direct_abstract_declarator(p):
 
         G.add_edge(p[1], p[3], style='invis')
         G.add_subgraph([p[1], p[3]], rank='same')
-    # AST doubt
 
 #correct till here
 
@@ -1142,8 +1154,13 @@ def p_statement_list(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[2]
+        p[0] = new_node()
+        p[0].attr['label'] = ';'
+
         G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
 
 def p_expression_statement(p):
     '''
@@ -1151,14 +1168,8 @@ def p_expression_statement(p):
 	                     | expression ';'
     '''
     # AST Done
-    if (len(p) == 2):
-        p[0] = new_node()
-        p[0].attr['label'] = ';'
-    else:
-        p[0] = new_node()
-        p[0].attr['label'] = ';'
-        G.add_edge(p[0], p[1])
-
+    if (len(p) == 3):
+        p[0] = p[1]
 
 def p_selection_statement(p):
     '''
@@ -1284,27 +1295,32 @@ def p_function_definition(p):
 	                    | declarator compound_statement
     '''
 
+    p[0] = new_node()
+    p[0].attr['label'] = "FUNC"
+
     if (len(p) == 3):
-        p[0] = p[2]
-        G.add_edge(p[0], p[1])
-
-
-    elif (len(p) == 4):
-        p[0] = p[3]
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[2])
         G.add_edge(p[1],p[2],style='invis')
         G.add_subgraph([p[1],p[2]], rank='same')
 
-
-    elif (len(p) == 5):
-        p[0] = p[4]
+    elif (len(p) == 4):
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[2])
         G.add_edge(p[0], p[3])
         G.add_edge(p[1],p[2],style='invis')
         G.add_edge(p[2],p[3],style='invis')
         G.add_subgraph([p[1],p[2],p[3]], rank='same')
+
+    elif (len(p) == 5):
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[0], p[3])
+        G.add_edge(p[0], p[4])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_edge(p[2],p[3],style='invis')
+        G.add_edge(p[3],p[4],style='invis')
+        G.add_subgraph([p[1],p[2],p[3],p[4]], rank='same')
 	
     # AST doubt
 
