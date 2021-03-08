@@ -552,31 +552,7 @@ def p_type_specifier(p):
 	               | struct_or_union_specifier
 	               | enum_specifier
     '''
-    if(str(p[1])=="VOID"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="CHAR"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="SHORT"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="INT"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="LONG"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="FLOAT"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="DOUBLE"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="SIGNED"):
-        p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
-    elif(str(p[1])=="UNSIGNED"):
+    if str(p[1]) in ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
         p[0] = new_node()
         p[0].attr['label'] = str(p[1])
     else:
