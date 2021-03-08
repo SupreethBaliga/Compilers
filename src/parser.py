@@ -7,12 +7,12 @@ import sys
 from lexer import tokens
 
 # This has to be filled
-precedence = (
-    ('nonassoc', '<', '>'),
-    ('left', '+', '-'),
-    ('left', '/', '*')
-    # ('right', 'UMINUS') # for the unary minus operator
-)
+# precedence = (
+#     ('nonassoc', '<', '>'),
+#     ('left', '+', '-'),
+#     ('left', '/', '*')
+#     # ('right', 'UMINUS') # for the unary minus operator
+# )
 
 ############## Helper Functions #########################
 def new_node():
@@ -552,6 +552,7 @@ def p_type_specifier(p):
 	               | INT
 	               | LONG
 	               | FLOAT
+                   | BOOL
 	               | DOUBLE
 	               | SIGNED
 	               | UNSIGNED
@@ -968,14 +969,14 @@ def p_abstract_declarator(p):
 
 def p_direct_abstract_declarator(p):
     '''
-    direct_abstract_declarator : '(' abstract_declarator ')' 
-	                           | '[' ']'  
-	                           | '[' constant_expression ']'   
-	                           | direct_abstract_declarator '[' ']' 
+    direct_abstract_declarator : '(' abstract_declarator ')'
+	                           | '[' ']'
+	                           | '[' constant_expression ']'
+	                           | direct_abstract_declarator '[' ']'
 	                           | direct_abstract_declarator '[' constant_expression ']'
-	                           | '(' ')' 
-	                           | '(' parameter_type_list ')' 
-	                           | direct_abstract_declarator '(' ')' 
+	                           | '(' ')'
+	                           | '(' parameter_type_list ')'
+	                           | direct_abstract_declarator '(' ')'
 	                           | direct_abstract_declarator '(' parameter_type_list ')'
     '''
     if (len(p) == 3):
@@ -1134,6 +1135,7 @@ def p_declaration_list(p):
 def p_statement_list(p):
     '''
     statement_list : statement
+                   | statement_list declaration
 	               | statement_list statement
     '''
     # AST done
@@ -1279,7 +1281,7 @@ def p_function_definition(p):
     function_definition : declaration_specifiers declarator declaration_list compound_statement
 	                    | declaration_specifiers declarator compound_statement
 	                    | declarator declaration_list compound_statement
-	                    | declarator p_compound_statement
+	                    | declarator compound_statement
     '''
 
     if (len(p) == 3):
@@ -1305,9 +1307,6 @@ def p_function_definition(p):
         G.add_subgraph([p[1],p[2],p[3]], rank='same')
 	
     # AST doubt
-def p_empty(p):
-    'empty :'
-    pass
 
 def p_error(p):
     print("Error found while parsing!")
