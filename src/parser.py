@@ -105,9 +105,6 @@ def p_postfix_expression(p):
         G.add_edge(p[1],p[3],style='invis')
         G.add_subgraph([p[1],p[3]],rank='same')
 
-
-
-
 def p_argument_expression_list(p):
     '''
     argument_expression_list : assignment_expression
@@ -142,7 +139,7 @@ def p_unary_expression(p):
     elif (len(p) == 3):
         if p[1] == '++' or p[1] == '--':
             p[0] = new_node()
-            p[0].attr['label'] = str(p[1])
+            p[0].attr['label'] = 'PRE' + str(p[1])
             G.add_edge(p[0],p[2])
         elif p[1] == 'sizeof':
             p[0] = new_node()
@@ -168,7 +165,7 @@ def p_unary_operator(p):
     '''
     # AST DONE
     p[0] = new_node()
-    p[0].attr['label'] = str(p[1])
+    p[0].attr['label'] = 'UNARY' + str(p[1])
 
 def p_cast_expression(p):
     '''
@@ -395,7 +392,7 @@ def p_conditional_expression(p):
         p[0] = p[1]
     elif (len(p) == 6):
         p[0] = new_node()
-        p[0].attr['label'] = '?:'
+        p[0].attr['label'] = 'TERNARY'
 
         G.add_edge(p[0],p[1])
         G.add_edge(p[0],p[3])
@@ -473,10 +470,16 @@ def p_declaration(p):
 	            | declaration_specifiers init_declarator_list ';'
     '''
     if (len(p) == 3):
-        p[0] = p[1]
+        p[0] = new_node()
+        p[0].attr['label'] = 'TypeDecl'
+        G.add_edge(p[0], p[1])
     elif (len(p) == 4):
-        p[0] = p[1]
+        p[0] = new_node()
+        p[0].attr['label'] = 'TypeDecl'
+        G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[2])
+        G.add_edge(p[1], p[2], style='invis')
+        G.add_subgraph([p[1], p[2]], rank='same')
 
 def p_declaration_specifiers(p):
     '''
@@ -488,6 +491,7 @@ def p_declaration_specifiers(p):
 	                       | type_qualifier declaration_specifiers
     '''
 
+    # May cause issues due to enum specifiers
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
@@ -565,7 +569,8 @@ def p_struct_or_union_specifier(p):
 	                          | struct_or_union ID
     '''
     p[0] = p[1]
-    if (len(p) == 5):
+    if (len(p) == 6):
+        p[0].attr['label'] = p[0].attr['label'] + '{}'
         p2val = p[2]
         p[2] = new_node()
         p[2].attr['label'] = str(p2val)
@@ -575,8 +580,8 @@ def p_struct_or_union_specifier(p):
         G.add_edge(p[2], p[4], style='invis')
         G.add_subgraph([p[2], p[4]], rank='same')
 
-    elif (len(p) == 4):
-        p[0].attr['label'] = p[0].attr['label'] + '{'
+    elif (len(p) == 5):
+        p[0].attr['label'] = p[0].attr['label'] + '{}'
         G.add_edge(p[0], p[3])
 
     elif (len(p) == 3):
@@ -602,13 +607,12 @@ def p_struct_declaration_list(p):
         p[0] = p[2]
         G.add_edge(p[0], p[1])
 
-
 def p_struct_declaration(p):
     '''
     struct_declaration : specifier_qualifier_list struct_declarator_list ';'
     '''
     p[0] = new_node()
-    p[0].attr['label'] = 'struct_declaration'
+    p[0].attr['label'] = 'StructDec'
 
     G.add_edge(p[0], p[1])
     G.add_edge(p[0], p[2])
@@ -684,12 +688,12 @@ def p_enum_specifier(p):
     # AST done
     if (len(p) == 5):
         p[0] = new_node()
-        p[0].attr['label'] = 'ENUM{'
+        p[0].attr['label'] = 'ENUM{}'
 
         G.add_edge(p[0], p[3])
     elif (len(p) == 6):
         p[0] = new_node()
-        p[0].attr['label'] = 'ENUM'
+        p[0].attr['label'] = 'ENUM{}'
 
         p2val = p[2]
         p[2] = new_node()
@@ -1089,9 +1093,7 @@ def p_labeled_statement(p):
 def p_compound_statement(p):
     '''
     compound_statement : '{' '}'
-	                   | '{' statement_list '}'
-	                   | '{' declaration_list '}'
-	                   | '{' declaration_list statement_list '}'
+	                   | '{' block_item_list '}'
     '''
     if (len(p) == 3):
         p[0] = new_node()
@@ -1100,35 +1102,18 @@ def p_compound_statement(p):
         p[0] = new_node()
         p[0].attr['label'] = "{}"
         G.add_edge(p[0], p[2])
-    else:
+
+def p_block_item_list(p):
+    '''
+    block_item_list : block_item
+                    | block_item_list block_item
+    '''
+    # AST done
+
+    if (len(p) == 2):
         p[0] = new_node()
-        p[0].attr['label'] = "{}"
-        G.add_edge(p[0],p[2])
-        G.add_edge(p[0],p[3])
-        G.add_edge(p[2],p[3],style='invis')
-        G.add_subgraph([p[2],p[3]], rank='same')
-
-def p_declaration_list(p):
-    '''
-    declaration_list : declaration
-	                 | declaration_list declaration
-    '''
-    # AST done
-    if (len(p) == 2):
-        p[0] = p[1]
-    elif (len(p) == 3):
-        p[0] = p[2]
-        G.add_edge(p[0], p[1]) 
-
-def p_statement_list(p):
-    '''
-    statement_list : statement
-                   | statement_list declaration
-	               | statement_list statement
-    '''
-    # AST done
-    if (len(p) == 2):
-        p[0] = p[1]
+        p[0].attr['label'] = ';'
+        G.add_edge(p[0], p[1])
     elif (len(p) == 3):
         p[0] = new_node()
         p[0].attr['label'] = ';'
@@ -1137,6 +1122,15 @@ def p_statement_list(p):
         G.add_edge(p[0], p[2])
         G.add_edge(p[1],p[2],style='invis')
         G.add_subgraph([p[1],p[2]], rank='same')
+
+def p_block_item(p):
+    '''
+    block_item : declaration
+	            | statement
+    '''
+    # AST Done
+    if (len(p) == 2):
+        p[0] = p[1]
 
 def p_expression_statement(p):
     '''
@@ -1310,6 +1304,25 @@ def p_function_definition(p):
         G.add_subgraph([p[1],p[2],p[3],p[4]], rank='same')
 	
     # AST doubt
+
+def p_declaration_list(p):
+    '''
+    declaration_list : declaration
+	                 | declaration_list declaration
+    '''
+    # AST done
+    if (len(p) == 2):
+        p[0] = new_node()
+        p[0].attr['label'] = ';'
+        G.add_edge(p[0], p[1])
+    elif (len(p) == 3):
+        p[0] = new_node()
+        p[0].attr['label'] = ';'
+
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same') 
 
 def p_error(p):
     print("Error found while parsing!")
