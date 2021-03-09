@@ -6,9 +6,14 @@
 
 ## Instructions:
 * Install all the python modules and set up virtual environment by executing install.sh
+* If the above step gives an error, repeat the above step
 * Activate the virtual environment by running: `source venvcompiler/bin/activate`
-* To use the lexer execute lexer.sh and provide the test file(s) as command line arguments
+### Milestone - 1:
+* To use the lexer execute lex.sh and provide the test file(s) as command line arguments
 
+### Milestone - 2:
+* To use the parser execute parser.sh and provide the test file(s) as command line arguments
+* The available flags can be listed with *-h/--help*
 ## Group Members :boy:
 
 | Name | Roll Number |
