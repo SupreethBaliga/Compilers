@@ -1038,19 +1038,15 @@ def p_initializer(p):
     '''
     initializer : assignment_expression
 	            | '{' initializer_list '}'
+                | '{' initializer_list ',' '}'
     '''
-    # '{' initializer_list ',' '}'
     # AST done
     if len(p) == 2:
         p[0] = p[1]
-    elif len(p) == 4:
+    elif len(p) == 4 or len(p) == 5:
         p[0] = new_node()
         p[0].attr['label'] = '{}'
         G.add_edge(p[0], p[2])
-    # else:
-    #     p[0] = new_node()
-    #     p[0].attr['label'] = ','
-    #     G.add_edge(p[0], p[2])
 
 def p_initializer_list(p):
     '''
@@ -1089,7 +1085,7 @@ def p_labeled_statement(p):
     '''
     # AST Done
     if (len(p) == 4):
-        if (p[1] == "default"):
+        if (p[1] == 'default'):
             p[0] = new_node()
             p[0].attr['label'] = 'DEFAULT:'
             G.add_edge(p[0],p[3])
@@ -1118,7 +1114,7 @@ def p_compound_statement(p):
     '''
     if (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = 'SCOPE'
+        p[0].attr['label'] = 'EmptySCOPE'
     elif (len(p) == 4):
         p[0] = new_node()
         p[0].attr['label'] = 'SCOPE'
@@ -1174,7 +1170,7 @@ def p_selection_statement(p):
     # AST done
     if(len(p) == 6):
         p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
+        p[0].attr['label'] = str(p[1]).upper()
         G.add_edge(p[0], p[3])
         G.add_edge(p[0], p[5])
         G.add_edge(p[3],p[5],style='invis')
@@ -1189,7 +1185,6 @@ def p_selection_statement(p):
         G.add_edge(p[5],p[7],style='invis')
         G.add_subgraph([p[3],p[5],p[7]], rank='same')
 
-
 # Correct till here
 
 def p_iteration_statement(p):
@@ -1198,20 +1193,20 @@ def p_iteration_statement(p):
 	                    | DO statement WHILE '(' expression ')' ';'
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
-	                    | FOR '(' declaration_list expression_statement ')' statement
-	                    | FOR '(' declaration_list expression_statement expression ')' statement
+	                    | FOR '(' declaration expression_statement ')' statement
+	                    | FOR '(' declaration expression_statement expression ')' statement
     '''
     # AST done
     if len(p) == 6:
         p[0] = new_node()
-        p[0].attr['label'] = "WHILE"
+        p[0].attr['label'] = 'WHILE'
         G.add_edge(p[0], p[3])
         G.add_edge(p[0], p[5])
         G.add_edge(p[3],p[5],style='invis')
         G.add_subgraph([p[3],p[5]], rank='same')
     elif len(p) == 7:
         p[0] = new_node()
-        p[0].attr['label'] = "FOR"
+        p[0].attr['label'] = 'FOR'
         G.add_edge(p[0], p[3])
         G.add_edge(p[0], p[4])
         G.add_edge(p[0], p[6])
@@ -1220,14 +1215,14 @@ def p_iteration_statement(p):
         G.add_subgraph([p[3],p[4],p[6]], rank='same')
     else:
         p[0] = new_node()
-        if (p[1] == "do"):
-            p[0].attr['label'] = "DO-WHILE"
+        if (p[1] == 'do'):
+            p[0].attr['label'] = 'DO-WHILE'
             G.add_edge(p[0], p[2])
             G.add_edge(p[0], p[5])
             G.add_edge(p[2],p[5],style='invis')
             G.add_subgraph([p[2],p[5]], rank='same')
         else:
-            p[0].attr['label'] = "FOR"
+            p[0].attr['label'] = 'FOR'
             G.add_edge(p[0], p[3])
             G.add_edge(p[0], p[4])
             G.add_edge(p[0], p[5])
@@ -1236,7 +1231,6 @@ def p_iteration_statement(p):
             G.add_edge(p[4],p[5],style='invis')
             G.add_edge(p[5],p[7],style='invis')
             G.add_subgraph([p[3],p[4],p[5],p[7]], rank='same')
-
 
 def p_jump_statement(p):
     '''
@@ -1249,15 +1243,15 @@ def p_jump_statement(p):
     # AST done
     if (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = str(p[1])
+        p[0].attr['label'] = str(p[1]).upper()
     else:
-        if(p[1] == "return"):
+        if(p[1] == 'return'):
             p[0] = new_node()
-            p[0].attr['label'] = "RETURN"
+            p[0].attr['label'] = 'RETURN'
             G.add_edge(p[0],p[2])
         else:
             p[0] = new_node()
-            p[0].attr['label'] = "GOTO"
+            p[0].attr['label'] = 'GOTO'
             p2val = p[2]
             p[2] = new_node()
             p[2].attr['label'] = str(p2val)
@@ -1296,9 +1290,9 @@ def p_function_definition(p):
 	                    | declarator declaration_list compound_statement
 	                    | declarator compound_statement
     '''
-
+    # AST doubt
     p[0] = new_node()
-    p[0].attr['label'] = "FUNC"
+    p[0].attr['label'] = 'FUNC'
 
     if (len(p) == 3):
         G.add_edge(p[0], p[1])
@@ -1323,8 +1317,6 @@ def p_function_definition(p):
         G.add_edge(p[2],p[3],style='invis')
         G.add_edge(p[3],p[4],style='invis')
         G.add_subgraph([p[1],p[2],p[3],p[4]], rank='same')
-	
-    # AST doubt
 
 def p_declaration_list(p):
     '''
@@ -1346,7 +1338,7 @@ def p_declaration_list(p):
         G.add_subgraph([p[1],p[2]], rank='same') 
 
 def p_error(p):
-    print("Error found while parsing!")
+    print('Error found while parsing!')
     global isError
     isError = 1
 
@@ -1356,14 +1348,14 @@ parser = yacc.yacc(start='translation_unit')
 
 # driver code
 G = pgv.AGraph(strict=False, directed=True)
-G.layout(prog="circo")
+G.layout(prog='circo')
 
 itr = 0 # Global var to give unique IDs to nodes of the graph
 
 isError = 0
 # DRIVER CODE
 if len(sys.argv) == 1:
-    print("No file given as input")    
+    print('No file given as input')
     sys.exit()
 
 file = open(sys.argv[1], 'r')
@@ -1371,11 +1363,11 @@ data = file.read()
 result = parser.parse(data)
 
 count = str(sys.argv[2])
-outputFile = "dot/file" + count + ".dot"
+outputFile = 'dot/file' + count + '.dot'
 
 if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
 else:
-    print("Output file is: graph" + count + ".ps")
+    print('Output file is: graph' + count + '.ps')
     G.write(outputFile) ## Change this later
