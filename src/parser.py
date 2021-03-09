@@ -766,17 +766,23 @@ def p_type_qualifier(p):
     p[0] = new_node()
     p[0].attr['label'] = str(p[1])
 
+# To be done from here
+
 def p_declarator(p):
     '''
     declarator : pointer direct_declarator
 	           | direct_declarator
     '''
-    #AST doubt
+    #AST done
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = p[1]
+        p[0] = new_node()
+        p[0].attr['label'] = 'Decl'
+        G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[2])
+        G.add_edge(p[1], p[2], style='invis')
+        G.add_subgraph([p[1], p[2]], rank='same')
 
 def p_direct_declarator(p):
     '''
@@ -797,21 +803,21 @@ def p_direct_declarator(p):
             p[0] = p[2]
         elif (p[2] == '['):
             p[0] = new_node()
-            p[0].attr['label'] = '#[]'
+            p[0].attr['label'] = 'DDArrSub'
 
             G.add_edge(p[0], p[1])
         elif (p[2] == '('):
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'DDFuncCall'
 
             G.add_edge(p[0], p[1])
     elif (len(p) == 5):
         if (p[2] == '('):
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'DDFuncCall'
         elif (p[2] == '['):
             p[0] = new_node()
-            p[0].attr['label'] = '[]'
+            p[0].attr['label'] = 'DDArrSub'
         
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[3])
@@ -831,14 +837,14 @@ def p_pointer(p):
     # AST done
     if (len(p) == 2):
         p[0] = new_node()
-        p[0].attr['label'] = '#*'
+        p[0].attr['label'] = 'PTR'
     elif (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = '#*'
+        p[0].attr['label'] = 'PTR'
         G.add_edge(p[0], p[2])
     elif (len(p) == 4):
         p[0] = new_node()
-        p[0].attr['label'] = '#*'
+        p[0].attr['label'] = 'PTR'
 
         G.add_edge(p[0],p[2])
         G.add_edge(p[0],p[3])
@@ -876,7 +882,7 @@ def p_parameter_type_list(p):
             # Right child : ELLIPSIS 
 
         p[0] = new_node()
-        p[0].attr['label'] = '...'
+        p[0].attr['label'] = 'ELLIPSIS'
         G.add_edge(p[0], p[1])
 
 def p_parameter_list(p):
@@ -902,11 +908,15 @@ def p_parameter_declaration(p):
 	                      | declaration_specifiers
     '''
     # AST done
+    p[0] = new_node()
+    p[0].attr['label'] = 'ParDecl'
     if len(p) == 2:
-        p[0] = p[1]
+        G.add_edge(p[0], p[1])
     elif len(p) == 3:
-        p[0] = p[1]
-        G.add_edge(p[0] , p[2])
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
      
 def p_identifier_list(p):
     '''
@@ -935,13 +945,18 @@ def p_type_name(p):
     type_name : specifier_qualifier_list
 	          | specifier_qualifier_list abstract_declarator
     '''
-
     # AST done
+
+    p[0] = new_node()
+    p[0].attr['label'] = 'TypeName'
+
     if len(p) == 2:
-        p[0] = p[1]
+        G.add_edge(p[0], p[1])
     else:
-        p[0] = p[1]
-        G.add_edge(p[0] , p[2])
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
 
 def p_abstract_declarator(p):
     '''
@@ -949,59 +964,67 @@ def p_abstract_declarator(p):
 	                    | direct_abstract_declarator
 	                    | pointer direct_abstract_declarator
     '''
-
     # AST done
+
+    p[0] = new_node()
+    p[0].attr['label'] = 'AbsDecl'
+
     if len(p) == 2:
-        p[0] = p[1]
+        G.add_edge(p[0], p[1])
     else:
-        p[0] = p[1]
-        G.add_edge(p[0] , p[2])
+        G.add_edge(p[0], p[1])
+        G.add_edge(p[0], p[2])
+        G.add_edge(p[1],p[2],style='invis')
+        G.add_subgraph([p[1],p[2]], rank='same')
 
 def p_direct_abstract_declarator(p):
     '''
-    direct_abstract_declarator : '(' abstract_declarator ')'
-	                           | '[' ']'
+	direct_abstract_declarator : '[' ']'
+	                           | '(' ')'
+                               | '(' abstract_declarator ')'
+	                           | '(' parameter_type_list ')'
 	                           | '[' constant_expression ']'
 	                           | direct_abstract_declarator '[' ']'
-	                           | direct_abstract_declarator '[' constant_expression ']'
-	                           | '(' ')'
-	                           | '(' parameter_type_list ')'
 	                           | direct_abstract_declarator '(' ')'
+	                           | direct_abstract_declarator '[' constant_expression ']'
 	                           | direct_abstract_declarator '(' parameter_type_list ')'
     '''
-    # AST doubt
+    # AST done
 
-    # We may add it
-    # if (len(p) == 3):
-    #     if(p[1] == '('):
-    #         p[0] = new_node()
-    #         p[0].attr['label'] = '#()'
-    #     elif(p[1] == '['):
-    #         p[0] = new_node()
-    #         p[0].attr['label'] = '#[]'    
+    if (len(p) == 3):
+        if(p[1] == '('):
+            p[0] = new_node()
+            p[0].attr['label'] = 'DAD()'
+        elif(p[1] == '['):
+            p[0] = new_node()
+            p[0].attr['label'] = 'DAD[]'    
 
     if (len(p) == 4):
         if(p[1] == '('):
-            p[0] = p[2]
+            p[0] = new_node()
+            p[0].attr['label'] = 'DAD()'
+            G.add_edge(p[0], p[2])
         elif(p[1] == '['):
-            p[0] = p[2]
+            p[0] = new_node()
+            p[0].attr['label'] = 'DAD[]'
+            G.add_edge(p[0], p[2])
         elif(p[2] == '('):
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'POSTDAD()'
             G.add_edge(p[0], p[1])
         elif(p[2] == '['):
             p[0] = new_node()
-            p[0].attr['label'] = '#[]'
+            p[0].attr['label'] = 'POSTDAD[]'
             G.add_edge(p[0], p[1])
 
 
     elif (len(p) == 5):
         if (p[2] == '('):
             p[0] = new_node()
-            p[0].attr['label'] = '#()'
+            p[0].attr['label'] = 'DAD()'
         elif (p[2] == '['):
             p[0] = new_node()
-            p[0].attr['label'] = '#[]'
+            p[0].attr['label'] = 'DAD[]'
         
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[3])
@@ -1015,17 +1038,19 @@ def p_initializer(p):
     '''
     initializer : assignment_expression
 	            | '{' initializer_list '}'
-	            | '{' initializer_list ',' '}'
     '''
+    # '{' initializer_list ',' '}'
     # AST done
     if len(p) == 2:
         p[0] = p[1]
     elif len(p) == 4:
-        p[0] = p[2]
-    else:
         p[0] = new_node()
-        p[0].attr['label'] = ','
+        p[0].attr['label'] = '{}'
         G.add_edge(p[0], p[2])
+    # else:
+    #     p[0] = new_node()
+    #     p[0].attr['label'] = ','
+    #     G.add_edge(p[0], p[2])
 
 def p_initializer_list(p):
     '''
@@ -1038,10 +1063,6 @@ def p_initializer_list(p):
     else:
         p[0] = new_node()
         p[0].attr['label'] = ','
-
-        p3val = p[3]
-        p[3] = new_node()
-        p[3].attr['label'] = str(p3val)
 
         G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[3])
@@ -1068,7 +1089,7 @@ def p_labeled_statement(p):
     '''
     # AST Done
     if (len(p) == 4):
-        if (p[1] == "DEFAULT"):
+        if (p[1] == "default"):
             p[0] = new_node()
             p[0].attr['label'] = 'DEFAULT:'
             G.add_edge(p[0],p[3])
@@ -1084,7 +1105,7 @@ def p_labeled_statement(p):
             G.add_subgraph([p[1],p[3]], rank='same')
     else:
         p[0] = new_node()
-        p[0].attr['label'] = 'CASE'
+        p[0].attr['label'] = 'CASE:'
         G.add_edge(p[0], p[2])
         G.add_edge(p[0], p[4])
         G.add_edge(p[2],p[4],style='invis')
@@ -1097,10 +1118,10 @@ def p_compound_statement(p):
     '''
     if (len(p) == 3):
         p[0] = new_node()
-        p[0].attr['label'] = "{}"
+        p[0].attr['label'] = 'SCOPE'
     elif (len(p) == 4):
         p[0] = new_node()
-        p[0].attr['label'] = "{}"
+        p[0].attr['label'] = 'SCOPE'
         G.add_edge(p[0], p[2])
 
 def p_block_item_list(p):
@@ -1160,7 +1181,7 @@ def p_selection_statement(p):
         G.add_subgraph([p[3],p[5]], rank='same')
     else:
         p[0] = new_node()
-        p[0].attr['label'] = "IF-ELSE"
+        p[0].attr['label'] = 'IF-ELSE'
         G.add_edge(p[0], p[3])
         G.add_edge(p[0], p[5])
         G.add_edge(p[0], p[7])
