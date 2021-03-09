@@ -1,0 +1,263 @@
+digraph "" {
+	graph [bb="0,0,0,0"];
+	node [label="\N"];
+	{
+		graph [rank=same];
+		2	[label=int];
+		3	[label=a];
+		2 -> 3	[style=invis];
+	}
+	{
+		graph [rank=same];
+		1	[label=hello];
+		4	[label=ParDecl];
+		1 -> 4	[style=invis];
+	}
+	{
+		graph [rank=same];
+		7	[label=b];
+		8	[label=2];
+		7 -> 8	[style=invis];
+	}
+	{
+		graph [rank=same];
+		6	[label=int];
+		9	[label="="];
+		6 -> 9	[style=invis];
+	}
+	{
+		graph [rank=same];
+		11	[label=";"];
+		12	[label=RETURN];
+		11 -> 12	[style=invis];
+	}
+	{
+		graph [rank=same];
+		0	[label=void];
+		5	[label=DDFuncCall];
+		0 -> 5	[style=invis];
+		14	[label=SCOPE];
+		5 -> 14	[style=invis];
+	}
+	{
+		graph [rank=same];
+		18	[label=int];
+		19	[label=b];
+		18 -> 19	[style=invis];
+	}
+	{
+		graph [rank=same];
+		17	[label=bye];
+		20	[label=ParDecl];
+		17 -> 20	[style=invis];
+	}
+	{
+		graph [rank=same];
+		22	[label=hello];
+		23	[label=b];
+		22 -> 23	[style=invis];
+	}
+	{
+		graph [rank=same];
+		25	[label=";"];
+		27	[label=RETURN];
+		25 -> 27	[style=invis];
+	}
+	{
+		graph [rank=same];
+		16	[label=int];
+		21	[label=DDFuncCall];
+		16 -> 21	[style=invis];
+		29	[label=SCOPE];
+		21 -> 29	[style=invis];
+	}
+	{
+		graph [rank=same];
+		35	[label=a];
+		36	[label=6];
+		35 -> 36	[style=invis];
+	}
+	{
+		graph [rank=same];
+		34	[label=int];
+		37	[label="="];
+		34 -> 37	[style=invis];
+	}
+	{
+		graph [rank=same];
+		41	[label=b];
+		42	[label=6];
+		41 -> 42	[style=invis];
+	}
+	{
+		graph [rank=same];
+		40	[label=int];
+		43	[label="="];
+		40 -> 43	[style=invis];
+	}
+	{
+		graph [rank=same];
+		39	[label=";"];
+		44	[label=TypeDecl];
+		39 -> 44	[style=invis];
+	}
+	{
+		graph [rank=same];
+		46	[label=printf];
+		47	[label="\"Hello\""];
+		46 -> 47	[style=invis];
+	}
+	{
+		graph [rank=same];
+		45	[label=";"];
+		48	[label=FuncCall];
+		45 -> 48	[style=invis];
+	}
+	{
+		graph [rank=same];
+		51	[label=c];
+		52	[label=12.34];
+		51 -> 52	[style=invis];
+	}
+	{
+		graph [rank=same];
+		50	[label=float];
+		53	[label="="];
+		50 -> 53	[style=invis];
+	}
+	{
+		graph [rank=same];
+		49	[label=";"];
+		54	[label=TypeDecl];
+		49 -> 54	[style=invis];
+	}
+	{
+		graph [rank=same];
+		56	[label=bye];
+		57	[label=a];
+		56 -> 57	[style=invis];
+	}
+	{
+		graph [rank=same];
+		55	[label=";"];
+		58	[label=FuncCall];
+		55 -> 58	[style=invis];
+	}
+	{
+		graph [rank=same];
+		62	[label=hello];
+		64	[label=a];
+		64 -> 62	[style=invis];
+	}
+	{
+		graph [rank=same];
+		59	[label=";"];
+		67	[label=TypeDecl];
+		59 -> 67	[style=invis];
+	}
+	{
+		graph [rank=same];
+		68	[label=";"];
+		70	[label=RETURN];
+		68 -> 70	[style=invis];
+	}
+	{
+		graph [rank=same];
+		31	[label=int];
+		33	[label=DDFuncCall];
+		31 -> 33	[style=invis];
+		72	[label=SCOPE];
+		33 -> 72	[style=invis];
+	}
+	4 -> 2;
+	4 -> 3;
+	5 -> 1;
+	5 -> 4;
+	9 -> 7;
+	9 -> 8;
+	10	[label=TypeDecl];
+	10 -> 6;
+	10 -> 9;
+	11 -> 10;
+	13	[label=";"];
+	13 -> 11;
+	13 -> 12;
+	14 -> 13;
+	15	[label=FUNC];
+	15 -> 0;
+	15 -> 5;
+	15 -> 14;
+	SourceNode -> 15;
+	30	[label=FUNC];
+	SourceNode -> 30;
+	73	[label=FUNC];
+	SourceNode -> 73;
+	20 -> 18;
+	20 -> 19;
+	21 -> 17;
+	21 -> 20;
+	24	[label=FuncCall];
+	24 -> 22;
+	24 -> 23;
+	25 -> 24;
+	26	[label=b];
+	27 -> 26;
+	28	[label=";"];
+	28 -> 25;
+	28 -> 27;
+	29 -> 28;
+	30 -> 16;
+	30 -> 21;
+	30 -> 29;
+	32	[label=main];
+	33 -> 32;
+	37 -> 35;
+	37 -> 36;
+	38	[label=TypeDecl];
+	38 -> 34;
+	38 -> 37;
+	39 -> 38;
+	43 -> 41;
+	43 -> 42;
+	44 -> 40;
+	44 -> 43;
+	45 -> 39;
+	45 -> 44;
+	48 -> 46;
+	48 -> 47;
+	49 -> 45;
+	49 -> 48;
+	53 -> 51;
+	53 -> 52;
+	54 -> 50;
+	54 -> 53;
+	55 -> 49;
+	55 -> 54;
+	58 -> 56;
+	58 -> 57;
+	59 -> 55;
+	59 -> 58;
+	60	[label=const];
+	61	[label=volatile];
+	60 -> 61;
+	63	[label="ENUM{}"];
+	61 -> 63;
+	63 -> 62;
+	63 -> 64;
+	65	[label=typedef];
+	63 -> 65;
+	66	[label=int];
+	65 -> 66;
+	67 -> 60;
+	68 -> 59;
+	68 -> 67;
+	69	[label=0];
+	70 -> 69;
+	71	[label=";"];
+	71 -> 68;
+	71 -> 70;
+	72 -> 71;
+	73 -> 31;
+	73 -> 33;
+	73 -> 72;
+}

@@ -3,53 +3,79 @@
 STATUS=0
 count=0
 
-if [ $# -eq 1 ] && ([ "$1" == "-h" ] || [ "$1" == "--help" ]); then
-    echo "List all the programs that you want to test as $ bash parser.sh tests/test1.c tests/test2.c ... "
-    echo "-l flag prints the scanner table"
-    echo "-h[--help] flag prints this message"
+if [ $# -eq 0 ] || ([ $# -eq 1 ] && ([ "$1" == "-h" ] || [ "$1" == "--help" ]));
+then
+    echo "Usage : bash $0 /path/to/test1.c /path/to/test2.c ... "
+    echo "-l : enable printing the scanner table"
+    echo "-d : prevent removal of dump files of the parser"
+    echo "-h / --help : prints this message"
     exit 0
 fi
 
 files=()
 lexer=false
+dump=false
 
 for i in "$@"
 do
-    if [ ${i:0:1} = "-" ]; then
-        if [ ${i:1:2} = "l" ]; then
+    if [ ${i:0:1} = "-" ]; 
+    then
+        if [ ${i:1:2} = "l" ]; 
+        then
             lexer=true
+        elif [ ${i:1:2} = "d" ]; 
+        then
+            dump=true
         fi
     else
         files+=($i)
     fi
 done
 
-for i in ${files[@]};
+if [ -d "./tmp" ] && [ ! -z "$(ls -A ./tmp)" ];
+then
+    echo "Removing older dump files"
+    rm -v tmp/*
+fi;
+
+for file in ${files[@]};
 do
-    if [ ! -d "./dot" ];
-    then
-        mkdir dot
-    fi;
     count=$((count+1))
-    echo $i
-    if [ $lexer = true ]; then
+    echo "$count. $file"
+    fileNameCore="${file%%.*}"
+    fileNameCore=${fileNameCore##*/}
+
+    if [ $lexer = true ]; 
+    then
         export lex_env=1
     else
         export lex_env=0
     fi
-    python3 ./src/parser.py $i $count
+
+    if [ ! -d ".tmp/" ];
+    then
+      mkdir tmp
+    fi
+    
+    python3 src/parser.py $file
     RETVAL=$?
+
     if [ $RETVAL -ne 0 ]; 
     then
         echo "Failure"
-    STATUS=$RETVAL
+        STATUS=$RETVAL
     else
         echo "Success"
-        dot -Tps dot/file$count.dot -o dot/graph$count.ps
+        dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
     fi;
-
-    rm src/parsetab.py src/parser.out
 
     echo "<----------------------------------------------------------------------->"
 done
+
+if [ $dump = false ] && [ ! -z "$(ls -A ./tmp)" ]; 
+then
+    echo "Removing parser dump files"
+    rm -v tmp/*
+fi;
+
 exit $STATUS

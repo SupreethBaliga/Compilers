@@ -14,7 +14,7 @@ from lexer import tokens
 #     # ('right', 'UMINUS') # for the unary minus operator
 # )
 
-############## Helper Functions #########################
+############## Helper Functions ###########
 def new_node():
     global itr
     G.add_node(itr)
@@ -22,7 +22,7 @@ def new_node():
     itr += 1
     return n
 
-######### Grammar Rules ################
+############## Grammar Rules ##############
 
 def p_primary_expression(p):
     '''
@@ -1263,17 +1263,14 @@ def p_translation_unit(p):
 	                 | translation_unit external_declaration
     '''
     # AST done
+
+    # Hack to restrict single source node
     p[0] = 'SourceNode'
-    # p[0] = new_node()
-    # p[0].attr['label'] = 'SourceNode'
 
     if (len(p) == 2):
         G.add_edge(p[0] , p[1])
     elif (len(p) == 3):
-        # G.add_edge(p[0], p[1])
         G.add_edge(p[0], p[2])
-        # G.add_edge(p[1],p[2],style='invis')
-        # G.add_subgraph([p[1],p[2]], rank='same')
 
 def p_external_declaration(p):
     '''
@@ -1342,32 +1339,29 @@ def p_error(p):
     global isError
     isError = 1
 
-
-# add precedence and associativity of operators
-parser = yacc.yacc(start='translation_unit')
-
 # driver code
+parser = yacc.yacc(start='translation_unit', outputdir='./tmp')
+
 G = pgv.AGraph(strict=False, directed=True)
 G.layout(prog='circo')
 
 itr = 0 # Global var to give unique IDs to nodes of the graph
 
 isError = 0
-# DRIVER CODE
 if len(sys.argv) == 1:
     print('No file given as input')
-    sys.exit()
+    sys.exit(1)
 
 file = open(sys.argv[1], 'r')
 data = file.read()
 result = parser.parse(data)
 
-count = str(sys.argv[2])
-outputFile = 'dot/file' + count + '.dot'
+fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
+outputFile = 'dot/' + fileNameCore + '.dot'
 
 if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
 else:
-    print('Output file is: graph' + count + '.ps')
-    G.write(outputFile) ## Change this later
+    print('Output file is: ' + fileNameCore + '.ps')
+    G.write(outputFile)
