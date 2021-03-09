@@ -585,6 +585,9 @@ def p_struct_or_union_specifier(p):
         G.add_edge(p[0], p[3])
 
     elif (len(p) == 3):
+        p2val = p[2]
+        p[2] = new_node()
+        p[2].attr['label'] = str(p2val)
         G.add_edge(p[0], p[2])
 
 def p_struct_or_union(p):
