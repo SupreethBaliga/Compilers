@@ -615,7 +615,7 @@ def p_struct_declaration(p):
     struct_declaration : specifier_qualifier_list struct_declarator_list ';'
     '''
     p[0] = new_node()
-    p[0].attr['label'] = 'StructDec'
+    p[0].attr['label'] = 'StructOrUnionDec'
 
     G.add_edge(p[0], p[1])
     G.add_edge(p[0], p[2])

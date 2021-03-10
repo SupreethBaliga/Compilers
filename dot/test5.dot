@@ -1,0 +1,445 @@
+digraph "" {
+	graph [bb="0,0,0,0"];
+	node [label="\N"];
+	{
+		graph [rank=same];
+		2	[label=float];
+		3	[label=b];
+		2 -> 3	[style=invis];
+	}
+	{
+		graph [rank=same];
+		5	[label=int];
+		6	[label=a];
+		5 -> 6	[style=invis];
+	}
+	{
+		graph [rank=same];
+		4	[label=ParDecl];
+		7	[label=ParDecl];
+		4 -> 7	[style=invis];
+	}
+	{
+		graph [rank=same];
+		1	[label=f1];
+		8	[label=","];
+		1 -> 8	[style=invis];
+	}
+	{
+		graph [rank=same];
+		10	[label=2];
+		11	[label=b];
+		10 -> 11	[style=invis];
+	}
+	{
+		graph [rank=same];
+		0	[label=float];
+		9	[label=DDFuncCall];
+		0 -> 9	[style=invis];
+		15	[label=SCOPE];
+		9 -> 15	[style=invis];
+	}
+	{
+		graph [rank=same];
+		19	[label=int];
+		20	[label=a];
+		19 -> 20	[style=invis];
+	}
+	{
+		graph [rank=same];
+		18	[label=f2];
+		21	[label=ParDecl];
+		18 -> 21	[style=invis];
+	}
+	{
+		graph [rank=same];
+		23	[label=a];
+		24	[label=1];
+		23 -> 24	[style=invis];
+	}
+	{
+		graph [rank=same];
+		17	[label=int];
+		22	[label=DDFuncCall];
+		17 -> 22	[style=invis];
+		28	[label=SCOPE];
+		22 -> 28	[style=invis];
+	}
+	{
+		graph [rank=same];
+		31	[label=int];
+		32	[label=time];
+		31 -> 32	[style=invis];
+	}
+	{
+		graph [rank=same];
+		33	[label=StructOrUnionDec];
+		34	[label=Date];
+		34 -> 33	[style=invis];
+	}
+	{
+		graph [rank=same];
+		41	[label=x];
+		42	[label=1];
+		41 -> 42	[style=invis];
+	}
+	{
+		graph [rank=same];
+		39	[label=static];
+		43	[label="="];
+		39 -> 43	[style=invis];
+	}
+	{
+		graph [rank=same];
+		49	[label=y];
+		50	[label=0];
+		49 -> 50	[style=invis];
+	}
+	{
+		graph [rank=same];
+		46	[label=const];
+		51	[label="="];
+		46 -> 51	[style=invis];
+	}
+	{
+		graph [rank=same];
+		45	[label=";"];
+		52	[label=TypeDecl];
+		45 -> 52	[style=invis];
+	}
+	{
+		graph [rank=same];
+		56	[label=f2];
+		57	[label=x];
+		56 -> 57	[style=invis];
+	}
+	{
+		graph [rank=same];
+		54	[label=x];
+		58	[label=FuncCall];
+		54 -> 58	[style=invis];
+	}
+	{
+		graph [rank=same];
+		53	[label=";"];
+		55	[label="="];
+		53 -> 55	[style=invis];
+	}
+	{
+		graph [rank=same];
+		63	[label=0.0];
+		64	[label=x];
+		63 -> 64	[style=invis];
+	}
+	{
+		graph [rank=same];
+		62	[label=f1];
+		65	[label=","];
+		62 -> 65	[style=invis];
+	}
+	{
+		graph [rank=same];
+		61	[label=z];
+		66	[label=FuncCall];
+		61 -> 66	[style=invis];
+	}
+	{
+		graph [rank=same];
+		60	[label=float];
+		67	[label="="];
+		60 -> 67	[style=invis];
+	}
+	{
+		graph [rank=same];
+		59	[label=";"];
+		68	[label=TypeDecl];
+		59 -> 68	[style=invis];
+	}
+	{
+		graph [rank=same];
+		71	[label=PTR];
+		72	[label=ptr];
+		71 -> 72	[style=invis];
+	}
+	{
+		graph [rank=same];
+		70	[label=int];
+		73	[label=Decl];
+		70 -> 73	[style=invis];
+	}
+	{
+		graph [rank=same];
+		69	[label=";"];
+		74	[label=TypeDecl];
+		69 -> 74	[style=invis];
+	}
+	{
+		graph [rank=same];
+		76	[label=ptr];
+		78	[label="UNARY&"];
+		76 -> 78	[style=invis];
+	}
+	{
+		graph [rank=same];
+		75	[label=";"];
+		77	[label="="];
+		75 -> 77	[style=invis];
+	}
+	{
+		graph [rank=same];
+		82	[label="\"%d is stored at address %Ld\""];
+		83	[label="UNARY*"];
+		82 -> 83	[style=invis];
+	}
+	{
+		graph [rank=same];
+		85	[label=","];
+		86	[label=ptr];
+		85 -> 86	[style=invis];
+	}
+	{
+		graph [rank=same];
+		81	[label=printf];
+		87	[label=","];
+		81 -> 87	[style=invis];
+	}
+	{
+		graph [rank=same];
+		80	[label=";"];
+		88	[label=FuncCall];
+		80 -> 88	[style=invis];
+	}
+	{
+		graph [rank=same];
+		90	[label=struct];
+		92	[label=tom];
+		90 -> 92	[style=invis];
+	}
+	{
+		graph [rank=same];
+		89	[label=";"];
+		93	[label=TypeDecl];
+		89 -> 93	[style=invis];
+	}
+	{
+		graph [rank=same];
+		95	[label=tom];
+		97	[label=time];
+		95 -> 97	[style=invis];
+	}
+	{
+		graph [rank=same];
+		96	[label="."];
+		99	[label=0];
+		96 -> 99	[style=invis];
+	}
+	{
+		graph [rank=same];
+		94	[label=";"];
+		98	[label="="];
+		94 -> 98	[style=invis];
+	}
+	{
+		graph [rank=same];
+		103	[label=b];
+		104	[label=2];
+		103 -> 104	[style=invis];
+	}
+	{
+		graph [rank=same];
+		102	[label=a];
+		105	[label=DDArrSub];
+		102 -> 105	[style=invis];
+	}
+	{
+		graph [rank=same];
+		101	[label=int];
+		106	[label=","];
+		101 -> 106	[style=invis];
+	}
+	{
+		graph [rank=same];
+		100	[label=";"];
+		107	[label=TypeDecl];
+		100 -> 107	[style=invis];
+	}
+	{
+		graph [rank=same];
+		112	[label=int];
+		114	[label=AbsDecl];
+		112 -> 114	[style=invis];
+	}
+	{
+		graph [rank=same];
+		111	[label=int];
+		117	[label=AbsDecl];
+		111 -> 117	[style=invis];
+	}
+	{
+		graph [rank=same];
+		109	[label=a];
+		119	[label=SIZEOF];
+		109 -> 119	[style=invis];
+	}
+	{
+		graph [rank=same];
+		108	[label=";"];
+		110	[label="="];
+		108 -> 110	[style=invis];
+	}
+	{
+		graph [rank=same];
+		36	[label=void];
+		38	[label=DDFuncCall];
+		36 -> 38	[style=invis];
+		121	[label=SCOPE];
+		38 -> 121	[style=invis];
+	}
+	4 -> 2;
+	4 -> 3;
+	7 -> 5;
+	7 -> 6;
+	8 -> 4;
+	8 -> 7;
+	9 -> 1;
+	9 -> 8;
+	12	[label="*"];
+	12 -> 10;
+	12 -> 11;
+	13	[label=RETURN];
+	13 -> 12;
+	14	[label=";"];
+	14 -> 13;
+	15 -> 14;
+	16	[label=FUNC];
+	16 -> 0;
+	16 -> 9;
+	16 -> 15;
+	SourceNode -> 16;
+	29	[label=FUNC];
+	SourceNode -> 29;
+	35	[label=TypeDecl];
+	SourceNode -> 35;
+	122	[label=FUNC];
+	SourceNode -> 122;
+	21 -> 19;
+	21 -> 20;
+	22 -> 18;
+	22 -> 21;
+	25	[label=">>"];
+	25 -> 23;
+	25 -> 24;
+	26	[label=RETURN];
+	26 -> 25;
+	27	[label=";"];
+	27 -> 26;
+	28 -> 27;
+	29 -> 17;
+	29 -> 22;
+	29 -> 28;
+	30	[label="struct{}"];
+	30 -> 33;
+	30 -> 34;
+	33 -> 31;
+	33 -> 32;
+	35 -> 30;
+	37	[label=main];
+	38 -> 37;
+	40	[label=int];
+	39 -> 40;
+	43 -> 41;
+	43 -> 42;
+	44	[label=TypeDecl];
+	44 -> 39;
+	44 -> 43;
+	45 -> 44;
+	47	[label=long];
+	46 -> 47;
+	48	[label=int];
+	47 -> 48;
+	51 -> 49;
+	51 -> 50;
+	52 -> 46;
+	52 -> 51;
+	53 -> 45;
+	53 -> 52;
+	55 -> 54;
+	55 -> 58;
+	58 -> 56;
+	58 -> 57;
+	59 -> 53;
+	59 -> 55;
+	65 -> 63;
+	65 -> 64;
+	66 -> 62;
+	66 -> 65;
+	67 -> 61;
+	67 -> 66;
+	68 -> 60;
+	68 -> 67;
+	69 -> 59;
+	69 -> 68;
+	73 -> 71;
+	73 -> 72;
+	74 -> 70;
+	74 -> 73;
+	75 -> 69;
+	75 -> 74;
+	77 -> 76;
+	77 -> 78;
+	79	[label=x];
+	78 -> 79;
+	80 -> 75;
+	80 -> 77;
+	84	[label=ptr];
+	83 -> 84;
+	85 -> 82;
+	85 -> 83;
+	87 -> 85;
+	87 -> 86;
+	88 -> 81;
+	88 -> 87;
+	89 -> 80;
+	89 -> 88;
+	91	[label=Date];
+	90 -> 91;
+	93 -> 90;
+	93 -> 92;
+	94 -> 89;
+	94 -> 93;
+	96 -> 95;
+	96 -> 97;
+	98 -> 96;
+	98 -> 99;
+	100 -> 94;
+	100 -> 98;
+	105 -> 103;
+	105 -> 104;
+	106 -> 102;
+	106 -> 105;
+	107 -> 101;
+	107 -> 106;
+	108 -> 100;
+	108 -> 107;
+	110 -> 109;
+	110 -> 119;
+	113	[label=PTR];
+	114 -> 113;
+	115	[label=ParDecl];
+	115 -> 112;
+	115 -> 114;
+	116	[label="DAD()"];
+	116 -> 115;
+	117 -> 116;
+	118	[label=TypeName];
+	118 -> 111;
+	118 -> 117;
+	119 -> 118;
+	120	[label=";"];
+	120 -> 108;
+	120 -> 110;
+	121 -> 120;
+	122 -> 36;
+	122 -> 38;
+	122 -> 121;
+}

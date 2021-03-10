@@ -1,0 +1,447 @@
+digraph "" {
+	graph [bb="0,0,0,0"];
+	node [label="\N"];
+	{
+		graph [rank=same];
+		0	[label=Mon];
+		1	[label=Tue];
+		0 -> 1	[style=invis];
+	}
+	{
+		graph [rank=same];
+		2	[label=","];
+		3	[label=Wed];
+		2 -> 3	[style=invis];
+	}
+	{
+		graph [rank=same];
+		4	[label=","];
+		5	[label=Thur];
+		4 -> 5	[style=invis];
+	}
+	{
+		graph [rank=same];
+		6	[label=","];
+		7	[label=Fri];
+		6 -> 7	[style=invis];
+	}
+	{
+		graph [rank=same];
+		8	[label=","];
+		9	[label=Sat];
+		8 -> 9	[style=invis];
+	}
+	{
+		graph [rank=same];
+		10	[label=","];
+		11	[label=Sun];
+		10 -> 11	[style=invis];
+	}
+	{
+		graph [rank=same];
+		12	[label=","];
+		14	[label=week];
+		14 -> 12	[style=invis];
+	}
+	{
+		graph [rank=same];
+		17	[label=a];
+		18	[label=10];
+		17 -> 18	[style=invis];
+	}
+	{
+		graph [rank=same];
+		16	[label=int];
+		19	[label="="];
+		16 -> 19	[style=invis];
+	}
+	{
+		graph [rank=same];
+		22	[label=int];
+		23	[label=time];
+		22 -> 23	[style=invis];
+	}
+	{
+		graph [rank=same];
+		24	[label=StructOrUnionDec];
+		25	[label=Date];
+		25 -> 24	[style=invis];
+	}
+	{
+		graph [rank=same];
+		21	[label="struct{}"];
+		26	[label=today];
+		21 -> 26	[style=invis];
+	}
+	{
+		graph [rank=same];
+		30	[label=a];
+		31	[label=20];
+		30 -> 31	[style=invis];
+	}
+	{
+		graph [rank=same];
+		29	[label=int];
+		32	[label=DDArrSub];
+		29 -> 32	[style=invis];
+	}
+	{
+		graph [rank=same];
+		33	[label=StructOrUnionDec];
+		34	[label="Node"];
+		34 -> 33	[style=invis];
+	}
+	{
+		graph [rank=same];
+		39	[label=extern];
+		41	[label=a];
+		39 -> 41	[style=invis];
+	}
+	{
+		graph [rank=same];
+		45	[label=i];
+		46	[label=0];
+		45 -> 46	[style=invis];
+	}
+	{
+		graph [rank=same];
+		44	[label=int];
+		47	[label="="];
+		44 -> 47	[style=invis];
+	}
+	{
+		graph [rank=same];
+		43	[label=";"];
+		48	[label=TypeDecl];
+		43 -> 48	[style=invis];
+	}
+	{
+		graph [rank=same];
+		50	[label=i];
+		52	[label=0];
+		50 -> 52	[style=invis];
+	}
+	{
+		graph [rank=same];
+		53	[label=i];
+		54	[label=5];
+		53 -> 54	[style=invis];
+	}
+	{
+		graph [rank=same];
+		60	[label=count];
+		61	[label=3];
+		60 -> 61	[style=invis];
+	}
+	{
+		graph [rank=same];
+		58	[label=static];
+		62	[label="="];
+		58 -> 62	[style=invis];
+	}
+	{
+		graph [rank=same];
+		64	[label=";"];
+		66	[label="POST++"];
+		64 -> 66	[style=invis];
+	}
+	{
+		graph [rank=same];
+		69	[label="\"Value of 'count' is %d while when i is %d\n\""];
+		70	[label=count];
+		69 -> 70	[style=invis];
+	}
+	{
+		graph [rank=same];
+		71	[label=","];
+		72	[label=i];
+		71 -> 72	[style=invis];
+	}
+	{
+		graph [rank=same];
+		68	[label=printf];
+		73	[label=","];
+		68 -> 73	[style=invis];
+	}
+	{
+		graph [rank=same];
+		67	[label=";"];
+		74	[label=FuncCall];
+		67 -> 74	[style=invis];
+	}
+	{
+		graph [rank=same];
+		51	[label="="];
+		55	[label="<"];
+		51 -> 55	[style=invis];
+		57	[label="POST++"];
+		55 -> 57	[style=invis];
+		76	[label=SCOPE];
+		57 -> 76	[style=invis];
+	}
+	{
+		graph [rank=same];
+		49	[label=";"];
+		77	[label=FOR];
+		49 -> 77	[style=invis];
+	}
+	{
+		graph [rank=same];
+		81	[label=PTR];
+		82	[label=tom];
+		81 -> 82	[style=invis];
+	}
+	{
+		graph [rank=same];
+		79	[label=struct];
+		83	[label=Decl];
+		79 -> 83	[style=invis];
+	}
+	{
+		graph [rank=same];
+		78	[label=";"];
+		84	[label=TypeDecl];
+		78 -> 84	[style=invis];
+	}
+	{
+		graph [rank=same];
+		88	[label=struct];
+		91	[label=AbsDecl];
+		88 -> 91	[style=invis];
+	}
+	{
+		graph [rank=same];
+		93	[label=malloc];
+		97	[label=SIZEOF];
+		93 -> 97	[style=invis];
+	}
+	{
+		graph [rank=same];
+		92	[label=TypeName];
+		98	[label=FuncCall];
+		92 -> 98	[style=invis];
+	}
+	{
+		graph [rank=same];
+		86	[label=tom];
+		99	[label=CAST];
+		86 -> 99	[style=invis];
+	}
+	{
+		graph [rank=same];
+		85	[label=";"];
+		87	[label="="];
+		85 -> 87	[style=invis];
+	}
+	{
+		graph [rank=same];
+		101	[label=tom];
+		103	[label=time];
+		101 -> 103	[style=invis];
+	}
+	{
+		graph [rank=same];
+		102	[label="->"];
+		105	[label=Tue];
+		102 -> 105	[style=invis];
+	}
+	{
+		graph [rank=same];
+		100	[label=";"];
+		104	[label="="];
+		100 -> 104	[style=invis];
+	}
+	{
+		graph [rank=same];
+		107	[label=union];
+		109	[label=head];
+		107 -> 109	[style=invis];
+	}
+	{
+		graph [rank=same];
+		106	[label=";"];
+		110	[label=TypeDecl];
+		106 -> 110	[style=invis];
+	}
+	{
+		graph [rank=same];
+		113	[label="\"Memory occupied by union : %d\n\""];
+		115	[label=SIZEOF];
+		113 -> 115	[style=invis];
+	}
+	{
+		graph [rank=same];
+		112	[label=printf];
+		116	[label=","];
+		112 -> 116	[style=invis];
+	}
+	{
+		graph [rank=same];
+		111	[label=";"];
+		117	[label=FuncCall];
+		111 -> 117	[style=invis];
+	}
+	{
+		graph [rank=same];
+		118	[label=";"];
+		120	[label=RETURN];
+		118 -> 120	[style=invis];
+	}
+	{
+		graph [rank=same];
+		36	[label=int];
+		38	[label=DDFuncCall];
+		36 -> 38	[style=invis];
+		122	[label=SCOPE];
+		38 -> 122	[style=invis];
+	}
+	2 -> 0;
+	2 -> 1;
+	4 -> 2;
+	4 -> 3;
+	6 -> 4;
+	6 -> 5;
+	8 -> 6;
+	8 -> 7;
+	10 -> 8;
+	10 -> 9;
+	12 -> 10;
+	12 -> 11;
+	13	[label="ENUM{}"];
+	13 -> 12;
+	13 -> 14;
+	15	[label=TypeDecl];
+	15 -> 13;
+	SourceNode -> 15;
+	20	[label=TypeDecl];
+	SourceNode -> 20;
+	27	[label=TypeDecl];
+	SourceNode -> 27;
+	35	[label=TypeDecl];
+	SourceNode -> 35;
+	123	[label=FUNC];
+	SourceNode -> 123;
+	19 -> 17;
+	19 -> 18;
+	20 -> 16;
+	20 -> 19;
+	21 -> 24;
+	21 -> 25;
+	24 -> 22;
+	24 -> 23;
+	27 -> 21;
+	27 -> 26;
+	28	[label="union{}"];
+	28 -> 33;
+	28 -> 34;
+	32 -> 30;
+	32 -> 31;
+	33 -> 29;
+	33 -> 32;
+	35 -> 28;
+	37	[label=main];
+	38 -> 37;
+	40	[label=int];
+	39 -> 40;
+	42	[label=TypeDecl];
+	42 -> 39;
+	42 -> 41;
+	43 -> 42;
+	47 -> 45;
+	47 -> 46;
+	48 -> 44;
+	48 -> 47;
+	49 -> 43;
+	49 -> 48;
+	51 -> 50;
+	51 -> 52;
+	55 -> 53;
+	55 -> 54;
+	56	[label=i];
+	57 -> 56;
+	59	[label=int];
+	58 -> 59;
+	62 -> 60;
+	62 -> 61;
+	63	[label=TypeDecl];
+	63 -> 58;
+	63 -> 62;
+	64 -> 63;
+	65	[label=count];
+	66 -> 65;
+	67 -> 64;
+	67 -> 66;
+	71 -> 69;
+	71 -> 70;
+	73 -> 71;
+	73 -> 72;
+	74 -> 68;
+	74 -> 73;
+	75	[label=";"];
+	75 -> 67;
+	75 -> 74;
+	76 -> 75;
+	77 -> 51;
+	77 -> 55;
+	77 -> 57;
+	77 -> 76;
+	78 -> 49;
+	78 -> 77;
+	80	[label=Date];
+	79 -> 80;
+	83 -> 81;
+	83 -> 82;
+	84 -> 79;
+	84 -> 83;
+	85 -> 78;
+	85 -> 84;
+	87 -> 86;
+	87 -> 99;
+	89	[label=Date];
+	88 -> 89;
+	90	[label=PTR];
+	91 -> 90;
+	92 -> 88;
+	92 -> 91;
+	94	[label=struct];
+	95	[label=Date];
+	94 -> 95;
+	96	[label=TypeName];
+	96 -> 94;
+	97 -> 96;
+	98 -> 93;
+	98 -> 97;
+	99 -> 92;
+	99 -> 98;
+	100 -> 85;
+	100 -> 87;
+	102 -> 101;
+	102 -> 103;
+	104 -> 102;
+	104 -> 105;
+	106 -> 100;
+	106 -> 104;
+	108	[label="Node"];
+	107 -> 108;
+	110 -> 107;
+	110 -> 109;
+	111 -> 106;
+	111 -> 110;
+	114	[label=head];
+	115 -> 114;
+	116 -> 113;
+	116 -> 115;
+	117 -> 112;
+	117 -> 116;
+	118 -> 111;
+	118 -> 117;
+	119	[label=0];
+	120 -> 119;
+	121	[label=";"];
+	121 -> 118;
+	121 -> 120;
+	122 -> 121;
+	123 -> 36;
+	123 -> 38;
+	123 -> 122;
+}

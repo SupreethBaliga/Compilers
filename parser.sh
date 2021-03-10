@@ -52,7 +52,7 @@ do
         export lex_env=0
     fi
 
-    if [ ! -d ".tmp/" ];
+    if [ ! -d "./tmp" ];
     then
       mkdir tmp
     fi
@@ -75,7 +75,7 @@ done
 if [ $dump = false ] && [ ! -z "$(ls -A ./tmp)" ]; 
 then
     echo "Removing parser dump files"
-    rm -v tmp/*
+    rm -vr tmp/
 fi;
 
 exit $STATUS
