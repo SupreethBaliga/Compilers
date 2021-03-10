@@ -13,7 +13,9 @@
 
 ### Milestone - 2:
 * To use the parser execute parser.sh and provide the test file(s) as command line arguments
-* The available flags can be listed with *-h/--help*
+* The available flags can be listed with *-h/--help* (We have added the -l flag which displays the lexer token table)
+* Note that we have already added the corresponding dot files and ps files for the provided non-trivial testcases
+
 ## Group Members :boy:
 
 | Name | Roll Number |
