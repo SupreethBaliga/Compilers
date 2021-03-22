@@ -25,7 +25,7 @@ class Node:
         if children:
             self.children = children
         else:
-            self.children = [ ]
+            self.children = []
         self.leaf = leaf
     
     def print_val(self):
@@ -67,10 +67,13 @@ def p_term_times(p):
     p[0] = Node('*',[p[1],p[3]])
     p[0].node = new_node()
     p[0].node.attr['label'] = '*'
+
     G.add_edge(p[0].node,p[1].node)
     G.add_edge(p[0].node,p[3].node)
     G.add_edge(p[1].node,p[3].node,style='invis')
     G.add_subgraph([p[1].node,p[3].node], rank='same')
+    for child in p[0].children: # if you want to remove the node
+        G.remove_node(child.node.name)
 
 def p_term_div(p):
     '''term : term '/' factor'''

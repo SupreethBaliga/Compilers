@@ -6,14 +6,6 @@ import sys
 # Get the token map from lexer
 from lexer import tokens
 
-# This has to be filled
-# precedence = (
-#     ('nonassoc', '<', '>'),
-#     ('left', '+', '-'),
-#     ('left', '/', '*')
-#     # ('right', 'UMINUS') # for the unary minus operator
-# )
-
 ############## Helper Functions ###########
 def new_node():
     global itr
@@ -22,17 +14,26 @@ def new_node():
     itr += 1
     return n
 
+########### Classes Required ###########
+
+# This class denotes the Node of our Functional AST
 class Node:
-    def __init__(self,label,children=None,leaf=None,node=None):
+    def __init__(self,label,children=None,leaf=None,node=None,attributes=None):
         self.label = label
-        # self.attribute = attribute
-        self.type = "void"
+        self.leaf = leaf
+
         if children:
             self.children = children
         else:
             self.children = []
+
+        if attributes:
+            self.attributes = attributes
+        else:
+            self.attributes = {}
+        
+        self.attributes["err"] = False  # determines if AST subtree has an error
         self.makeGraph()
-        self.leaf = leaf
     
     # def print_val(self):
     #     for child in self.children:
@@ -45,7 +46,7 @@ class Node:
     #             return True
     #     return False
     
-    def makeGraph(self):
+    def makeGraph(self): # for creating the dot dump
         self.node = new_node()
         self.node.attr['label'] = self.label
         listNode = []
@@ -57,8 +58,27 @@ class Node:
 
         G.add_subgraph(listNode,rank='same')
 
-############## Grammar Rules ##############
+# This denotes an entry of the symbol table
+class SymTabEntry:
 
+    def __init__(self, name, type=None, attributes=None):
+        self.name = name
+        if type:
+            self.type = type
+        else:
+            self.type = None
+        
+        if attributes:
+            self.attributes = attributes
+        else:
+            attributes = {}
+
+######## Important Global Variables
+
+symtab = {}  # right now a global var. If class based parser, then it will become an attribute
+ast_root = None # this will contain the root of the AST after it is built
+############## Grammar Rules ##############
+### Might have to convert it into class based code
 def p_primary_expression(p):
     '''
     primary_expression : ID
