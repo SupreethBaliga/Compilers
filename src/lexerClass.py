@@ -41,6 +41,13 @@ class CLexer(object):
         """
         self.lexer = lex.lex(object=self, **kwargs)
 
+    def _error(self, msg, token):
+        # location = self._make_tok_location(token)
+        row = token.lineno
+        line_start = self.lexer.lexdata.rfind('\n', 0, token.lexpos) + 1
+        col = (token.lexpos - line_start) + 1
+        self.error_func(msg, row, col)
+        self.lexer.skip(1)
 
 
     reserved_keywords = {
@@ -188,7 +195,14 @@ class CLexer(object):
         return t
 
     # Octal Constants
-    octal_const = r'(0' + digit + '+' + r')'
+    octal_const = r'(0' + r'[0-7]' + '+' + r')'
+    wrong_octal_const = r'(0' + r'[0-7]' + '*' + r'[89]' + r')'
+
+    @TOKEN(wrong_octal_const)
+    def t_BAD_CONST_OCT(self, t):
+        msg = "Invalid octal constant"
+        self._error(msg, t)
+
     @TOKEN(octal_const)
     def t_OCTAL_CONSTANT(self, t):
         t.value = int(t.value, 8) # converting the lexeme to integer value
@@ -205,6 +219,7 @@ class CLexer(object):
 
     # String Literals
     string_literal = r'(\"(\\.|[^\\"])*\")'
+
     @TOKEN(string_literal)
     def t_STRING_LITERAL(self, t):
         return t
@@ -218,16 +233,34 @@ class CLexer(object):
         t.lexer.lineno += t.value.count('\n')
         pass                #Ignore
 
+    unending_block_comment = r'/\*(.|\n)*$'
+
+    @TOKEN(unending_block_comment)
+    def t_UNENDING_BLOCK_COMMENT(self, t):
+        msg = "Block comment does not end"
+        self._error(msg, t)
+
     # Identifiers
     def t_ID(self, t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
         t.type = self.reserved_keywords.get(t.value,'ID')
-
         if t.type == 'ID' :
             contents = {"line" : t.lineno}
             t.value = {"lexeme": t.value, "additional": contents}
-
         return t
+
+    unmatched_single_quote = r'(\'(\\.|[^\\\'])+$)'
+    @TOKEN(unmatched_single_quote)
+    def t_UNMATCHED_SINGLE_QUOTE(self, t):
+        msg = "Unmatched ' encountered"
+        self._error(msg, t)
+
+
+    unmatched_double_quote = r'(\"(\\.|[^\\"])*$)'
+    @TOKEN(unmatched_double_quote)
+    def t_UNMATCHED_DOUBLE_QUOTE(self, t):
+        msg = "Unmatched \" encountered"
+        self._error(msg, t)
 
     # Track the line numbers
     def t_newline(self, t):
@@ -240,10 +273,10 @@ class CLexer(object):
 
     # Error handling: Ignore bad characters, as in ANSI specification
     def t_error(self, t):
-        print(f'Error found while scanning line number {t.lexer.lineno}')
-        global isError
-        isError = 1
-        t.lexer.skip(1)
+
+        msg = "Illegal token found"
+        self._error(msg, t)
+
         
 
     ###############################################################
@@ -255,8 +288,11 @@ class CLexer(object):
 # clex = CLexer(self.error_func, on_lbrace, on_rbrace, self.type_lookup_func)
 isError = 0
 
-def error_func():
-    self.error = msg
+def error_func(msg, row, col):
+    print(f'Error found while scanning line number {row}, column number {col}:')
+    print(msg)
+    global isError
+    isError = 1
 
 def on_lbrace_func():
     pass
@@ -280,13 +316,18 @@ data = file.read()
 
 clex.build()
 clex.lexer.input(data)
+
 def find_column(input, token):
     line_start = input.rfind('\n', 0, token.lexpos) + 1
     return (token.lexpos - line_start) + 1
 
 table_list = []
 for tok in clex.lexer:
+    row = []
+    # if tok.type != 'ID':
     row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
+    # else:
+    #     row = [tok.type, tok.value['lexeme'], tok.lineno, find_column(data,tok)]
     table_list.append(row)
 
 toPrint = os.environ['lex_env']
