@@ -210,7 +210,7 @@ isError = 0
 # DRIVER CODE
 if len(sys.argv) == 1:
     print("No file given as input")    
-    sys.exit()
+    sys.exit(1)
 
 file = open(sys.argv[1],'r')
 data = file.read()

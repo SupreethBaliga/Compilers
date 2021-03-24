@@ -159,7 +159,7 @@ class CLexer(object):
     @TOKEN(r'\}')
     def t_RBRACE(self, t):
         self.on_rbrace_func()
-        t.type = '{'
+        t.type = '}'
         return t
 
     # Character Constants 
@@ -221,9 +221,12 @@ class CLexer(object):
     # Identifiers
     def t_ID(self, t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
-
-         
         t.type = self.reserved_keywords.get(t.value,'ID')
+
+        if t.type == 'ID' :
+            contents = {"line" : t.lineno}
+            t.value = {"lexeme": t.value, "additional": contents}
+
         return t
 
     # Track the line numbers
@@ -270,14 +273,13 @@ clex = CLexer(error_func, on_lbrace_func, on_rbrace_func, type_lookup_func)
 # DRIVER CODE
 if len(sys.argv) == 1:
     print("No file given as input")    
-    sys.exit()
+    sys.exit(1)
 
 file = open(sys.argv[1],'r')
 data = file.read()
 
 clex.build()
 clex.lexer.input(data)
-
 def find_column(input, token):
     line_start = input.rfind('\n', 0, token.lexpos) + 1
     return (token.lexpos - line_start) + 1
@@ -288,6 +290,7 @@ for tok in clex.lexer:
     table_list.append(row)
 
 toPrint = os.environ['lex_env']
+clex.lexer.lineno = 1
 
 if isError == 1:
     print(f'Errors found. Aborting scanning of {sys.argv[1]}....')

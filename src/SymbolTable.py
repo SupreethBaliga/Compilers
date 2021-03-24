@@ -53,7 +53,7 @@ class SymbolTable() :
             scope = self.Table[-1]
             a = list(scope.items())
             if len(a) >= 1:
-                self.LastPushedInPrevScope = a[-1]
+                self.LastPushedInPrevScope = a[-1][0]
         else:
             self.TopScope = None
         return TScope

@@ -4,7 +4,7 @@ import pygraphviz as pgv
 import sys
 
 # Get the token map from lexer
-from lexer import tokens
+from lexerClass import CLexer
 from SymbolTable import SymbolTable
 
 ############## Helper Functions ###########
@@ -657,9 +657,9 @@ def p_direct_declarator(p):
     direct_declarator : identifier
 	                  | '(' declarator ')'
 	                  | direct_declarator '[' ']'
-	                  | direct_declarator '(' ')'
+	                  | direct_declarator '(' markerFuncPush ')'
 	                  | direct_declarator '[' constant_expression ']'
-	                  | direct_declarator '(' parameter_type_list ')'
+	                  | direct_declarator '(' markerFuncPush parameter_type_list ')'
 	                  | direct_declarator '(' identifier_list ')'
     '''
     # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
@@ -670,13 +670,19 @@ def p_direct_declarator(p):
             p[0] = p[2]
         elif (p[2] == '['):
             p[0] = Node('DDArrSub',[p[1]])
-        elif (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1]])
-    elif (len(p) == 5):
+    elif len(p) == 5:
         if (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1],p[3]])
+            p[0] = Node('DDFuncCall',[p[1]])
         elif (p[2] == '['):
             p[0] = Node('DDArrSub',[p[1],p[3]])
+    elif len(p) == 6:
+        p[0] = Node('DDFuncCall',[p[1],p[4]])
+
+def p_markerFuncPush(p):
+    '''
+    markerFuncPush :
+    '''
+    ST.PushScope()
 
 def p_direct_declarator_struct(p):
     '''
@@ -964,19 +970,36 @@ def p_iteration_statement(p):
 	                    | DO statement WHILE '(' expression ')' ';'
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
-	                    | FOR '(' declaration expression_statement ')' statement
-	                    | FOR '(' declaration expression_statement expression ')' statement
+	                    | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
+	                    | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
     '''
     # AST done
     if len(p) == 6:
         p[0] = Node('WHILE',[p[3],p[5]])
     elif len(p) == 7:
         p[0] = Node('FOR',[p[3],p[4],p[6]])
-    else:
+    elif len(p) == 8:
         if (p[1] == 'do'):
             p[0] = Node('DO-WHILE',[p[2],p[5]])
         else:
             p[0] = Node('FOR',[p[3],p[4],p[5],p[7]])
+    elif len(p) == 9:
+        p[0] = Node('FOR', [p[4], p[5], p[7]])
+    else:
+        p[0] = Node('FOR', [p[4], p[5], p[6], p[8]])
+
+# Markers for FOR loops
+def p_markerForPush(p):
+    '''
+    markerForPush :
+    '''
+    ST.PushScope()
+
+def p_markerForPop(p):
+    '''
+    markerForPop :
+    '''
+    ST.PopScope()
 
 def p_jump_statement(p):
     '''
@@ -1029,18 +1052,28 @@ def p_external_declaration(p):
 
 def p_function_definition(p):
     '''
-    function_definition : declaration_specifiers declarator declaration_list compound_statement
-	                    | declaration_specifiers declarator compound_statement
-	                    | declarator declaration_list compound_statement
-	                    | declarator compound_statement
+    function_definition : declaration_specifiers declarator declaration_list '{' markerFuncPop '}'
+                        | declaration_specifiers declarator declaration_list '{' markerFuncPop block_item_list '}'
+                        | declaration_specifiers declarator '{' markerFuncPop '}'
+                        | declaration_specifiers declarator '{' markerFuncPop block_item_list '}'
     '''
     # AST doubt
-    if (len(p) == 3):
+    if (len(p) == 6):
+        # Add AST Node for EMPTY SCOPE? (check other places too)
         p[0] = Node('FUNC',[p[1],p[2]])
-    elif (len(p) == 4):
-        p[0] = Node('FUNC',[p[1],p[2],p[3]])
-    elif (len(p) == 5):
-        p[0] = Node('FUNC',[p[1],p[2],p[3],p[4]])
+    elif (len(p) == 7):
+        if p[3] == '{':
+            p[0] = Node('FUNC',[p[1],p[2],Node('SCOPE', [p[5]])])
+        else:
+            p[0] = Node('FUNC',[p[1],p[2],p[3]])
+    elif len(p) == 8:
+        p[0] = Node('FUNC',[p[1],p[2],p[3],Node('SCOPE', [p[6]])])
+
+def p_markerFuncPop(p):
+    '''
+    markerFuncPop : 
+    '''
+    ST.PopScope()
 
 def p_declaration_list(p):
     '''
@@ -1058,6 +1091,32 @@ def p_error(p):
     global isError
     isError = 1
 
+def _lex_on_lbrace_func():
+    ST.PushScope()
+
+def _lex_on_rbrace_func():
+    ST.PopScope()
+
+def error_func():
+    pass
+
+def type_lookup_func():
+    pass
+
+isError = 0
+if len(sys.argv) == 1:
+    print('No file given as input')
+    sys.exit(1)
+file = open(sys.argv[1], 'r')
+data = file.read()
+
+# Lexer driver code
+clex = CLexer( error_func=error_func, type_lookup_func=type_lookup_func, on_lbrace_func=_lex_on_lbrace_func, on_rbrace_func=_lex_on_rbrace_func)
+clex.build()
+clex.lexer.input(data)
+tokens = clex.tokens
+clex.lexer.lineno = 1
+
 # driver code
 parser = yacc.yacc(start='start', outputdir='./tmp')
 
@@ -1066,12 +1125,7 @@ G.layout(prog='circo')
 
 itr = 0 # Global var to give unique IDs to nodes of the graph
 
-isError = 0
-if len(sys.argv) == 1:
-    print('No file given as input')
-    sys.exit(1)
-file = open(sys.argv[1], 'r')
-data = file.read()
+
 result = parser.parse(data)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
