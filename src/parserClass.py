@@ -5,6 +5,7 @@ import sys
 
 # Get the token map from lexer
 from lexer import tokens
+from SymbolTable import SymbolTable
 
 ############## Helper Functions ###########
 def new_node():
@@ -59,30 +60,37 @@ class Node:
         G.add_subgraph(listNode,rank='same')
 
 # This denotes an entry of the symbol table
-class SymTabEntry:
+# class SymTabEntry:
 
-    def __init__(self, name, type=None, attributes=None):
-        self.name = name
-        if type:
-            self.type = type
-        else:
-            self.type = None
+#     def __init__(self, name, type=None, attributes=None):
+#         self.name = name
+#         if type:
+#             self.type = type
+#         else:
+#             self.type = None
         
-        if attributes:
-            self.attributes = attributes
-        else:
-            attributes = {}
+#         if attributes:
+#             self.attributes = attributes
+#         else:
+#             attributes = {}
 
-######## Important Global Variables
+# ######## Important Global Variables
 
-symtab = {}  # right now a global var. If class based parser, then it will become an attribute
+# symtab = {}  # right now a global var. If class based parser, then it will become an attribute
 ast_root = None # this will contain the root of the AST after it is built
 ############## Grammar Rules ##############
 ### Might have to convert it into class based code
-def p_primary_expression(p):
+ST = SymbolTable()
+
+def p_primary_expression_1(p):
     '''
     primary_expression : ID
-                       | CONSTANT
+    '''
+    p[0] = Node(str(p[1]['lexeme']))
+
+def p_primary_expression(p):
+    '''
+    primary_expression : CONSTANT
                        | STRING_LITERAL
                        | '(' expression ')'
     '''
@@ -92,6 +100,12 @@ def p_primary_expression(p):
     elif (len(p) == 4):
         p[0] = p[2]
 
+def p_identifer(p):
+    '''
+    identifier : ID
+    '''
+    p[0] = Node(str(p[1]['lexeme']))
+    ST.InsertSymbol(p[1]['lexeme'], p[1]['additional'])
 
 def p_postfix_expression(p):
     '''
@@ -111,18 +125,18 @@ def p_postfix_expression(p):
         p[0] = Node('POST' + str(p[2]),[p[1]])
     elif (len(p) == 4):
         if p[2] == '.':
-            p3val = p[3]
+            p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
-            
+
             p[0] = Node('.',[p[1],p[3]])
 
         elif p[2] == '(':
             p[0] = Node('FuncCall',[p[1]])
 
         elif p[2] == '->':
-            p3val = p[3]
+            p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
-            
+
             p[0] = Node('->',[p[1],p[3]])
 
     elif (len(p) == 5):
@@ -464,7 +478,7 @@ def p_struct_or_union_specifier(p):
     '''
     p[0] = p[1]
     if (len(p) == 6):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
 
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
@@ -488,7 +502,7 @@ def p_struct_or_union_specifier(p):
 
 
     elif (len(p) == 3):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
         G.add_edge(p[0].node, p[2].node)
         p[0].children.append(p[2])
@@ -550,9 +564,9 @@ def p_struct_declarator_list(p):
 
 def p_struct_declarator(p):
     '''
-    struct_declarator : declarator
+    struct_declarator : declarator_struct
 	                  | ':' constant_expression
-	                  | declarator ':' constant_expression
+	                  | declarator_struct ':' constant_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -575,12 +589,12 @@ def p_enum_specifier(p):
     if (len(p) == 5):
         p[0] = Node('ENUM{}',[p[3]])
     elif (len(p) == 6):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
 
         p[0] = Node('ENUM{}',[p[2],p[4]])
     elif (len(p) == 3):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
         p[0] = Node('ENUM',[p[2]])
 
@@ -597,15 +611,13 @@ def p_enumerator_list(p):
 
 def p_enumerator(p):
     '''
-    enumerator : ID
-	           | ID '=' constant_expression
+    enumerator : identifier
+	           | identifier '=' constant_expression
     '''
     # AST done
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = p[1]
     elif (len(p) == 4):
-        p1val = p[1]
-        p[1] = Node(str(p1val))
         p[0] = Node('=',[p[1],p[3]])
 
 def p_type_qualifier(p):
@@ -629,9 +641,20 @@ def p_declarator(p):
     elif (len(p) == 3):
         p[0] = Node('Decl',[p[1],p[2]])
 
+def p_declarator_struct(p):
+    '''
+    declarator_struct : pointer direct_declarator_struct
+	           | direct_declarator_struct
+    '''
+    #AST done
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = Node('Decl',[p[1],p[2]])
+
 def p_direct_declarator(p):
     '''
-    direct_declarator : ID
+    direct_declarator : identifier
 	                  | '(' declarator ')'
 	                  | direct_declarator '[' ']'
 	                  | direct_declarator '(' ')'
@@ -641,7 +664,33 @@ def p_direct_declarator(p):
     '''
     # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = p[1]
+    elif (len(p) == 4):
+        if (p[1] == '('):
+            p[0] = p[2]
+        elif (p[2] == '['):
+            p[0] = Node('DDArrSub',[p[1]])
+        elif (p[2] == '('):
+            p[0] = Node('DDFuncCall',[p[1]])
+    elif (len(p) == 5):
+        if (p[2] == '('):
+            p[0] = Node('DDFuncCall',[p[1],p[3]])
+        elif (p[2] == '['):
+            p[0] = Node('DDArrSub',[p[1],p[3]])
+
+def p_direct_declarator_struct(p):
+    '''
+    direct_declarator_struct : ID
+	                  | '(' declarator_struct ')'
+	                  | direct_declarator_struct '[' ']'
+	                  | direct_declarator_struct '(' ')'
+	                  | direct_declarator_struct '[' constant_expression ']'
+	                  | direct_declarator_struct '(' parameter_type_list ')'
+	                  | direct_declarator_struct '(' identifier_list ')'
+    '''
+    # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
+    if (len(p) == 2):
+        p[0] = Node(str(p[1]['lexeme']))
     elif (len(p) == 4):
         if (p[1] == '('):
             p[0] = p[2]
@@ -732,9 +781,9 @@ def p_identifier_list(p):
     '''
     # AST Done
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = Node(str(p[1]['lexeme']))
     else:
-        p3val = p[3]
+        p3val = p[3]['lexeme']
         p[3] = Node(str(p3val))
         p[0] = Node(',',[p[1],p[3]])
 
@@ -847,7 +896,7 @@ def p_labeled_statement(p):
         if (p[1] == 'default'):
             p[0] = Node('DEFAULT:',[p[3]])
         else:
-            p1val = p[1]
+            p1val = p[1]['lexeme']
             p[1] = Node(str(p1val))
             p[0] = Node('ID:',[p[1],p[3]])
     else:
@@ -944,9 +993,16 @@ def p_jump_statement(p):
         if(p[1] == 'return'):
             p[0] = Node('RETURN',[p[2]])
         else:
-            p2val = p[2]
+            p2val = p[2]['lexeme']
             p[2] = Node(str(p2val))
             p[0] = Node('GOTO',[p[2]])
+
+def p_start(p):
+    '''
+    start : translation_unit
+    '''
+    p[0] = p[1]
+    ST.PushScope()
 
 def p_translation_unit(p):
     '''
@@ -962,7 +1018,6 @@ def p_translation_unit(p):
         G.add_edge(p[0] , p[1].node)
     elif (len(p) == 3):
         G.add_edge(p[0], p[2].node)
-
 
 def p_external_declaration(p):
     '''
@@ -1004,7 +1059,7 @@ def p_error(p):
     isError = 1
 
 # driver code
-parser = yacc.yacc(start='translation_unit', outputdir='./tmp')
+parser = yacc.yacc(start='start', outputdir='./tmp')
 
 G = pgv.AGraph(strict=False, directed=True)
 G.layout(prog='circo')
@@ -1015,7 +1070,6 @@ isError = 0
 if len(sys.argv) == 1:
     print('No file given as input')
     sys.exit(1)
-
 file = open(sys.argv[1], 'r')
 data = file.read()
 result = parser.parse(data)
@@ -1026,6 +1080,9 @@ outputFile = 'dot/' + fileNameCore + '.dot'
 if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
+elif ST.error:
+    sys.exit(1)
 else:
     print('Output file is: ' + fileNameCore + '.ps')
     G.write(outputFile)
+    ST.PrintTable()
