@@ -179,6 +179,11 @@ def t_BLOCK_COMMENT(t):
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = reserved_keywords.get(t.value,'ID')
+
+    if t.type == 'ID' :
+        contents = {"line" : t.lineno}
+        t.value = {"lexeme": t.value, "additional": contents}
+
     return t
 
 # Track the line numbers
@@ -205,7 +210,7 @@ isError = 0
 # DRIVER CODE
 if len(sys.argv) == 1:
     print("No file given as input")    
-    sys.exit()
+    sys.exit(1)
 
 file = open(sys.argv[1],'r')
 data = file.read()
@@ -232,3 +237,6 @@ else:
         print(tabulate(table_list, headers=['Token', 'Lexeme', 'Line#', 'Column#']))
     # else:
     #     print("Not printing lexer table")
+
+# Reset Line Number
+lexers.lineno = 1

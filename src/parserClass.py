@@ -4,7 +4,8 @@ import pygraphviz as pgv
 import sys
 
 # Get the token map from lexer
-from lexer import tokens
+from lexerClass import CLexer
+from SymbolTable import SymbolTable
 
 ############## Helper Functions ###########
 def new_node():
@@ -71,30 +72,37 @@ class Node:
         G.add_subgraph(listNode,rank='same')
 
 # This denotes an entry of the symbol table
-class SymTabEntry:
+# class SymTabEntry:
 
-    def __init__(self, name, type=None, attributes=None):
-        self.name = name
-        if type:
-            self.type = type
-        else:
-            self.type = None
+#     def __init__(self, name, type=None, attributes=None):
+#         self.name = name
+#         if type:
+#             self.type = type
+#         else:
+#             self.type = None
         
-        if attributes:
-            self.attributes = attributes
-        else:
-            attributes = {}
+#         if attributes:
+#             self.attributes = attributes
+#         else:
+#             attributes = {}
 
-######## Important Global Variables
+# ######## Important Global Variables
 
-symtab = {}  # right now a global var. If class based parser, then it will become an attribute
+# symtab = {}  # right now a global var. If class based parser, then it will become an attribute
 ast_root = None # this will contain the root of the AST after it is built
 ############## Grammar Rules ##############
 ### Might have to convert it into class based code
-def p_primary_expression(p):
+ST = SymbolTable()
+
+def p_primary_expression_1(p):
     '''
     primary_expression : ID
-                       | CONSTANT
+    '''
+    p[0] = Node(str(p[1]['lexeme']))
+
+def p_primary_expression(p):
+    '''
+    primary_expression : CONSTANT
                        | STRING_LITERAL
                        | '(' expression ')'
     '''
@@ -104,6 +112,13 @@ def p_primary_expression(p):
     elif (len(p) == 4):
         p[0] = p[2]
 
+def p_identifer(p):
+    '''
+    identifier : ID
+    '''
+    p[0] = Node(str(p[1]['lexeme']))
+    p[0].variables[p[0].label] = []
+    ST.InsertSymbol(p[1]['lexeme'], p[1]['additional'])
 
 def p_postfix_expression(p):
     '''
@@ -123,18 +138,18 @@ def p_postfix_expression(p):
         p[0] = Node('POST' + str(p[2]),[p[1]])
     elif (len(p) == 4):
         if p[2] == '.':
-            p3val = p[3]
+            p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
-            
+
             p[0] = Node('.',[p[1],p[3]])
 
         elif p[2] == '(':
             p[0] = Node('FuncCall',[p[1]])
 
         elif p[2] == '->':
-            p3val = p[3]
+            p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
-            
+
             p[0] = Node('->',[p[1],p[3]])
 
     elif (len(p) == 5):
@@ -497,7 +512,7 @@ def p_struct_or_union_specifier(p):
     '''
     p[0] = p[1]
     if (len(p) == 6):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
 
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
@@ -521,7 +536,7 @@ def p_struct_or_union_specifier(p):
 
 
     elif (len(p) == 3):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
         G.add_edge(p[0].node, p[2].node)
         p[0].children.append(p[2])
@@ -583,9 +598,9 @@ def p_struct_declarator_list(p):
 
 def p_struct_declarator(p):
     '''
-    struct_declarator : declarator
+    struct_declarator : declarator_struct
 	                  | ':' constant_expression
-	                  | declarator ':' constant_expression
+	                  | declarator_struct ':' constant_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -608,12 +623,12 @@ def p_enum_specifier(p):
     if (len(p) == 5):
         p[0] = Node('ENUM{}',[p[3]])
     elif (len(p) == 6):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
 
         p[0] = Node('ENUM{}',[p[2],p[4]])
     elif (len(p) == 3):
-        p2val = p[2]
+        p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
         p[0] = Node('ENUM',[p[2]])
 
@@ -630,15 +645,13 @@ def p_enumerator_list(p):
 
 def p_enumerator(p):
     '''
-    enumerator : ID
-	           | ID '=' constant_expression
+    enumerator : identifier
+	           | identifier '=' constant_expression
     '''
     # AST done
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = p[1]
     elif (len(p) == 4):
-        p1val = p[1]
-        p[1] = Node(str(p1val))
         p[0] = Node('=',[p[1],p[3]])
 
 def p_type_qualifier(p):
@@ -666,21 +679,31 @@ def p_declarator(p):
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
 
+def p_declarator_struct(p):
+    '''
+    declarator_struct : pointer direct_declarator_struct
+	           | direct_declarator_struct
+    '''
+    #AST done
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = Node('Decl',[p[1],p[2]])
+
 def p_direct_declarator(p):
     '''
-    direct_declarator : ID
+    direct_declarator : identifier
 	                  | '(' declarator ')'
 	                  | direct_declarator '[' ']'
-	                  | direct_declarator '(' M1 ')'
+	                  | direct_declarator '(' markerFuncPush ')'
 	                  | direct_declarator '[' constant_expression ']'
+	                  | direct_declarator '(' markerFuncPush parameter_type_list ')'
 	                  | direct_declarator '(' identifier_list ')'
-	                  | direct_declarator '(' M1 parameter_type_list ')'
     '''
     # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
     if (len(p) == 2):
         # ID
-        p[0] = Node(str(p[1]))
-        p[0].variables[p[0].label] = []
+        p[0] = p[1]
     elif (len(p) == 4):
         if (p[1] == '('):
             p[0] = p[2]
@@ -714,12 +737,38 @@ def p_direct_declarator(p):
 
 # correct till here
 
-def p_M1(p):
+def p_markerFuncPush(p):
     '''
-    M1 : 
+    markerFuncPush :
     '''
-    # Here we will push scope
     p[0] = None
+    ST.PushScope()
+
+def p_direct_declarator_struct(p):
+    '''
+    direct_declarator_struct : ID
+	                  | '(' declarator_struct ')'
+	                  | direct_declarator_struct '[' ']'
+	                  | direct_declarator_struct '(' ')'
+	                  | direct_declarator_struct '[' constant_expression ']'
+	                  | direct_declarator_struct '(' parameter_type_list ')'
+	                  | direct_declarator_struct '(' identifier_list ')'
+    '''
+    # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
+    if (len(p) == 2):
+        p[0] = Node(str(p[1]['lexeme']))
+    elif (len(p) == 4):
+        if (p[1] == '('):
+            p[0] = p[2]
+        elif (p[2] == '['):
+            p[0] = Node('DDArrSub',[p[1]])
+        elif (p[2] == '('):
+            p[0] = Node('DDFuncCall',[p[1]])
+    elif (len(p) == 5):
+        if (p[2] == '('):
+            p[0] = Node('DDFuncCall',[p[1],p[3]])
+        elif (p[2] == '['):
+            p[0] = Node('DDArrSub',[p[1],p[3]])
 
 def p_pointer(p):
     '''
@@ -815,9 +864,9 @@ def p_identifier_list(p):
     '''
     # AST Done
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = Node(str(p[1]['lexeme']))
     else:
-        p3val = p[3]
+        p3val = p[3]['lexeme']
         p[3] = Node(str(p3val))
         p[0] = Node(',',[p[1],p[3]])
 
@@ -930,7 +979,7 @@ def p_labeled_statement(p):
         if (p[1] == 'default'):
             p[0] = Node('DEFAULT:',[p[3]])
         else:
-            p1val = p[1]
+            p1val = p[1]['lexeme']
             p[1] = Node(str(p1val))
             p[0] = Node('ID:',[p[1],p[3]])
     else:
@@ -998,19 +1047,36 @@ def p_iteration_statement(p):
 	                    | DO statement WHILE '(' expression ')' ';'
 	                    | FOR '(' expression_statement expression_statement ')' statement
 	                    | FOR '(' expression_statement expression_statement expression ')' statement
-	                    | FOR '(' declaration expression_statement ')' statement
-	                    | FOR '(' declaration expression_statement expression ')' statement
+	                    | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
+	                    | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
     '''
     # AST done
     if len(p) == 6:
         p[0] = Node('WHILE',[p[3],p[5]])
     elif len(p) == 7:
         p[0] = Node('FOR',[p[3],p[4],p[6]])
-    else:
+    elif len(p) == 8:
         if (p[1] == 'do'):
             p[0] = Node('DO-WHILE',[p[2],p[5]])
         else:
             p[0] = Node('FOR',[p[3],p[4],p[5],p[7]])
+    elif len(p) == 9:
+        p[0] = Node('FOR', [p[4], p[5], p[7]])
+    else:
+        p[0] = Node('FOR', [p[4], p[5], p[6], p[8]])
+
+# Markers for FOR loops
+def p_markerForPush(p):
+    '''
+    markerForPush :
+    '''
+    ST.PushScope()
+
+def p_markerForPop(p):
+    '''
+    markerForPop :
+    '''
+    ST.PopScope()
 
 def p_jump_statement(p):
     '''
@@ -1027,9 +1093,16 @@ def p_jump_statement(p):
         if(p[1] == 'return'):
             p[0] = Node('RETURN',[p[2]])
         else:
-            p2val = p[2]
+            p2val = p[2]['lexeme']
             p[2] = Node(str(p2val))
             p[0] = Node('GOTO',[p[2]])
+
+def p_start(p):
+    '''
+    start : translation_unit
+    '''
+    p[0] = p[1]
+    ST.PushScope()
 
 def p_translation_unit(p):
     '''
@@ -1046,7 +1119,6 @@ def p_translation_unit(p):
     elif (len(p) == 3):
         G.add_edge(p[0], p[2].node)
 
-
 def p_external_declaration(p):
     '''
     external_declaration : function_definition
@@ -1057,29 +1129,42 @@ def p_external_declaration(p):
 
 def p_function_definition(p):
     '''
-    function_definition : declaration_specifiers declarator declaration_list compound_statement
-	                    | declaration_specifiers declarator compound_statement
+    function_definition : declaration_specifiers declarator declaration_list '{' markerFuncPop '}'
+                        | declaration_specifiers declarator declaration_list '{' markerFuncPop block_item_list '}'
+                        | declaration_specifiers declarator '{' markerFuncPop '}'
+                        | declaration_specifiers declarator '{' markerFuncPop block_item_list '}'
     '''
     # AST doubt
-    if (len(p) == 3):
+    if (len(p) == 6):
+        # Add AST Node for EMPTY SCOPE? (check other places too)
         p[0] = Node('FUNC',[p[1],p[2]])
-    elif (len(p) == 4):
-        p[0] = Node('FUNC',[p[1],p[2],p[3]])
-        
-        function_name = str()
-        for key in p[2].variables.keys():
-            if(p[2].variables[key][0] == "Function Name"):
-                function_name = key
-                break
-        p[2].variables[key] += p[1].extraValues
-        
-        print("The function return type and the datatype of parameters of the function")
-        for key in p[2].variables.keys():
-            print("The key is: " + key)
-            print(p[2].variables[key])
-        print("This is the end of the given function\n")
-    elif (len(p) == 5):
-        p[0] = Node('FUNC',[p[1],p[2],p[3],p[4]])
+    elif (len(p) == 7):
+        if p[3] == '{':
+            p[0] = Node('FUNC',[p[1],p[2],Node('SCOPE', [p[5]])])
+        else:
+            p[0] = Node('FUNC',[p[1],p[2],p[3]])
+    elif len(p) == 8:
+        p[0] = Node('FUNC',[p[1],p[2],p[3],Node('SCOPE', [p[6]])])
+
+    # This part is for printing the various values of the keys
+    function_name = str()
+    for key in p[2].variables.keys():
+        if(p[2].variables[key][0] == "Function Name"):
+            function_name = key
+            break
+    p[2].variables[key] += p[1].extraValues
+    
+    print("The function return type and the datatype of parameters of the function")
+    for key in p[2].variables.keys():
+        print("The key is: " + key)
+        print(p[2].variables[key])
+    print("This is the end of the given function\n")
+
+def p_markerFuncPop(p):
+    '''
+    markerFuncPop : 
+    '''
+    ST.PopScope()
 
 def p_declaration_list(p):
     '''
@@ -1097,21 +1182,41 @@ def p_error(p):
     global isError
     isError = 1
 
+def _lex_on_lbrace_func():
+    ST.PushScope()
+
+def _lex_on_rbrace_func():
+    ST.PopScope()
+
+def error_func():
+    pass
+
+def type_lookup_func():
+    pass
+
+isError = 0
+if len(sys.argv) == 1:
+    print('No file given as input')
+    sys.exit(1)
+file = open(sys.argv[1], 'r')
+data = file.read()
+
+# Lexer driver code
+clex = CLexer( error_func=error_func, type_lookup_func=type_lookup_func, on_lbrace_func=_lex_on_lbrace_func, on_rbrace_func=_lex_on_rbrace_func)
+clex.build()
+clex.lexer.input(data)
+tokens = clex.tokens
+clex.lexer.lineno = 1
+
 # driver code
-parser = yacc.yacc(start='translation_unit', outputdir='./tmp')
+parser = yacc.yacc(start='start', outputdir='./tmp')
 
 G = pgv.AGraph(strict=False, directed=True)
 G.layout(prog='circo')
 
 itr = 0 # Global var to give unique IDs to nodes of the graph
 
-isError = 0
-if len(sys.argv) == 1:
-    print('No file given as input')
-    sys.exit(1)
 
-file = open(sys.argv[1], 'r')
-data = file.read()
 result = parser.parse(data)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
@@ -1120,6 +1225,9 @@ outputFile = 'dot/' + fileNameCore + '.dot'
 if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
+elif ST.error:
+    sys.exit(1)
 else:
     print('Output file is: ' + fileNameCore + '.ps')
     G.write(outputFile)
+    ST.PrintTable()
