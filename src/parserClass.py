@@ -18,9 +18,10 @@ def new_node():
 
 # This class denotes the Node of our Functional AST
 class Node:
-    def __init__(self,label,children=None,leaf=None,node=None,attributes=None):
+    def __init__(self,label,children=None,leaf=None,node=None,attributes=None,createAST = True):
         self.label = label
         self.leaf = leaf
+        self.createAST = createAST
 
         if children:
             self.children = children
@@ -33,8 +34,19 @@ class Node:
             self.attributes = {}
         
         self.attributes["err"] = False  # determines if AST subtree has an error
-        self.makeGraph()
+
+        if (self.createAST == True) :
+            self.makeGraph()
     
+        self.variables = dict()
+        # The key of the dictionary will be variable name and the value will be a tuple consisting of type
+        self.extraValues = []
+    def addTypeInDict(self,type):
+        '''
+        Add "type" to all variables in the dictionary
+        '''
+        for key in self.variables.keys():
+            self.variables[key].append(type)
     # def print_val(self):
     #     for child in self.children:
     #         child.print_val()
@@ -405,16 +417,28 @@ def p_declaration_specifiers(p):
         p[0] = p[1]
         G.add_edge(p[0].node, p[2].node)
         p[0].children.append(p[2])
+        p[0].extraValues += p[2].extraValues
 
 def p_init_declarator_list(p):
     '''
     init_declarator_list : init_declarator
-	                     | init_declarator_list ',' init_declarator
+	                     | init_declarator_list ',' InitM1 init_declarator
     '''
+    #  Marker Here
     if (len(p) == 2):
         p[0] = p[1]
-    elif (len(p) == 4):
-        p[0] = Node(',',[p[1],p[3]])
+    elif (len(p) == 5):
+        p[0] = Node(',',[p[1],p[4]])
+    # print(p[-1])
+    p[0].extraValues = p[-1].extraValues
+
+def p_InitM1(p):
+    '''
+    InitM1 : 
+    '''
+    p[0] = Node('',createAST=False)
+    p[0].extraValues = p[-2].extraValues
+
 
 def p_init_declarator(p):
     '''
@@ -425,6 +449,14 @@ def p_init_declarator(p):
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = Node('=',[p[1],p[3]])
+        p[0].variables = p[1].variables
+    
+    p[0].extraValues = p[-1].extraValues
+    for val in p[0].extraValues:
+        p[0].addTypeInDict(val)
+    for key in p[0].variables.keys():
+        print("The key is: " + key)
+        print(p[0].variables[key])
 
 def p_storage_class_specifier(p):
     '''
@@ -453,6 +485,7 @@ def p_type_specifier(p):
     '''
     if str(p[1]) in ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
         p[0] = Node(str(p[1]))
+        p[0].extraValues.append(str(p[1]))
     else:
         p[0] = p[1]
 
@@ -615,47 +648,78 @@ def p_type_qualifier(p):
     '''
     # AST done
     p[0] = Node(str(p[1]))
+    p[0].extraValues.append(str(p[1]))
 
 # To be done from here
 
 def p_declarator(p):
     '''
-    declarator : pointer direct_declarator
-	           | direct_declarator
+    declarator : direct_declarator
+	           | pointer direct_declarator
     '''
     #AST done
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
         p[0] = Node('Decl',[p[1],p[2]])
+        p[0].variables = p[2].variables
+        for val in p[1].extraValues:
+            p[0].addTypeInDict(val)
 
 def p_direct_declarator(p):
     '''
     direct_declarator : ID
 	                  | '(' declarator ')'
 	                  | direct_declarator '[' ']'
-	                  | direct_declarator '(' ')'
+	                  | direct_declarator '(' M1 ')'
 	                  | direct_declarator '[' constant_expression ']'
-	                  | direct_declarator '(' parameter_type_list ')'
 	                  | direct_declarator '(' identifier_list ')'
+	                  | direct_declarator '(' M1 parameter_type_list ')'
     '''
     # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
     if (len(p) == 2):
+        # ID
         p[0] = Node(str(p[1]))
+        p[0].variables[p[0].label] = []
     elif (len(p) == 4):
         if (p[1] == '('):
             p[0] = p[2]
         elif (p[2] == '['):
             p[0] = Node('DDArrSub',[p[1]])
-        elif (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1]])
+            p[0].variables = p[1].variables
+            p[0].addTypeInDict("[]")
     elif (len(p) == 5):
         if (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1],p[3]])
+            if(p[3] == None):
+                # direct_declarator '(' M1 ')'
+                # this is a function, I have to pass the name of the function,
+                # that is create an entry in global symbol table to 
+                # to create this function and then pass the variables
+                p[0] = Node('DDFuncCall',[p[1]])
+                p[0].variables = p[1].variables
+                p[0].addTypeInDict("Function Name")
+            else:
+                # Do not know what this rule is for
+                p[0] = Node('DDFuncCallWithIdList',[p[1],p[3]])
         elif (p[2] == '['):
             p[0] = Node('DDArrSub',[p[1],p[3]])
+            type1 = "[" + str(p[3].label) + "]"
+            p[0].variables = p[1].variables
+            p[0].addTypeInDict(type1)
+    elif (len(p) == 6):
+            # This has last rule
+            p[0] = Node('DDFuncCall',[p[1],p[4]])
+            p[0].variables = p[4].variables
+            p[0].variables[p[1].label] = ["Function Name"]
 
 # correct till here
+
+def p_M1(p):
+    '''
+    M1 : 
+    '''
+    # Here we will push scope
+    p[0] = None
 
 def p_pointer(p):
     '''
@@ -667,10 +731,15 @@ def p_pointer(p):
     # AST done
     if (len(p) == 2):
         p[0] = Node('PTR')
+        p[0].extraValues.append("*")
     elif (len(p) == 3):
         p[0] = Node('PTR',[p[2]])
+        p[0].extraValues = p[2].extraValues
+        p[0].extraValues.append("*")
     elif (len(p) == 4):
         p[0] = Node('PTR',[p[2],p[3]])
+        p[0].extraValues = p[2].extraValues + p[3].extraValues
+        p[0].extraValues.append("*")
 
 def p_type_qualifier_list(p):
     '''
@@ -684,6 +753,7 @@ def p_type_qualifier_list(p):
         p[0] = p[2]
         G.add_edge(p[0].node, p[1].node)
         p[0].children.append(p[1])
+        p[0].extraValues += p[1].extraValues
 
 def p_parameter_type_list(p):
     '''
@@ -701,6 +771,8 @@ def p_parameter_type_list(p):
             # Left child : parameter_list
             # Right child : ELLIPSIS 
         p[0] = Node('ELLIPSIS',[p[1]])
+        p[0].variables = p[1].variables
+        p[0].variables["Ellipses"] = []
 
 def p_parameter_list(p):
     '''
@@ -712,18 +784,29 @@ def p_parameter_list(p):
         p[0] = p[1]
     else:
         p[0] = Node(',',[p[1],p[3]])
+        p[0].variables = {**p[1].variables, **p[3].variables}
 
-def p_parameter_declaration(p):
+def p_parameter_declaration_1(p):
     '''
-    parameter_declaration : declaration_specifiers declarator
-	                      | declaration_specifiers abstract_declarator
+    parameter_declaration : declaration_specifiers abstract_declarator
 	                      | declaration_specifiers
     '''
     # AST done
     if len(p) == 2:
-        p[0] = Node('ParDecl',[p[1]])
+        # Doubt here
+        p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
     elif len(p) == 3:
         p[0] = Node('ParDecl',[p[1],p[2]])
+
+def p_parameter_declaration_2(p):
+    '''
+    parameter_declaration : declaration_specifiers declarator
+    '''
+    # AST done
+    p[0] = Node('ParDecl',[p[1],p[2]])
+    p[0].variables = p[2].variables
+    for val in p[1].extraValues:
+        p[0].addTypeInDict(val)
      
 def p_identifier_list(p):
     '''
@@ -976,14 +1059,25 @@ def p_function_definition(p):
     '''
     function_definition : declaration_specifiers declarator declaration_list compound_statement
 	                    | declaration_specifiers declarator compound_statement
-	                    | declarator declaration_list compound_statement
-	                    | declarator compound_statement
     '''
     # AST doubt
     if (len(p) == 3):
         p[0] = Node('FUNC',[p[1],p[2]])
     elif (len(p) == 4):
         p[0] = Node('FUNC',[p[1],p[2],p[3]])
+        
+        function_name = str()
+        for key in p[2].variables.keys():
+            if(p[2].variables[key][0] == "Function Name"):
+                function_name = key
+                break
+        p[2].variables[key] += p[1].extraValues
+        
+        print("The function return type and the datatype of parameters of the function")
+        for key in p[2].variables.keys():
+            print("The key is: " + key)
+            print(p[2].variables[key])
+        print("This is the end of the given function\n")
     elif (len(p) == 5):
         p[0] = Node('FUNC',[p[1],p[2],p[3],p[4]])
 
