@@ -1,5 +1,19 @@
 from collections import OrderedDict
 
+# Structure of each entry of the symbol table --
+# line: contains the line number where variable was declared
+# check: For usual variables, the value for this will be 'VAR', for functions it will be 'FUNC'
+#         Yet to decide regarding structs, enums and unions
+# type: if check == 'VAR' -> this field contains the data type of the variable
+#       if check == 'FUNC' -> this field contains the return type of the function
+# params: if check == 'VAR' -> this field is not available or contains none
+#         if check == 'FUNC' -> this field points to a dict where key is parameter names and the
+#                               corresponding value is the type of the parameter
+# value: stores the value of the of the entry (valid only if check == 'VAR')
+# Any other temporary attribute can be stored with temp_<attr_name> just to denote that it is
+# temporary 
+#       
+
 class SymbolTable() :
     def __init__(self):
        self.Table = []
@@ -11,7 +25,7 @@ class SymbolTable() :
     def InsertSymbol(self, iden, content_info):
         found = self.FindSymbolInCurrentScope(iden)
         if not found:
-            found = self.FindSymbolInTable(iden)
+            found = self.FindSymbolInTable(iden,1)
             if found:
                 print("Warning:", iden, "on line", content_info["line"], "is already declared at line", found[1]["line"])
             self.TopScope[iden] = content_info
@@ -19,13 +33,19 @@ class SymbolTable() :
             print("Error: Redeclaration of existing variable", iden,".\nPrior declaration is at line", found["line"])
             self.error = True
 
-    def FindSymbolInTable(self, iden):
+    def FindSymbolInTable(self, iden, path):
         Level_int = 1
 
-        for Tree in reversed(self.Table):
-            if Tree is not None and Tree.__contains__(iden):
-                return abs(Level_int-len(self.Table)), Tree.get(iden)
-            Level_int += 1
+        if path == 1:
+            for Tree in reversed(self.Table):
+                if Tree is not None and Tree.__contains__(iden):
+                    return abs(Level_int-len(self.Table)), Tree.get(iden)
+                Level_int += 1
+
+        elif path == 2:
+            for Tree in reversed(self.Table):
+                if Tree is not None and Tree.__contains__(iden):
+                    return Tree.get(iden)
 
         return False
 
@@ -65,10 +85,21 @@ class SymbolTable() :
                 if self.CompletedTable.__contains__(item):
                     print("start", item)
                     for it in self.CompletedTable[item]:
-                        print(it)
+                        print(it, self.CompletedTable[item][it])
                     print("end", item)
+    
+    def ModifySymbol(self, iden, field, val, statement_line):
+        found = self.FindSymbolInCurrentScope(iden)
+        if found:
+            self.TopScope[iden][field] = val
+            return True
 
-
-# AddType
-# CT as Dict
-# Table as Dict
+        else:
+            found = self.FindSymbolInTable(iden,2)
+            if found:
+                found[field] = val
+                return True
+            else:
+                print(f'Tried to modify the {field} of the undeclared symbol {iden} on line {statement_line}')
+                self.error = True
+                return False

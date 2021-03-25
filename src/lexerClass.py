@@ -324,10 +324,10 @@ def find_column(input, token):
 table_list = []
 for tok in clex.lexer:
     row = []
-    # if tok.type != 'ID':
-    row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
-    # else:
-    #     row = [tok.type, tok.value['lexeme'], tok.lineno, find_column(data,tok)]
+    if tok.type != 'ID':
+        row = [tok.type, tok.value, tok.lineno, find_column(data,tok)]
+    else:
+        row = [tok.type, tok.value['lexeme'], tok.lineno, find_column(data,tok)]
     table_list.append(row)
 
 toPrint = os.environ['lex_env']
