@@ -1198,10 +1198,10 @@ def p_external_declaration(p):
 
 def p_function_definition(p):
     '''
-    function_definition : declaration_specifiers declarator declaration_list '{' markerFuncPop '}'
-                        | declaration_specifiers declarator declaration_list '{' markerFuncPop block_item_list '}'
-                        | declaration_specifiers declarator '{' markerFuncPop '}'
-                        | declaration_specifiers declarator '{' markerFuncPop block_item_list '}'
+    function_definition : declaration_specifiers declarator declaration_list '{' markerFuncPop1 '}'
+                        | declaration_specifiers declarator declaration_list '{' markerFuncPop1 block_item_list '}'
+                        | declaration_specifiers declarator '{' markerFuncPop2 '}'
+                        | declaration_specifiers declarator '{' markerFuncPop2 block_item_list '}'
     '''
     # AST doubt
     if (len(p) == 6):
@@ -1215,26 +1215,59 @@ def p_function_definition(p):
     elif len(p) == 8:
         p[0] = Node('FUNC',[p[1],p[2],p[3],Node('SCOPE', [p[6]])])
 
-    # This part is for printing the various values of the keys
-    function_name = str()
-    for key in p[2].variables.keys():
-        if(p[2].variables[key][0] == "Function Name"):
-            function_name = key
-            break
-    p[2].variables[key] += p[1].extraValues
-    
-    # Code to print return type of function and the parameters of the function
-    # print("The function return type and the datatype of parameters of the function")
-    # for key in p[2].variables.keys():
-    #     print("The key is: " + key)
-    #     print(p[2].variables[key])
-    # print("This is the end of the given function\n")
-
-def p_markerFuncPop(p):
+def p_markerFuncPop1(p):
     '''
-    markerFuncPop : 
+    markerFuncPop1 : 
     '''
     ST.PopScope()
+
+    p[0] = Node('',createAST=False)
+    p[0].variables = p[-3].variables
+    function_name = str()
+    for key in p[0].variables.keys():
+        if(p[0].variables[key][0] == "Function Name"):
+            function_name = key
+            break
+    p[0].variables[key] += p[-4].extraValues
+
+    # Add code after this to inser the function name,return type and parameter list
+    # Explanation of everything given in below rule. Same code as below should be applied here
+
+    # Add code before this
+    #  <----------------------XXXXXX------------------>
+
+
+def p_markerFuncPop2(p):
+    '''
+    markerFuncPop2 : 
+    '''
+    ST.PopScope()
+    p[0] = Node('',createAST=False)
+    p[0].variables = p[-2].variables
+    function_name = str()
+    for key in p[0].variables.keys():
+        if(p[0].variables[key][0] == "Function Name"):
+            function_name = key
+            break
+    p[0].variables[key] += p[-3].extraValues
+
+    # Uncomment this part to check whether output is correct
+    # and to show how things are stored
+
+    # p[0] is a Node(with no drawing)
+    # for key in p[0].variables.keys():
+    #     print("The key is: " + key)
+    #     print(p[0].variables[key])
+    # print("This is the end of the given function\n")
+
+    # Add code after this to insert the function name,return type and parameter list
+    # Here the function name is a key and has a type "Function Name" in the value list
+    # The first item in the list will be "Function Name" and thereafter the rest of the
+    # items in the list will be return type.
+
+
+    # Add code before this
+    #  <----------------------XXXXXX------------------>
 
 def p_declaration_list(p):
     '''
