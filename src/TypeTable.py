@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 ## This handles the struct and union case
 # NOTE: WE HAVE PUT A RESTRICTION THAT A STRUCT AND UNION CANNOT HAVE THE SAME IDENTIFIER
 # It's a dictionary with the key as the struct name and the value as another dict
@@ -10,7 +12,7 @@
 
 class TypeTable():
     def __init__(self):
-        self.Table = {}
+        self.Table = OrderedDict()
         self.error = False
 
     def InsertSymbol(self, iden, type_name, line_num):
@@ -24,7 +26,7 @@ class TypeTable():
             self.Table[iden] = {}
             self.Table[iden]['check'] = type_name
             self.Table[iden]['line'] = line_num
-            self.Table[iden]['vars'] = {}
+            self.Table[iden]['vars'] = dict()
             return True
         
     def AddVars(self, iden, var_names, var_types, var_vals):
@@ -45,4 +47,15 @@ class TypeTable():
                     return False
                 else:
                     self.Table[iden]['vars'][var_name] = (var_type, var_val)
+        
+    def PrintTypeTable(self):
+        for x in self.Table.keys():
+            print(x, self.Table[x])
+    
+    def LastElem(self): # to return the last inserted struct name
+        temp = list(self.TopScope.items())
+        if temp:
+            return temp[-1][0]
+        else:
+            return None
 

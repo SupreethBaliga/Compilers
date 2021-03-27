@@ -62,7 +62,6 @@ class CLexer(object):
         'do'        : 'DO',
         'double'    : 'DOUBLE',
         'else'      : 'ELSE',
-        'enum'      : 'ENUM',
         'extern'    : 'EXTERN',
         'float'     : 'FLOAT',
         'for'       : 'FOR',
@@ -163,6 +162,7 @@ class CLexer(object):
         self.on_lbrace_func()
         t.type = '{'
         return t
+
     @TOKEN(r'\}')
     def t_RBRACE(self, t):
         self.on_rbrace_func()

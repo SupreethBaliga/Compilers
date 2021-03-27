@@ -6,6 +6,7 @@ import sys
 # Get the token map from lexer
 from lexerClass import CLexer
 from SymbolTable import SymbolTable
+from TypeTable import TypeTable
 
 ############## Helper Functions ###########
 def new_node():
@@ -116,6 +117,7 @@ ast_root = None # this will contain the root of the AST after it is built
 ############## Grammar Rules ##############
 ### Might have to convert it into class based code
 ST = SymbolTable()
+TT = TypeTable()
 
 def p_primary_expression_1(p):
     '''
@@ -142,6 +144,7 @@ def p_identifer(p):
     p[0] = Node(str(p[1]['lexeme']))
     p[0].variables[p[0].label] = []
     ST.InsertSymbol(p[1]['lexeme'], p[1]['additional'])
+    ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
 
 def p_postfix_expression(p):
     '''
@@ -459,8 +462,6 @@ def p_declaration_specifiers(p):
 	                       | type_qualifier
 	                       | type_qualifier declaration_specifiers
     '''
-
-    # May cause issues due to enum specifiers
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
@@ -507,22 +508,14 @@ def p_init_declarator(p):
     p[0].extraValues = p[-1].extraValues
     for val in p[0].extraValues:
         p[0].addTypeInDict(val)
-    for key in p[0].variables.keys():
-        print("The key is: " + key)
-        print(p[0].variables[key])
+    # for key in p[0].variables.keys():
+    #     print("The key is: " + key)
+    #     print(p[0].variables[key])
     
-    # Add code here to add type of variables in symbol table
-    # Te variables are stored as follows:
-    # p[0].variables is a dictionary
-    # The keys of the dictionary are the variable names
-    # The value of a key is a list which stores the variable type
-    # After the symbols are added in symbol tables
-    # I am removing the nodes of the variables
-
-
-
-    # Add code before here
-    # <---------------XXXXXX------------------>
+    # Types added
+    for var_name in p[0].variables:
+        ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
+    # <---------------XXXXX------------------>
 
 
 def p_storage_class_specifier(p):
@@ -548,7 +541,6 @@ def p_type_specifier(p):
 	               | SIGNED
 	               | UNSIGNED
 	               | struct_or_union_specifier
-	               | enum_specifier
     '''
     if str(p[1]) in ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
         p[0] = Node(str(p[1]))
@@ -559,7 +551,6 @@ def p_type_specifier(p):
 def p_struct_or_union_specifier(p):
     '''
     struct_or_union_specifier : struct_or_union ID '{' struct_declaration_list '}'
-	                          | struct_or_union '{' struct_declaration_list '}'
 	                          | struct_or_union ID
     '''
     p[0] = p[1]
@@ -676,49 +667,6 @@ def p_struct_declarator(p):
     elif (len(p) == 4):
         p[0] = Node(':',[p[1],p[3]])
 
-
-# correct till here
-
-def p_enum_specifier(p):
-    '''
-    enum_specifier : ENUM '{' enumerator_list '}'
-	               | ENUM ID '{' enumerator_list '}'
-	               | ENUM ID
-    '''
-    # AST done
-    if (len(p) == 5):
-        p[0] = Node('ENUM{}',[p[3]])
-    elif (len(p) == 6):
-        p2val = p[2]['lexeme']
-        p[2] = Node(str(p2val))
-
-        p[0] = Node('ENUM{}',[p[2],p[4]])
-    elif (len(p) == 3):
-        p2val = p[2]['lexeme']
-        p[2] = Node(str(p2val))
-        p[0] = Node('ENUM',[p[2]])
-
-def p_enumerator_list(p):
-    '''
-    enumerator_list : enumerator
-	                | enumerator_list ',' enumerator
-    '''
-    # AST done
-    if (len(p) == 2):
-        p[0] = p[1]
-    elif (len(p) == 4):
-        p[0] = Node('.',[p[1],p[3]])
-
-def p_enumerator(p):
-    '''
-    enumerator : identifier
-	           | identifier '=' constant_expression
-    '''
-    # AST done
-    if (len(p) == 2):
-        p[0] = p[1]
-    elif (len(p) == 4):
-        p[0] = Node('=',[p[1],p[3]])
 
 def p_type_qualifier(p):
     '''
@@ -1179,6 +1127,7 @@ def p_translation_unit(p):
     # AST done
     # Here
     # Hack to restrict single source node
+    # <------XXXXX-------> do this once the type adding thing done
     p[0] = 'SourceNode'
 
     if (len(p) == 2):
@@ -1230,9 +1179,12 @@ def p_markerFuncPop1(p):
             break
     p[0].variables[key] += p[-4].extraValues
 
-    # Add code after this to inser the function name,return type and parameter list
-    # Explanation of everything given in below rule. Same code as below should be applied here
-
+    ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+    for key in p[0].variables.keys():
+        if not key == function_name:
+            ST.ModifySymbol(key, "type", p[0].variables[key])
+        else:
+            ST.ModifySymbol(key, "type", p[0].variables[key][1:])
     # Add code before this
     #  <----------------------XXXXXX------------------>
 
@@ -1251,23 +1203,24 @@ def p_markerFuncPop2(p):
             break
     p[0].variables[key] += p[-3].extraValues
 
-    # Uncomment this part to check whether output is correct
-    # and to show how things are stored
-
-    # p[0] is a Node(with no drawing)
+    # print("This is start of the function")
     # for key in p[0].variables.keys():
     #     print("The key is: " + key)
     #     print(p[0].variables[key])
-    # print("This is the end of the given function\n")
-
-    # Add code after this to insert the function name,return type and parameter list
+    # print("This is end of function")
     # Here the function name is a key and has a type "Function Name" in the value list
     # The first item in the list will be "Function Name" and thereafter the rest of the
     # items in the list will be return type.
 
 
     # Add code before this
-    #  <----------------------XXXXXX------------------>
+    ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+    for key in p[0].variables.keys():
+        if not key == function_name:
+            ST.ModifySymbol(key, "type", p[0].variables[key])
+        else:
+            ST.ModifySymbol(key, "type", p[0].variables[key][1:])
+    #  <----------------------XXXX------------------>
 
 def p_declaration_list(p):
     '''

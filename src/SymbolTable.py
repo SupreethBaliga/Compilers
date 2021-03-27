@@ -88,7 +88,7 @@ class SymbolTable() :
                         print(it, self.CompletedTable[item][it])
                     print("end", item)
     
-    def ModifySymbol(self, iden, field, val, statement_line):
+    def ModifySymbol(self, iden, field, val, statement_line=None):
         found = self.FindSymbolInCurrentScope(iden)
         if found:
             self.TopScope[iden][field] = val
@@ -100,6 +100,9 @@ class SymbolTable() :
                 found[field] = val
                 return True
             else:
-                print(f'Tried to modify the {field} of the undeclared symbol {iden} on line {statement_line}')
+                if statement_line:
+                    print(f'Tried to modify the {field} of the undeclared symbol {iden} on line {statement_line}')
+                else:
+                    print(f'Tried to modify the {field} of the undeclared symbol {iden}')
                 self.error = True
                 return False
