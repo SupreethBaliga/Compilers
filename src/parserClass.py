@@ -15,15 +15,20 @@ def new_node():
     itr += 1
     return n
 
+def remove_node(graphNode):
+    G.remove_node(graphNode)
+
 ########### Classes Required ###########
 
 # This class denotes the Node of our Functional AST
 class Node:
-    def __init__(self,label,children=None,leaf=None,node=None,attributes=None,createAST = True):
+    def __init__(self,label,children=None,node=None,attributes=None,createAST = True):
         self.label = label
-        self.leaf = leaf
         self.createAST = createAST
-
+        self.node = node
+        self.isTerminal = False
+        if children is None:
+            self.isTerminal = True
         if children:
             self.children = children
         else:
@@ -58,18 +63,36 @@ class Node:
     #         if child.node:
     #             return True
     #     return False
+    def removeGraph(self):
+        for child in self.children:
+            if child.node :
+                child.removeGraph()
+        remove_node(self.node)
+        self.node = None
     
     def makeGraph(self): # for creating the dot dump
-        self.node = new_node()
-        self.node.attr['label'] = self.label
-        listNode = []
-        for child in self.children:
-            G.add_edge(self.node,child.node)
-            listNode.append(child.node)
-        for i in range(0,len(self.children)-1):
-            G.add_edge(self.children[i].node,self.children[i+1].node,style='invis')
+        if self.isTerminal:
+            self.node = new_node()
+            self.node.attr['label'] = self.label
+            return
 
-        G.add_subgraph(listNode,rank='same')
+        newchildren = []
+        for child in self.children:
+            if ((child is not None) and (child.node is not None)):
+                newchildren.append(child)
+        self.children = newchildren
+
+        if self.children:
+            self.node = new_node()
+            self.node.attr['label'] = self.label
+            listNode = []
+            for child in self.children:
+                G.add_edge(self.node,child.node)
+                listNode.append(child.node)
+            for i in range(0,len(self.children)-1):
+                G.add_edge(self.children[i].node,self.children[i+1].node,style='invis')
+
+            G.add_subgraph(listNode,rank='same')
 
 # This denotes an entry of the symbol table
 # class SymTabEntry:
@@ -188,8 +211,9 @@ def p_unary_expression(p):
             p[0] = Node('SIZEOF',[p[2]])
         else:
             p[0] = p[1]
-            p[0].children.append(p[2])
-            G.add_edge(p[0].node,p[2].node)
+            if ((p[2] is not None) and (p[2].node is not None)):
+                p[0].children.append(p[2])
+                G.add_edge(p[0].node,p[2].node)
     elif (len(p) == 5):
         p[0] = Node('SIZEOF',[p[3]])
 
@@ -359,14 +383,23 @@ def p_assignment_expression(p):
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = p[2]
-        G.add_edge(p[0].node,p[1].node)
-        G.add_edge(p[0].node,p[3].node)
+        if ((p[1] is not None) and (p[1].node is not None)):
+            if ((p[3] is not None) and (p[3].node is not None)):
+                G.add_edge(p[0].node,p[1].node)
+                G.add_edge(p[0].node,p[3].node)
 
-        G.add_edge(p[1].node,p[3].node,style='invis')
-        G.add_subgraph([p[1].node,p[3].node], rank='same')
-        p[0].children.append(p[1])
-        p[0].children.append(p[3])
-
+                G.add_edge(p[1].node,p[3].node,style='invis')
+                G.add_subgraph([p[1].node,p[3].node], rank='same')
+                p[0].children.append(p[1])
+                p[0].children.append(p[3])
+            else:
+                G.add_edge(p[0].node,p[1].node)
+                p[0].children.append(p[1])
+        else:
+            if ((p[3] is not None) and (p[3].node is not None)):
+                G.add_edge(p[0].node,p[3].node)
+                p[0].children.append(p[3])
+                
 def p_assignment_operator(p):
     '''
     assignment_operator : '='
@@ -411,9 +444,11 @@ def p_declaration(p):
 	            | declaration_specifiers init_declarator_list ';'
     '''
     if (len(p) == 3):
-        p[0] = Node('TypeDecl',[p[1]])
+        p[0] = Node('TypeDecl')
     elif (len(p) == 4):
-        p[0] = Node('TypeDecl',[p[1],p[2]])
+        p[0] = Node('TypeDecl',[p[2]])
+    p[1].removeGraph()
+    # Need to remove the nodes for declaration_specifiers
 
 def p_declaration_specifiers(p):
     '''
@@ -430,8 +465,10 @@ def p_declaration_specifiers(p):
         p[0] = p[1]
     elif (len(p) == 3):
         p[0] = p[1]
-        G.add_edge(p[0].node, p[2].node)
-        p[0].children.append(p[2])
+        if ((p[2] is not None) and (p[2].node is not None)):
+            G.add_edge(p[0].node, p[2].node)
+            p[0].children.append(p[2])
+
         p[0].extraValues += p[2].extraValues
 
 def p_init_declarator_list(p):
@@ -444,7 +481,6 @@ def p_init_declarator_list(p):
         p[0] = p[1]
     elif (len(p) == 5):
         p[0] = Node(',',[p[1],p[4]])
-    # print(p[-1])
     p[0].extraValues = p[-1].extraValues
 
 def p_InitM1(p):
@@ -461,17 +497,33 @@ def p_init_declarator(p):
 	                | declarator '=' initializer
     '''
     if (len(p) == 2):
+        p[1].removeGraph()
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = Node('=',[p[1],p[3]])
         p[0].variables = p[1].variables
     
+    # Code to add types to variable
     p[0].extraValues = p[-1].extraValues
     for val in p[0].extraValues:
         p[0].addTypeInDict(val)
     for key in p[0].variables.keys():
         print("The key is: " + key)
         print(p[0].variables[key])
+    
+    # Add code here to add type of variables in symbol table
+    # Te variables are stored as follows:
+    # p[0].variables is a dictionary
+    # The keys of the dictionary are the variable names
+    # The value of a key is a list which stores the variable type
+    # After the symbols are added in symbol tables
+    # I am removing the nodes of the variables
+
+
+
+    # Add code before here
+    # <---------------XXXXXX------------------>
+
 
 def p_storage_class_specifier(p):
     '''
@@ -518,21 +570,31 @@ def p_struct_or_union_specifier(p):
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
         p[0].label = p[0].node.attr['label']
 
-        G.add_edge(p[0].node, p[2].node)
-        G.add_edge(p[0].node, p[4].node)
-        G.add_edge(p[2].node, p[4].node, style='invis')
-        G.add_subgraph([p[2].node, p[4].node], rank='same')
-        p[0].children.append(p[2])
-        p[0].children.append(p[4])
-        # print("Hello")
+        if ((p[2] is not None) and (p[2].node is not None)):
+            if ((p[4] is not None) and (p[4].node is not None)):
+                G.add_edge(p[0].node,p[2].node)
+                G.add_edge(p[0].node,p[4].node)
+
+                G.add_edge(p[2].node,p[4].node,style='invis')
+                G.add_subgraph([p[2].node,p[4].node], rank='same')
+                p[0].children.append(p[2])
+                p[0].children.append(p[4])
+            else:
+                G.add_edge(p[0].node,p[2].node)
+                p[0].children.append(p[2])
+        else:
+            if ((p[4] is not None) and (p[4].node is not None)):
+                G.add_edge(p[0].node,p[4].node)
+                p[0].children.append(p[4])
 
     elif (len(p) == 5):
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
         p[0].label = p[0].node.attr['label']
-        
-        G.add_edge(p[0].node, p[3].node)
-        p[0].children.append(p[3])
-        # print("Hello")
+    
+        if ((p[3] is not None) and (p[3].node is not None)):
+            G.add_edge(p[0].node, p[3].node)
+            p[0].children.append(p[3])
+            # print("Hello")
 
 
     elif (len(p) == 3):
@@ -560,8 +622,10 @@ def p_struct_declaration_list(p):
         p[0] = p[1]
     elif (len(p) == 3):
         p[0] = p[2]
-        G.add_edge(p[0].node, p[1].node)
-        p[0].children.append(p[1])
+
+        if ((p[1] is not None) and (p[1].node is not None)):
+            G.add_edge(p[0].node, p[1].node)
+            p[0].children.append(p[1])
 
 def p_struct_declaration(p):
     '''
@@ -581,8 +645,10 @@ def p_specifier_qualifier_list(p):
         p[0] = p[1]
     elif (len(p) == 3):
         p[0] = p[1]
-        G.add_edge(p[0].node, p[2].node)
-        p[0].children.append(p[2])
+
+        if ((p[2] is not None) and (p[2].node is not None)):
+            G.add_edge(p[0].node, p[2].node)
+            p[0].children.append(p[2])
 
 
 def p_struct_declarator_list(p):
@@ -800,8 +866,9 @@ def p_type_qualifier_list(p):
         p[0] = p[1]
     elif len(p) == 3:
         p[0] = p[2]
-        G.add_edge(p[0].node, p[1].node)
-        p[0].children.append(p[1])
+        if ((p[1] is not None) and (p[1].node is not None)):
+            G.add_edge(p[0].node, p[1].node)
+            p[0].children.append(p[1])
         p[0].extraValues += p[1].extraValues
 
 def p_parameter_type_list(p):
@@ -1115,9 +1182,11 @@ def p_translation_unit(p):
     p[0] = 'SourceNode'
 
     if (len(p) == 2):
-        G.add_edge(p[0] , p[1].node)
+        if ((p[1] is not None) and (p[1].node is not None)):
+            G.add_edge(p[0] , p[1].node)
     elif (len(p) == 3):
-        G.add_edge(p[0], p[2].node)
+        if ((p[2] is not None) and (p[2].node is not None)):
+            G.add_edge(p[0], p[2].node)
 
 def p_external_declaration(p):
     '''
@@ -1154,11 +1223,12 @@ def p_function_definition(p):
             break
     p[2].variables[key] += p[1].extraValues
     
-    print("The function return type and the datatype of parameters of the function")
-    for key in p[2].variables.keys():
-        print("The key is: " + key)
-        print(p[2].variables[key])
-    print("This is the end of the given function\n")
+    # Code to print return type of function and the parameters of the function
+    # print("The function return type and the datatype of parameters of the function")
+    # for key in p[2].variables.keys():
+    #     print("The key is: " + key)
+    #     print(p[2].variables[key])
+    # print("This is the end of the given function\n")
 
 def p_markerFuncPop(p):
     '''
@@ -1226,7 +1296,7 @@ if isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
 elif ST.error:
-    sys.exit(1)
+    sys.exit(1) 
 else:
     print('Output file is: ' + fileNameCore + '.ps')
     G.write(outputFile)
