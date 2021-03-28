@@ -144,7 +144,7 @@ def p_identifer(p):
     '''
     p[0] = Node(str(p[1]['lexeme']))
     p[0].variables[p[0].label] = []
-    ST.InsertSymbol(p[1]['lexeme'], p[1]['additional'])
+    ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
     ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
 
 def p_postfix_expression(p):
@@ -551,11 +551,11 @@ def p_type_specifier(p):
 
 def p_struct_or_union_specifier(p):
     '''
-    struct_or_union_specifier : struct_or_union ID '{' struct_declaration_list '}'
+    struct_or_union_specifier : struct_or_union ID '{' markerStructFlag2 struct_declaration_list '}' markerStructFlag0
 	                          | struct_or_union ID
     '''
     p[0] = p[1]
-    if (len(p) == 6):
+    if (len(p) == 8):
         p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
 
@@ -563,23 +563,23 @@ def p_struct_or_union_specifier(p):
         p[0].label = p[0].node.attr['label']
 
         if ((p[2] is not None) and (p[2].node is not None)):
-            if ((p[4] is not None) and (p[4].node is not None)):
+            if ((p[5] is not None) and (p[5].node is not None)):
                 G.add_edge(p[0].node,p[2].node)
-                G.add_edge(p[0].node,p[4].node)
+                G.add_edge(p[0].node,p[5].node)
 
-                G.add_edge(p[2].node,p[4].node,style='invis')
-                G.add_subgraph([p[2].node,p[4].node], rank='same')
+                G.add_edge(p[2].node,p[5].node,style='invis')
+                G.add_subgraph([p[2].node,p[5].node], rank='same')
                 p[0].children.append(p[2])
-                p[0].children.append(p[4])
+                p[0].children.append(p[5])
             else:
                 G.add_edge(p[0].node,p[2].node)
                 p[0].children.append(p[2])
         else:
-            if ((p[4] is not None) and (p[4].node is not None)):
-                G.add_edge(p[0].node,p[4].node)
-                p[0].children.append(p[4])
+            if ((p[5] is not None) and (p[5].node is not None)):
+                G.add_edge(p[0].node,p[5].node)
+                p[0].children.append(p[5])
 
-    elif (len(p) == 5):
+    elif (len(p) == 7):
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
         p[0].label = p[0].node.attr['label']
     
@@ -595,7 +595,23 @@ def p_struct_or_union_specifier(p):
         G.add_edge(p[0].node, p[2].node)
         p[0].children.append(p[2])
         # print("Hello")
+    
+def p_markerStructFlag2(p):
+    '''
+    markerStructFlag2 :
+    '''
+    iden = p[-2]['lexeme']
+    type_name = p[-3].label.upper()
+    line_num = p[-2]['additional']['line']
+    ST.flag = 1
+    ST.InsertSymbol(iden, line_num, type_name)
+    ST.flag = 2
 
+def p_markerStructFlag0(p):
+    '''
+    markerStructFlag0 :
+    '''
+    ST.flag = 0
 
 def p_struct_or_union(p):
     '''
@@ -656,9 +672,9 @@ def p_struct_declarator_list(p):
 
 def p_struct_declarator(p):
     '''
-    struct_declarator : declarator_struct
+    struct_declarator : declarator
 	                  | ':' constant_expression
-	                  | declarator_struct ':' constant_expression
+	                  | declarator ':' constant_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -693,17 +709,6 @@ def p_declarator(p):
         p[0].variables = p[2].variables
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
-
-def p_declarator_struct(p):
-    '''
-    declarator_struct : pointer direct_declarator_struct
-	           | direct_declarator_struct
-    '''
-    #AST done
-    if (len(p) == 2):
-        p[0] = p[1]
-    elif (len(p) == 3):
-        p[0] = Node('Decl',[p[1],p[2]])
 
 def p_direct_declarator(p):
     '''
@@ -758,32 +763,6 @@ def p_markerFuncPush(p):
     '''
     p[0] = None
     ST.PushScope()
-
-def p_direct_declarator_struct(p):
-    '''
-    direct_declarator_struct : ID
-	                  | '(' declarator_struct ')'
-	                  | direct_declarator_struct '[' ']'
-	                  | direct_declarator_struct '(' ')'
-	                  | direct_declarator_struct '[' constant_expression ']'
-	                  | direct_declarator_struct '(' parameter_type_list ')'
-	                  | direct_declarator_struct '(' identifier_list ')'
-    '''
-    # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
-    if (len(p) == 2):
-        p[0] = Node(str(p[1]['lexeme']))
-    elif (len(p) == 4):
-        if (p[1] == '('):
-            p[0] = p[2]
-        elif (p[2] == '['):
-            p[0] = Node('DDArrSub',[p[1]])
-        elif (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1]])
-    elif (len(p) == 5):
-        if (p[2] == '('):
-            p[0] = Node('DDFuncCall',[p[1],p[3]])
-        elif (p[2] == '['):
-            p[0] = Node('DDArrSub',[p[1],p[3]])
 
 def p_pointer(p):
     '''
@@ -1130,7 +1109,7 @@ def p_start(p):
     start : translation_unit
     '''
     p[0] = p[1]
-    ST.PushScope()
+    ST.StoreResults()
 
 def p_translation_unit(p):
     '''

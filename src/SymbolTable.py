@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from TypeTable import TypeTable
 
 # Structure of each entry of the symbol table --
 # line: contains the line number where variable was declared
@@ -20,18 +21,28 @@ class SymbolTable() :
        self.CompletedTable = dict()
        self.TopScope = OrderedDict()
        self.LastPushedInPrevScope = None
+       self.TT = TypeTable()
        self.error = False
+       self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
 
-    def InsertSymbol(self, iden, content_info):
-        found = self.FindSymbolInCurrentScope(iden)
-        if not found:
-            found = self.FindSymbolInTable(iden,1)
-            if found:
-                print("Warning:", iden, "on line", content_info["line"], "is already declared at line", found[1]["line"])
-            self.TopScope[iden] = content_info
-        else:
-            print("Error: Redeclaration of existing variable", iden,".\nPrior declaration is at line", found["line"])
-            self.error = True
+    def InsertSymbol(self, iden, line_num, type_name=None):
+        if self.flag == 0:
+            found = self.FindSymbolInCurrentScope(iden)
+            if not found:
+                found = self.FindSymbolInTable(iden,1)
+                if found:
+                    print("Warning:", iden, "on line", line_num, "is already declared at line", found[1]["line"])
+                self.TopScope[iden] = dict()
+                self.TopScope[iden]['line'] = line_num
+            else:
+                print("Error: Redeclaration of existing variable", iden,". Prior declaration is at line", found["line"])
+                self.error = True
+        elif self.flag == 1:
+            self.TT.InsertSymbol(iden,type_name, line_num, 1)
+            self.error = self.error or self.TT.error
+        else: # flag 2
+            self.TT.InsertSymbol(iden,None, line_num, 2)
+            self.error = self.error or self.TT.error
 
     def FindSymbolInTable(self, iden, path):
         Level_int = 1
@@ -58,9 +69,19 @@ class SymbolTable() :
             self.LastPushedInPrevScope = a[-1][0]
         self.Table.append(self.TopScope)
         self.TopScope = OrderedDict()
+        self.TT.PushScope()
+        self.error = self.error or self.TT.error
+        return
+
+    def StoreResults(self):
+        self.TopScope['StructOrUnion'] = dict(self.TT.TopScope)
+        self.PushScope()
         return
 
     def PopScope(self):
+        self.TopScope['StructOrUnion'] = dict(self.TT.TopScope)
+        self.TT.PopScope()
+        self.error = self.error or self.TT.error
         TScope = self.TopScope
         if len(self.Table) == 1 :
             if self.LastPushedInPrevScope is not None:
@@ -89,24 +110,31 @@ class SymbolTable() :
                     print("end", item)
     
     def ModifySymbol(self, iden, field, val, statement_line=None):
-        found = self.FindSymbolInCurrentScope(iden)
-        if found:
-            self.TopScope[iden][field] = val
-            return True
-
-        else:
-            found = self.FindSymbolInTable(iden,2)
+        if self.flag == 0:
+            found = self.FindSymbolInCurrentScope(iden)
             if found:
-                found[field] = val
+                self.TopScope[iden][field] = val
                 return True
+
             else:
-                if statement_line:
-                    print(f'Tried to modify the {field} of the undeclared symbol {iden} on line {statement_line}')
+                found = self.FindSymbolInTable(iden,2)
+                if found:
+                    found[field] = val
+                    return True
                 else:
-                    print(f'Tried to modify the {field} of the undeclared symbol {iden}')
-                self.error = True
-                return False
-    
+                    if statement_line:
+                        print(f'Tried to modify the {field} of the undeclared symbol {iden} on line {statement_line}')
+                    else:
+                        print(f'Tried to modify the {field} of the undeclared symbol {iden}')
+                    self.error = True
+                    return False
+        elif self.flag == 1:
+            self.TT.ModifySymbol(iden, field, val, statement_line, 1)
+            self.error = self.error or self.TT.error
+        else: # flag = 2
+            self.TT.ModifySymbol(iden, field, val, statement_line, 2)
+            self.error = self.error or self.TT.error
+        
     def ReturnSymTabEntry(self, iden, statement_line=None):
         found = self.FindSymbolInCurrentScope(iden)
         if found:
