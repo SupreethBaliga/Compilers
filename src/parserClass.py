@@ -590,8 +590,15 @@ def p_struct_or_union_specifier(p):
 
 
     elif (len(p) == 3):
+        # This rule is used when declaring a struct type variable 
+        # Eg:
+        # struct tmp a;
+        # While Type Checking check here whether 
+        # the struct of given type exists or not
         p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
+        p[0].extraValues.append(p[1].label)
+        p[0].extraValues.append(p2val)
         G.add_edge(p[0].node, p[2].node)
         p[0].children.append(p[2])
         # print("Hello")
