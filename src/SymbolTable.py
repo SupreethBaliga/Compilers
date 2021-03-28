@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from TypeTable import TypeTable
+import json
 
 # Structure of each entry of the symbol table --
 # line: contains the line number where variable was declared
@@ -17,22 +18,21 @@ from TypeTable import TypeTable
 
 class SymbolTable() :
     def __init__(self):
-       self.Table = []
-       self.CompletedTable = dict()
-       self.TopScope = OrderedDict()
-       self.LastPushedInPrevScope = None
-       self.TT = TypeTable()
-       self.error = False
-       self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
-
+        self.Table = []
+        self.TopScope = OrderedDict()
+        self.TT = TypeTable()
+        self.error = False
+        self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
+    
     def InsertSymbol(self, iden, line_num, type_name=None):
+        
         if self.flag == 0:
             found = self.FindSymbolInCurrentScope(iden)
             if not found:
                 found = self.FindSymbolInTable(iden,1)
                 if found:
                     print("Warning:", iden, "on line", line_num, "is already declared at line", found[1]["line"])
-                self.TopScope[iden] = dict()
+                self.TopScope[iden] = OrderedDict()
                 self.TopScope[iden]['line'] = line_num
             else:
                 print("Error: Redeclaration of existing variable", iden,". Prior declaration is at line", found["line"])
@@ -64,11 +64,27 @@ class SymbolTable() :
         return self.TopScope.get(iden, False)
 
     def PushScope(self):
-        if self.TopScope:
-            a = list(self.TopScope.items())
-            self.LastPushedInPrevScope = a[-1][0]
-        self.Table.append(self.TopScope)
-        self.TopScope = OrderedDict()
+
+        if len(self.Table) == 0:
+            self.Table.append(self.TopScope)
+            TopScopeName = list(self.TopScope.items())[-1][0]
+            if TopScopeName != 'StructOrUnion':
+                self.TopScope = list(self.TopScope.items())[-1][1]
+                if '__scope__' not in self.TopScope:
+                    self.TopScope['__scope__'] = []
+                parScopeList = self.TopScope['__scope__']
+                parScopeList.append(OrderedDict())
+                self.TopScope = parScopeList[-1]
+        else:
+            
+            if '__scope__' not in self.TopScope:
+                self.TopScope['__scope__'] = []
+            
+            parScopeList = self.TopScope['__scope__']
+            self.Table.append(self.TopScope)
+            parScopeList.append(OrderedDict())
+            self.TopScope = parScopeList[-1]
+        
         self.TT.PushScope()
         self.error = self.error or self.TT.error
         return
@@ -83,32 +99,16 @@ class SymbolTable() :
         self.TT.PopScope()
         self.error = self.error or self.TT.error
         TScope = self.TopScope
-        if len(self.Table) == 1 :
-            if self.LastPushedInPrevScope is not None:
-                self.CompletedTable[self.LastPushedInPrevScope] = self.TopScope
+
+        if len(self.Table) > 0:
             self.TopScope = self.Table.pop()
-            self.LastPushedInPrevScope = None
-        elif len(self.Table) > 1:
-            self.TopScope = self.Table.pop()
-            self.LastPushedInPrevScope = None
-            scope = self.Table[-1]
-            a = list(scope.items())
-            if len(a) >= 1:
-                self.LastPushedInPrevScope = a[-1][0]
         else:
             self.TopScope = None
         return TScope
 
     def PrintTable(self):
-        if self.Table[0] is not None:
-            for item in self.Table[0]:
-                print(item, self.Table[0][item])
-                if self.CompletedTable.__contains__(item):
-                    print("start", item)
-                    for it in self.CompletedTable[item]:
-                        print(it, self.CompletedTable[item][it])
-                    print("end", item)
-    
+        print(json.dumps(self.Table, indent=2))
+
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:
             found = self.FindSymbolInCurrentScope(iden)

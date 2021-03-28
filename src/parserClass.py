@@ -709,7 +709,8 @@ def p_struct_declarator(p):
     # Add after this comment, the above print statement is for checking purposes
     
     
-    
+    for key in p[0].variables.keys():
+        ST.ModifySymbol(key, 'type', p[0].variables[key], p.lineno(0))
     
     # <--------------XXXXXXX---------------->
 
