@@ -641,6 +641,8 @@ def p_struct_declaration(p):
     '''
     p[0] = Node('StructOrUnionDec',[p[1],p[2]])
 
+    # Here p[1] has the datatypes like int, float ......
+
 def p_specifier_qualifier_list(p):
     '''
     specifier_qualifier_list : type_specifier specifier_qualifier_list
@@ -657,18 +659,26 @@ def p_specifier_qualifier_list(p):
         if ((p[2] is not None) and (p[2].node is not None)):
             G.add_edge(p[0].node, p[2].node)
             p[0].children.append(p[2])
-
+            p[0].extraValues += p[2].extraValues
 
 def p_struct_declarator_list(p):
     '''
     struct_declarator_list : struct_declarator
-	                       | struct_declarator_list ',' struct_declarator
+	                       | struct_declarator_list ',' structDeclaratorMarker1 struct_declarator
     '''
     # AST done
     if (len(p) == 2):
         p[0] = p[1]
-    elif (len(p) == 4):
-        p[0] = Node(',',[p[1],p[3]])
+    elif (len(p) == 5):
+        p[0] = Node(',',[p[1],p[4]])
+    p[0].extraValues = p[-1].extraValues
+        
+def p_structDeclaratorMarker1(p):
+    '''
+    structDeclaratorMarker1 :
+    '''
+    p[0] = Node('',createAST=False)
+    p[0].extraValues = p[-2].extraValues
 
 def p_struct_declarator(p):
     '''
@@ -683,7 +693,25 @@ def p_struct_declarator(p):
         p[0] = Node(':',[p[2]])
     elif (len(p) == 4):
         p[0] = Node(':',[p[1],p[3]])
+        p[0].variables = p[1].variables
+    
+    p[0].extraValues = p[-1].extraValues
+    # Here in p[0].extravalues we have all the types like int, float
 
+    for val in p[0].extraValues:
+        p[0].addTypeInDict(val)
+    # for key in p[0].variables.keys():
+    #     print("The key is: " + key)
+    #     print(p[0].variables[key])
+
+    # Here the name of the variable acts as a key of the dictionary p[0].variables
+    # The type of the variable is a list that is the value of the key
+    # Add after this comment, the above print statement is for checking purposes
+    
+    
+    
+    
+    # <--------------XXXXXXX---------------->
 
 def p_type_qualifier(p):
     '''
@@ -709,6 +737,19 @@ def p_declarator(p):
         p[0].variables = p[2].variables
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
+
+def p_function_declarator(p):
+    '''
+    function_declarator : direct_declarator
+	                    | pointer direct_declarator
+    '''
+    #AST done
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 3):
+        p[0] = Node('Decl',[p[1],p[2]])
+        p[0].variables = p[2].variables
+        p[0].extraValues += p[1].extraValues
 
 def p_direct_declarator(p):
     '''
@@ -1139,10 +1180,10 @@ def p_external_declaration(p):
 
 def p_function_definition(p):
     '''
-    function_definition : declaration_specifiers declarator declaration_list '{' markerFunc1 '}' markerFuncPop
-                        | declaration_specifiers declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
-                        | declaration_specifiers declarator '{' markerFunc2 '}' markerFuncPop
-                        | declaration_specifiers declarator '{' markerFunc2 block_item_list '}' markerFuncPop
+    function_definition : declaration_specifiers function_declarator declaration_list '{' markerFunc1 '}' markerFuncPop
+                        | declaration_specifiers function_declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
+                        | declaration_specifiers function_declarator '{' markerFunc2 '}' markerFuncPop
+                        | declaration_specifiers function_declarator '{' markerFunc2 block_item_list '}' markerFuncPop
     '''
     # AST doubt
     if (len(p) == 7):
@@ -1169,7 +1210,7 @@ def p_markerFunc1(p):
         if(p[0].variables[key][0] == "Function Name"):
             function_name = key
             break
-    p[0].variables[key] += p[-4].extraValues
+    p[0].variables[key] += p[-4].extraValues + p[-3].extraValues
 
     # print("This is start of the function in funcpop1")
     # for key in p[0].variables.keys():
@@ -1199,7 +1240,7 @@ def p_markerFunc2(p):
         if(p[0].variables[key][0] == "Function Name"):
             function_name = key
             break
-    p[0].variables[key] += p[-3].extraValues
+    p[0].variables[key] += p[-3].extraValues + p[-2].extraValues
 
     # print("This is start of the function in funcpop2")
     # for key in p[0].variables.keys():
