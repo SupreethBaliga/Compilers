@@ -106,3 +106,15 @@ class SymbolTable() :
                     print(f'Tried to modify the {field} of the undeclared symbol {iden}')
                 self.error = True
                 return False
+    
+    def ReturnSymTabEntry(self, iden, statement_line=None):
+        found = self.FindSymbolInCurrentScope(iden)
+        if found:
+            return found
+        else:
+            found = self.FindSymbolInTable(iden, 2)
+            if found:
+                return found
+            else:
+                print(f'Error: The variable {iden} on line {statement_line} is not declared.')
+                self.error = True

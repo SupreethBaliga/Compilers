@@ -123,7 +123,8 @@ def p_primary_expression_1(p):
     '''
     primary_expression : ID
     '''
-    p[0] = Node(str(p[1]['lexeme']))
+    if ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1)): # Change this accordingly
+        p[0] = Node(str(p[1]['lexeme']))
 
 def p_primary_expression(p):
     '''
@@ -1002,13 +1003,25 @@ def p_labeled_statement(p):
 
 def p_compound_statement(p):
     '''
-    compound_statement : '{' '}'
-	                   | '{' block_item_list '}'
+    compound_statement : '{' markerCompStatPush '}' markerCompStatPop
+	                   | '{' markerCompStatPush block_item_list '}' markerCompStatPop
     '''
-    if (len(p) == 3):
+    if (len(p) == 5):
         p[0] = Node('EmptySCOPE')
-    elif (len(p) == 4):
-        p[0] = Node('SCOPE',[p[2]])
+    elif (len(p) == 6):
+        p[0] = Node('SCOPE',[p[3]])
+
+def p_markerCompStatPush(p):
+    '''
+    markerCompStatPush :
+    '''
+    ST.PushScope()
+
+def p_markerCompStatPop(p):
+    '''
+    markerCompStatPop :
+    '''
+    ST.PopScope()
 
 def p_block_item_list(p):
     '''
@@ -1147,28 +1160,28 @@ def p_external_declaration(p):
 
 def p_function_definition(p):
     '''
-    function_definition : declaration_specifiers declarator declaration_list '{' markerFuncPop1 '}'
-                        | declaration_specifiers declarator declaration_list '{' markerFuncPop1 block_item_list '}'
-                        | declaration_specifiers declarator '{' markerFuncPop2 '}'
-                        | declaration_specifiers declarator '{' markerFuncPop2 block_item_list '}'
+    function_definition : declaration_specifiers declarator declaration_list '{' markerFunc1 '}' markerFuncPop
+                        | declaration_specifiers declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
+                        | declaration_specifiers declarator '{' markerFunc2 '}' markerFuncPop
+                        | declaration_specifiers declarator '{' markerFunc2 block_item_list '}' markerFuncPop
     '''
     # AST doubt
-    if (len(p) == 6):
+    if (len(p) == 7):
         # Add AST Node for EMPTY SCOPE? (check other places too)
         p[0] = Node('FUNC',[p[1],p[2]])
-    elif (len(p) == 7):
+    elif (len(p) == 8):
         if p[3] == '{':
             p[0] = Node('FUNC',[p[1],p[2],Node('SCOPE', [p[5]])])
         else:
             p[0] = Node('FUNC',[p[1],p[2],p[3]])
-    elif len(p) == 8:
+    elif len(p) == 9:
         p[0] = Node('FUNC',[p[1],p[2],p[3],Node('SCOPE', [p[6]])])
 
-def p_markerFuncPop1(p):
+def p_markerFunc1(p):
     '''
-    markerFuncPop1 : 
+    markerFunc1 : 
     '''
-    ST.PopScope()
+    # ST.PopScope()
 
     p[0] = Node('',createAST=False)
     p[0].variables = p[-3].variables
@@ -1178,6 +1191,12 @@ def p_markerFuncPop1(p):
             function_name = key
             break
     p[0].variables[key] += p[-4].extraValues
+
+    # print("This is start of the function in funcpop1")
+    # for key in p[0].variables.keys():
+    #     print("The key is: " + key)
+    #     print(p[0].variables[key])
+    # print('This is end of the function')
 
     ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
     for key in p[0].variables.keys():
@@ -1189,11 +1208,11 @@ def p_markerFuncPop1(p):
     #  <----------------------XXXXXX------------------>
 
 
-def p_markerFuncPop2(p):
+def p_markerFunc2(p):
     '''
-    markerFuncPop2 : 
+    markerFunc2 : 
     '''
-    ST.PopScope()
+    # ST.PopScope()
     p[0] = Node('',createAST=False)
     p[0].variables = p[-2].variables
     function_name = str()
@@ -1203,17 +1222,15 @@ def p_markerFuncPop2(p):
             break
     p[0].variables[key] += p[-3].extraValues
 
-    # print("This is start of the function")
+    # print("This is start of the function in funcpop2")
     # for key in p[0].variables.keys():
     #     print("The key is: " + key)
     #     print(p[0].variables[key])
-    # print("This is end of function")
+    # print('This is end of the function')
     # Here the function name is a key and has a type "Function Name" in the value list
     # The first item in the list will be "Function Name" and thereafter the rest of the
     # items in the list will be return type.
 
-
-    # Add code before this
     ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
     for key in p[0].variables.keys():
         if not key == function_name:
@@ -1221,6 +1238,12 @@ def p_markerFuncPop2(p):
         else:
             ST.ModifySymbol(key, "type", p[0].variables[key][1:])
     #  <----------------------XXXX------------------>
+
+def p_markerFuncPop(p):
+    '''
+    markerFuncPop :
+    '''
+    ST.PopScope();
 
 def p_declaration_list(p):
     '''

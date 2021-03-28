@@ -157,17 +157,17 @@ class CLexer(object):
 
     # Regular expression rules for complex tokens
 
-    @TOKEN(r'\{')
-    def t_LBRACE(self, t):
-        self.on_lbrace_func()
-        t.type = '{'
-        return t
+    # @TOKEN(r'\{')
+    # def t_LBRACE(self, t):
+    #     self.on_lbrace_func()
+    #     t.type = '{'
+    #     return t
 
-    @TOKEN(r'\}')
-    def t_RBRACE(self, t):
-        self.on_rbrace_func()
-        t.type = '}'
-        return t
+    # @TOKEN(r'\}')
+    # def t_RBRACE(self, t):
+    #     self.on_rbrace_func()
+    #     t.type = '}'
+    #     return t
 
     # Character Constants 
     char_const = r'(\'(\\.|[^\\\'])+\')'
