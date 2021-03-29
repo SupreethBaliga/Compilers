@@ -278,21 +278,25 @@ def p_postfix_expression(p):
             p[3] = Node(str(p3val))
 
             p[0] = Node('.',[p[1],p[3]])
+            # type of p[0]?
 
         elif p[2] == '(':
             p[0] = Node('FuncCall',[p[1]])
+            # type of p[0]?
 
         elif p[2] == '->':
             p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
 
             p[0] = Node('->',[p[1],p[3]])
+            # type of p[0]?
 
     elif (len(p) == 5):
         if p[2] == '(':
             p[0] = Node('FuncCall',[p[1],p[3]])
         elif p[2] == '[':
             p[0] = Node('ArrSub',[p[1],p[3]])
+            # type of p[0]?
 
 def p_argument_expression_list(p):
     '''
@@ -344,13 +348,17 @@ def p_unary_expression(p):
 
         elif p[1] == 'sizeof':
             p[0] = Node('SIZEOF',[p[2]])
+            p[0].type = ['int']
         else:
             p[0] = p[1]
             if ((p[2] is not None) and (p[2].node is not None)):
                 p[0].children.append(p[2])
                 G.add_edge(p[0].node,p[2].node)
+            # Stuff to be added here, what should the type of p[0] be
+
     elif (len(p) == 5):
         p[0] = Node('SIZEOF',[p[3]])
+        p[0].type = ['int']
 
 def p_unary_operator(p):
     '''
