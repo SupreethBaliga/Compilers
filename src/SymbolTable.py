@@ -27,7 +27,7 @@ class SymbolTable() :
     def InsertSymbol(self, iden, line_num, type_name=None):
         
         if self.flag == 0:
-            found = self.FindSymbolInCurrentScope(iden)
+            found, entry = self.FindSymbolInCurrentScope(iden)
             if not found:
                 found = self.FindSymbolInTable(iden,1)
                 if found:
@@ -56,12 +56,19 @@ class SymbolTable() :
         elif path == 2:
             for Tree in reversed(self.Table):
                 if Tree is not None and Tree.__contains__(iden):
-                    return Tree.get(iden)
+                    return Tree.get(iden), Tree[iden]
 
-        return False
+        if path == 2:
+            return False, []
+        elif path == 1:
+            return False
 
     def FindSymbolInCurrentScope(self, iden):
-        return self.TopScope.get(iden, False)
+        found = self.TopScope.get(iden, False)
+        if found:
+            return found, self.TopScope[iden]
+        else:
+            return found, []
 
     def PushScope(self):
 
@@ -111,13 +118,13 @@ class SymbolTable() :
 
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:
-            found = self.FindSymbolInCurrentScope(iden)
+            found, entry = self.FindSymbolInCurrentScope(iden)
             if found:
                 self.TopScope[iden][field] = val
                 return True
 
             else:
-                found = self.FindSymbolInTable(iden,2)
+                found, entry = self.FindSymbolInTable(iden,2)
                 if found:
                     found[field] = val
                     return True
@@ -136,13 +143,13 @@ class SymbolTable() :
             self.error = self.error or self.TT.error
         
     def ReturnSymTabEntry(self, iden, statement_line=None):
-        found = self.FindSymbolInCurrentScope(iden)
+        found, entry = self.FindSymbolInCurrentScope(iden)
         if found:
-            return found
+            return found, entry
         else:
-            found = self.FindSymbolInTable(iden, 2)
+            found, entry = self.FindSymbolInTable(iden, 2)
             if found:
-                return found
+                return found, entry
             else:
                 print(f'Error: The variable {iden} on line {statement_line} is not declared.')
                 self.error = True

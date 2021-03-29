@@ -57,7 +57,7 @@ tokens = list(reserved_keywords.values()) + [
     'FLOAT_CONSTANT',
     'INT_CONSTANT',
     'STRING_LITERAL',
-    'CONSTANT',
+    # 'CONSTANT',
     'ERROR',         #to denote any kind of scanning error
     
     # Operators
@@ -123,7 +123,7 @@ exponent = r'([Ee][+-]?' + digit + r'+)'
 char_const = r'(\'(\\.|[^\\\'])+\')'
 @TOKEN(char_const)
 def t_CHAR_CONSTANT(t):
-    t.type = 'CONSTANT'
+    t.type = 'CHAR_CONSTANT'
     return t
 
 # Floating constants
@@ -133,7 +133,7 @@ float_constant = r'(' + exponent_const + r'|' + dec_constant + r')'
 @TOKEN(float_constant)
 def t_FLOAT_CONSTANT(t):
     t.value = float(t.value) # converting the lexeme to float value
-    t.type = 'CONSTANT'
+    t.type = 'FLOAT_CONSTANT'
     return t
 
 # Hexadecimal Constants
@@ -141,7 +141,7 @@ hexa_const = r'(0[xX]' + hexa + '+' + r')'
 @TOKEN(hexa_const)
 def t_HEXA_CONSTANT(t):
     t.value = int(t.value, 16) # converting the lexeme to integer value
-    t.type = 'CONSTANT'
+    t.type = 'INT_CONSTANT'
     return t
 
 # Octal Constants
@@ -149,7 +149,7 @@ octal_const = r'(0' + digit + '+' + r')'
 @TOKEN(octal_const)
 def t_OCTAL_CONSTANT(t):
     t.value = int(t.value, 8) # converting the lexeme to integer value
-    t.type = 'CONSTANT'
+    t.type = 'INT_CONSTANT'
     return t
 
 # Decimal Constants
@@ -157,7 +157,7 @@ integer_const = r'(' + digit + '+' + r')'
 @TOKEN(integer_const)
 def t_INT_CONSTANT(t):
     t.value = int(t.value) # converting the lexeme to integer value
-    t.type = 'CONSTANT'
+    t.type = 'INT_CONSTANT'
     return t
 
 # String Literals

@@ -23,10 +23,12 @@ def remove_node(graphNode):
 
 # This class denotes the Node of our Functional AST
 class Node:
-    def __init__(self,label,children=None,node=None,attributes=None,createAST = True):
+    def __init__(self,label,children=None,node=None,attributes=None,createAST = True, type=None, isvar = False):
         self.label = label
         self.createAST = createAST
         self.node = node
+        self.type = type
+        self.isvar = isvar
         self.isTerminal = False
         if children is None:
             self.isTerminal = True
@@ -46,7 +48,7 @@ class Node:
             self.makeGraph()
     
         self.variables = dict()
-        # The key of the dictionary will be variable name and the value will be a tuple consisting of type
+        # The key of the dictionary  will be variable name and the value will be a tuple consisting of type
         self.extraValues = []
     def addTypeInDict(self,type):
         '''
@@ -123,18 +125,63 @@ def p_primary_expression_1(p):
     '''
     primary_expression : ID
     '''
-    if ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1)): # Change this accordingly
+    found, entry = ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
+    if found: # Change this accordingly
+        
         p[0] = Node(str(p[1]['lexeme']))
+        type_list = entry['type']
+        p[0].isvar = 1
+
+        p[0].type = []
+        if 'long' in type_list:
+            p[0].type.append('long int')
+            for single_type in type_list:
+                if single_type != 'long' and single_type != 'int':
+                    p[0].type.append(single_type)
+        
+        elif 'int' in type_list:
+            p[0].type.append('int')
+            for single_type in type_list:
+                if single_type != 'int':
+                    p[0].type.append(single_type)
+        
+        elif 'char' in type_list:
+            p[0].type.append('char')
+            for single_type in type_list:
+                if single_type != 'char':
+                    p[0].type.append(single_type)
+        
+        elif 'str' in type_list:
+            p[0].type.append('str')
+            for single_type in type_list:
+                if single_type != 'str':
+                    p[0].type.append(single_type)
+        
+        elif 'float' in type_list:
+            p[0].type.append('float')
+            for single_type in type_list:
+                if single_type != 'float':
+                    p[0].type.append(single_type)
+        
+        elif 'double' in type_list:
+            p[0].type.append('double')
+            for single_type in type_list:
+                if single_type != 'double':
+                    p[0].type.append(single_type)
+
+
 
 def p_primary_expression(p):
     '''
-    primary_expression : CONSTANT
-                       | STRING_LITERAL
+    primary_expression : IntegerConst
+                       | FloatConst
+                       | CharConst
+                       | StringConst
                        | '(' expression ')'
     '''
     # AST Done
     if (len(p) == 2):
-        p[0] = Node(str(p[1]))
+        p[0] = p[1]
     elif (len(p) == 4):
         p[0] = p[2]
 
@@ -144,8 +191,47 @@ def p_identifer(p):
     '''
     p[0] = Node(str(p[1]['lexeme']))
     p[0].variables[p[0].label] = []
+    p[0].isvar = 1
     ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
     ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
+
+
+def p_IntegerConst(p):
+    '''
+    IntegerConst : INT_CONSTANT
+    '''
+    p[0] = Node(str(p[1]))
+    p[0].type = ['int']
+    
+
+
+def p_FloatConst(p):
+    '''
+    FloatConst : FLOAT_CONSTANT
+    '''
+    p[0] = Node(str(p[1]))
+    p[0].type = ['float']
+
+
+
+def p_CharConst(p):
+    '''
+    CharConst : CHAR_CONSTANT
+    '''
+    p[0] = Node(str(p[1]))
+    p[0].type = ['char']
+
+
+
+
+def p_StringConst(p):
+    '''
+    StringConst : STRING_LITERAL
+    '''
+    p[0] = Node(str(p[1]))
+    p[0].type = ['str']
+
+
 
 def p_postfix_expression(p):
     '''
@@ -162,7 +248,30 @@ def p_postfix_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        p[0] = Node('POST' + str(p[2]),[p[1]])
+        global isError
+        if p[1].type == None:
+            isError = 1
+            print(f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
+
+        elif 'const' in p[1].type:
+            isError = 1
+            # print(p[1].isTerminal)
+            print(f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
+
+        elif p[1].type[0]!= 'int' and p[1].type[0]!= 'long int' and p[1].type[0]!= 'char':
+            isError = 1
+            # print(p[1].isTerminal)
+            print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
+        elif p[1].isTerminal == False:
+            isError = 1
+            print(f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
+        elif p[1].isvar == 0:
+            isError = 1
+            print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+        else:
+            p[0] = Node('POST' + str(p[2]),[p[1]])
+            p[0].type = p[1].type
+
     elif (len(p) == 4):
         if p[2] == '.':
             p3val = p[3]['lexeme']
@@ -210,7 +319,29 @@ def p_unary_expression(p):
         p[0] = p[1]
     elif (len(p) == 3):
         if p[1] == '++' or p[1] == '--':
-            p[0] = Node('PRE' + str(p[1]),[p[2]])
+            global isError
+            if p[2].type == None:
+                isError = 1
+                print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
+            elif 'const' in p[2].type:
+                isError = 1
+                # print(p[1].isTerminal)
+                print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
+
+            elif p[2].type[0]!= 'int' and p[2].type[0]!= 'long int' and p[2].type[0]!= 'char':
+                isError = 1
+                # print(p[1].isTerminal)
+                print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
+            elif p[2].isTerminal == False:
+                isError = 1
+                print(f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
+            elif p[2].isvar == 0:
+                isError = 1
+                print(f'Cannot use increment/decrement operator on constant at line {p.lineno(1)}')
+            else:
+                p[0] = Node('PRE' + str(p[1]),[p[2]])
+                p[0].type = p[2].type
+
         elif p[1] == 'sizeof':
             p[0] = Node('SIZEOF',[p[2]])
         else:
@@ -220,7 +351,6 @@ def p_unary_expression(p):
                 G.add_edge(p[0].node,p[2].node)
     elif (len(p) == 5):
         p[0] = Node('SIZEOF',[p[3]])
-
 
 def p_unary_operator(p):
     '''
@@ -245,6 +375,9 @@ def p_cast_expression(p):
     elif (len(p) == 5):
         p[0] = Node('CAST',[p[2],p[4]])
 
+        # Change this for pointers
+        p[0].type = p[2].type
+
 def p_mulitplicative_expression(p):
     '''
     multiplicative_expression : cast_expression
@@ -257,6 +390,38 @@ def p_mulitplicative_expression(p):
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = Node(str(p[2]),[p[1],p[3]])
+        
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
+            if p[1].type[0] == 'double' or p[3].type[0] == 'double':
+                p[0].type = 'double'
+            elif p[1].type[0] == 'float' or p[3].type[0] == 'float':
+                p[0].type = 'float'
+            elif p[1].type[0] == 'long int' or p[3].type[0] == 'long int':
+                p[0].type = 'long int'
+            elif p[1].type[0] == 'int' or p[3].type[0] == 'int':
+                p[0].type = 'int'
+            elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
+                p[0].type = 'char'
+            else:
+                isError = 1
+                print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
+
+            p[0].label = p[0].label + p[0].type
+            p[0].node.attr['label'] = p[0].label
+            p[0].type = [p[0].type]
+        else :
+            isError = 1
+            print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+        
+
+
+        
+
 
 def p_additive_expression(p):
     '''
@@ -265,10 +430,39 @@ def p_additive_expression(p):
 	                    | additive_expression '-' multiplicative_expression
     '''
     # AST DOne
+    
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
         p[0] = Node(str(p[2]),[p[1],p[3]])
+        
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
+            if p[1].type[0] == 'double' or p[3].type[0] == 'double':
+                p[0].type = 'double'
+            elif p[1].type[0] == 'float' or p[3].type[0] == 'float':
+                p[0].type = 'float'
+            elif p[1].type[0] == 'long int' or p[3].type[0] == 'long int':
+                p[0].type = 'long int'
+            elif p[1].type[0] == 'int' or p[3].type[0] == 'int':
+                p[0].type = 'int'
+            elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
+                p[0].type = 'char'
+            else:
+                isError = 1
+                print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
+
+            p[0].label = p[0].label + p[0].type
+            p[0].node.attr['label'] = p[0].label
+            p[0].type = [p[0].type]
+        else :
+            isError = 1
+            print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+        
 
 def p_shift_expression(p):
     '''
@@ -280,7 +474,24 @@ def p_shift_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node(str(p[2]),[p[1],p[3]])
+        
+        
+
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+
+
 
 def p_relational_expression(p):
     '''
@@ -294,7 +505,27 @@ def p_relational_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node(str(p[2]),[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+            if p[1].type[0] in ['float', 'double'] or p[3].type[0] in ['float', 'double']:
+                if p[1].type[0] == 'double' or p[3].type[0] == 'double':
+                    p[0].type = ['double']
+                else:
+                    p[0].type = ['float']
+        elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
 
 # 10 rules done till here
 
@@ -308,7 +539,26 @@ def p_equality_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node(str(p[2]),[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform equality check operation between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+            if p[1].type[0] in ['float', 'double'] or p[3].type[0] in ['float', 'double']:
+                if p[1].type[0] == 'double' or p[3].type[0] == 'double':
+                    p[0].type = ['double']
+                else:
+                    p[0].type = ['float']
+        elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 def p_and_expression(p):
     '''
@@ -319,7 +569,19 @@ def p_and_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node('&',[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform bitiwise and between expressions on line {p.lineno(2)}')
+
+        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
 
 def p_exclusive_or_expression(p):
     '''
@@ -330,8 +592,18 @@ def p_exclusive_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node('^',[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
+        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_inclusive_or_expression(p):
     '''
     inclusive_or_expression : exclusive_or_expression
@@ -341,8 +613,18 @@ def p_inclusive_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node('|',[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
+        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_logical_and_expression(p):
     '''
     logical_and_expression : inclusive_or_expression
@@ -352,8 +634,18 @@ def p_logical_and_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node('&&',[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Logical and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_logical_or_expression(p):
     '''
     logical_or_expression : logical_and_expression
@@ -363,8 +655,18 @@ def p_logical_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        p[0] = Node('||',[p[1],p[3]])
+        global isError
+        if p[1].type == None or p[3].type == None:
+            isError = 1
+            print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
 
+        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
+            p[0] = Node(str(p[2]),[p[1],p[3]])
+            p[0].type = ['int']
+
+        else:
+            isError = 1
+            print(f'Logical or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 def p_conditional_expression(p):
     '''
@@ -389,20 +691,40 @@ def p_assignment_expression(p):
         p[0] = p[2]
         if ((p[1] is not None) and (p[1].node is not None)):
             if ((p[3] is not None) and (p[3].node is not None)):
-                G.add_edge(p[0].node,p[1].node)
-                G.add_edge(p[0].node,p[3].node)
 
-                G.add_edge(p[1].node,p[3].node,style='invis')
-                G.add_subgraph([p[1].node,p[3].node], rank='same')
-                p[0].children.append(p[1])
-                p[0].children.append(p[3])
+                
+                
+                global isError
+                if p[1].isvar == 0:
+                    isError = 1
+                    print(f'Left hand side has to be a variable at line {p[2].lineno}')
+
+                elif 'const' in p[1].type:
+                    isError = 1
+                    print(f'Cannot assign value to read only variable at line {p[2].lineno}')
+
+                # Type mismatch arrays etc.
+                # elif p[1] is array/pointer, then no assignment
+
+                else:
+                    G.add_edge(p[0].node,p[1].node)
+                    G.add_edge(p[0].node,p[3].node)
+
+                    G.add_edge(p[1].node,p[3].node,style='invis')
+                    G.add_subgraph([p[1].node,p[3].node], rank='same')
+                    p[0].children.append(p[1])
+                    p[0].children.append(p[3])
+
             else:
                 G.add_edge(p[0].node,p[1].node)
                 p[0].children.append(p[1])
+                # Complete when p[3] may be None
+
         else:
             if ((p[3] is not None) and (p[3].node is not None)):
                 G.add_edge(p[0].node,p[3].node)
                 p[0].children.append(p[3])
+                # Complete when p[1] may be None
                 
 def p_assignment_operator(p):
     '''
@@ -420,6 +742,7 @@ def p_assignment_operator(p):
     '''
     # AST Done
     p[0] = Node(str(p[1]))
+    p[0].lineno = p.lineno(1)
 
 def p_expression(p):
     '''
