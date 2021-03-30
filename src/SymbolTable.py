@@ -4,7 +4,8 @@ import json
 
 # Structure of each entry of the symbol table --
 # line: contains the line number where variable was declared
-# check: For usual variables, the value for this will be 'VAR', for functions it will be 'FUNC'
+# check: For usual variables, the value for this will be 'VAR', for functions it will be 'FUNC',
+#        for structs, it will be "STRUCT" and for unions, it will be "UNION"
 #         Yet to decide regarding structs, enums and unions
 # type: if check == 'VAR' -> this field contains the data type of the variable
 #       if check == 'FUNC' -> this field contains the return type of the function
@@ -97,6 +98,7 @@ class SymbolTable() :
         return
 
     def StoreResults(self):
+        self.error = self.error or self.TT.error
         self.TopScope['StructOrUnion'] = dict(self.TT.TopScope)
         self.PushScope()
         return

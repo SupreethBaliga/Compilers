@@ -101,14 +101,25 @@ class TypeTable() :
                     return False
 
     
-    def ReturnSymTabEntry(self, iden, statement_line=None):
+    def ReturnTypeTabEntry(self, iden, type_name, statement_line=None):
         found = self.FindSymbolInCurrentScope(iden)
         if found:
-            return found
+            if found['check'].lower() == type_name:
+                return found
+            else:
+                print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
+                self.error = True
+                return None
         else:
             found = self.FindSymbolInTable(iden, 2)
             if found:
-                return found
+                if found['check'].lower() == type_name:
+                    return found
+                else:
+                    print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
+                    self.error = True
+                    return None
             else:
-                print(f'Error: The variable {iden} on line {statement_line} is not declared.')
+                print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
                 self.error = True
+                return None

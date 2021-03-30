@@ -846,7 +846,16 @@ def p_init_declarator(p):
     
     # Types added
     for var_name in p[0].variables:
-        ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
+        if not p[0].variables[var_name]:
+            return
+        elif p[0].variables[var_name][0] in ['struct', 'union']:
+            found = ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][1], p[0].variables[var_name][0], p.lineno(1))
+            if found:
+                ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(1))
+                ST.ModifySymbol(var_name, "check", found['check'], p.lineno(1))
+                ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
+        else:
+            ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
     # <---------------XXXXX------------------>
 
 
@@ -910,14 +919,13 @@ def p_struct_or_union_specifier(p):
                 G.add_edge(p[0].node,p[5].node)
                 p[0].children.append(p[5])
 
-    elif (len(p) == 7):
+    elif (len(p) == 7): # not needed anymore
         p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
         p[0].label = p[0].node.attr['label']
     
         if ((p[3] is not None) and (p[3].node is not None)):
             G.add_edge(p[0].node, p[3].node)
             p[0].children.append(p[3])
-            # print("Hello")
 
 
     elif (len(p) == 3):
@@ -928,11 +936,16 @@ def p_struct_or_union_specifier(p):
         # the struct of given type exists or not
         p2val = p[2]['lexeme']
         p[2] = Node(str(p2val))
-        p[0].extraValues.append(p[1].label)
-        p[0].extraValues.append(p2val)
-        G.add_edge(p[0].node, p[2].node)
-        p[0].children.append(p[2])
-        # print("Hello")
+        if ST.TT.ReturnTypeTabEntry(p[2].label, p[0].label, p.lineno(2)) is None:
+            ST.error = True
+        else:
+            p[0].extraValues.append(p[1].label)
+            p[0].extraValues.append(p2val)
+            G.add_edge(p[0].node, p[2].node)
+            p[0].children.append(p[2])
+        # checking if the given type exists in type table
+        # print(p[0].label, p[2].label) 
+        
     
 def p_markerStructFlag2(p):
     '''
