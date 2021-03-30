@@ -129,32 +129,25 @@ def p_primary_expression_1(p):
     if found: # Change this accordingly
 
 
-        
-
-
-
         # Not considering short, signed, unsigned, bool for now, change later
 
         for i in range(len(entry['type'])):
             if entry['type'][i] in ['short', 'signed', 'unsigned', 'bool']:
                 entry['type'][i] = 'int'
 
-        # ----------------------------------------------------------------
-
-
-        
-
+        # ----------------------------------------------------------------        
 
         isarr = 0
-        if entry['type'][0][0]=='[' and entry['type'][0][-1] == ']':
-            isarr = 1
+        for i in range(len(entry['type'])):
+            if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
+                isarr += 1
         
         p[0] = Node(str(p[1]['lexeme']))
         type_list = entry['type']
         p[0].isvar = 1
 
         p[0].type = []
-        if 'long' in type_list:
+        if 'long' in type_list and 'int' in type_list:
             p[0].type.append('long int')
             for single_type in type_list:
                 if single_type != 'long' and single_type != 'int':
@@ -183,18 +176,22 @@ def p_primary_expression_1(p):
             for single_type in type_list:
                 if single_type != 'float':
                     p[0].type.append(single_type)
-        
+
         elif 'double' in type_list:
             p[0].type.append('double')
             for single_type in type_list:
                 if single_type != 'double':
-                    p[0].type.append(single_type)
+                    if single_type != 'long':   # change later
+                        p[0].type.append(single_type)
 
-        if isarr:
+        if isarr > 0:
             temp_type = []
-            temp_type.append(p[0].type[0]+' *')
+            temp_type.append(p[0].type[0]+' ')
+            for i in range(isarr):
+                temp_type[0] += '*'
+
             for i in range(len(p[0].type)):
-                if i>=2:
+                if i>isarr:
                     temp_type.append(p[0].type[i])
             p[0].type = temp_type
 
@@ -324,6 +321,11 @@ def p_postfix_expression(p):
             p[3] = Node(str(p3val))
 
             p[0] = Node('.',[p[1],p[3]])
+            # ----------------------------------------------------------
+
+            # print(p[1].type)
+
+            # print("Here")
             # type of p[0]?
 
         elif p[2] == '(':
@@ -341,8 +343,30 @@ def p_postfix_expression(p):
         if p[2] == '(':
             p[0] = Node('FuncCall',[p[1],p[3]])
         elif p[2] == '[':
-            p[0] = Node('ArrSub',[p[1],p[3]])
-            # type of p[0]?
+            
+
+            flag = 0
+            if 'int' in p[3].type:
+                flag = 1
+            elif 'long int' in p[3].type:
+                flag = 1
+            elif 'char' in p[3].type:
+                flag = 1
+
+            if flag==0:
+                ST.Error = 1
+                print(f'Invalid array subscript of type {p[3].type} at line {p.lineno(2)}')
+            else:
+                if p[1].type[0][-1] != '*':
+                    ST.error = 1
+                    print(f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
+                else:
+                    p[0] = Node('ArrSub',[p[1],p[3]])
+                    p[0].type = p[1].type
+                    p[0].type[0] = p[0].type[0][0:-1]
+                    if p[0].type[0][-1] == ' ':
+                        p[0].type[0] = p[0].type[0][0:-1]
+
 
 def p_argument_expression_list(p):
     '''
@@ -997,7 +1021,7 @@ def p_init_declarator(p):
 
         if data_type_count > 1:    
             ST.error = 1
-            print(entry)
+            # print(entry)
             print('Two or more conflicting data types specified for variable at line', entry['line']) 
 
     # <---------------XXXXX------------------>
