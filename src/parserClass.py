@@ -127,6 +127,27 @@ def p_primary_expression_1(p):
     '''
     found, entry = ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
     if found: # Change this accordingly
+
+
+        
+
+
+
+        # Not considering short, signed, unsigned, bool for now, change later
+
+        for i in range(len(entry['type'])):
+            if entry['type'][i] in ['short', 'signed', 'unsigned', 'bool']:
+                entry['type'][i] = 'int'
+
+        # ----------------------------------------------------------------
+
+
+        
+
+
+        isarr = 0
+        if entry['type'][0][0]=='[' and entry['type'][0][-1] == ']':
+            isarr = 1
         
         p[0] = Node(str(p[1]['lexeme']))
         type_list = entry['type']
@@ -169,6 +190,27 @@ def p_primary_expression_1(p):
                 if single_type != 'double':
                     p[0].type.append(single_type)
 
+        if isarr:
+            temp_type = []
+            temp_type.append(p[0].type[0]+' *')
+            for i in range(len(p[0].type)):
+                if i>=2:
+                    temp_type.append(p[0].type[i])
+            p[0].type = temp_type
+
+
+        if '*' in type_list:
+            temp_type = []
+            temp_type.append(p[0].type[0]+' *')
+            for i in range(len(p[0].type)):
+                if i>=2:
+                    if p[0].type[i] == '*':
+                        temp_type[0] += '*'
+                    else:
+                        temp_type.append(p[0].type[i])
+            p[0].type = temp_type
+
+
 
 
 def p_primary_expression(p):
@@ -194,6 +236,10 @@ def p_identifer(p):
     p[0].isvar = 1
     ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
     ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
+
+
+
+
 
 
 def p_IntegerConst(p):
@@ -248,26 +294,26 @@ def p_postfix_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 3):
-        global isError
         if p[1].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
 
         elif 'const' in p[1].type:
-            isError = 1
-            # print(p[1].isTerminal)
+            ST.error = 1
             print(f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
 
         elif p[1].type[0]!= 'int' and p[1].type[0]!= 'long int' and p[1].type[0]!= 'char':
-            isError = 1
-            # print(p[1].isTerminal)
+            ST.error = 1
             print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
+
         elif p[1].isTerminal == False:
-            isError = 1
+            ST.error = 1
             print(f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
+
         elif p[1].isvar == 0:
-            isError = 1
+            ST.error = 1
             print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+
         else:
             p[0] = Node('POST' + str(p[2]),[p[1]])
             p[0].type = p[1].type
@@ -301,7 +347,7 @@ def p_postfix_expression(p):
 def p_argument_expression_list(p):
     '''
     argument_expression_list : assignment_expression
-	                         | argument_expression_list ',' assignment_expression
+                             | argument_expression_list ',' assignment_expression
     '''
     # AST Done
     if (len(p) == 2):
@@ -325,22 +371,22 @@ def p_unary_expression(p):
         if p[1] == '++' or p[1] == '--':
             global isError
             if p[2].type == None:
-                isError = 1
+                ST.error = 1
                 print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
             elif 'const' in p[2].type:
-                isError = 1
+                ST.error = 1
                 # print(p[1].isTerminal)
                 print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
 
             elif p[2].type[0]!= 'int' and p[2].type[0]!= 'long int' and p[2].type[0]!= 'char':
-                isError = 1
+                ST.error = 1
                 # print(p[1].isTerminal)
                 print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
             elif p[2].isTerminal == False:
-                isError = 1
+                ST.error = 1
                 print(f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
             elif p[2].isvar == 0:
-                isError = 1
+                ST.error = 1
                 print(f'Cannot use increment/decrement operator on constant at line {p.lineno(1)}')
             else:
                 p[0] = Node('PRE' + str(p[1]),[p[2]])
@@ -349,16 +395,64 @@ def p_unary_expression(p):
         elif p[1] == 'sizeof':
             p[0] = Node('SIZEOF',[p[2]])
             p[0].type = ['int']
+            # not sure
+
         else:
             p[0] = p[1]
             if ((p[2] is not None) and (p[2].node is not None)):
                 p[0].children.append(p[2])
                 G.add_edge(p[0].node,p[2].node)
-            # Stuff to be added here, what should the type of p[0] be
+                
+                # print(p[1].label[-1])
+
+                if p[1].label[-1] in ['+', '-', '!']:
+                    if p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
+                        p[0].type = [p[2].type[0]]
+                        if p[2].type[0] == 'char' or p[1].label[-1] == '!':
+                            p[0].type = ['int']
+                        else:
+                            pass
+                    else:
+                        ST.error = 1
+                        print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+
+                    print(p[0].type)
+
+                elif p[1].label[-1] == '~':
+                    if p[2].type[0] in ['int', 'long int', 'char']:
+                        p[0].type = [p[2].type[0]]
+                        if p[2].type[0] == 'char':
+                            p[0].type = ['int']
+                        else:
+                            pass
+                    else:
+                        ST.error = 1
+                        print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+
+                elif p[1].label[-1] == '*':
+                    if p[2].type[0][-1] != '*':
+                        ST.error = 1
+                        print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+                    else:
+                        p[0].type = p[2].type
+                        p[0].type[0] = p[0].type[0][:-1]
+                        if p[0].type[0][-1] == ' ':
+                             p[0].type[0] = p[0].type[0][:-1]
+
+                elif p[1].label[-1] == '&':
+                    if p[2].isvar==0:
+                        ST.error = 1
+                        print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
+
+                    else:
+                        p[0].type = ['int']
+
+
 
     elif (len(p) == 5):
         p[0] = Node('SIZEOF',[p[3]])
         p[0].type = ['int']
+        # not sure
 
 def p_unary_operator(p):
     '''
@@ -371,11 +465,12 @@ def p_unary_operator(p):
     '''
     # AST DONE
     p[0] = Node('UNARY' + str(p[1]))
+    p[0].lineno = p.lineno(1)
 
 def p_cast_expression(p):
     '''
     cast_expression : unary_expression
-	                | '(' type_name ')' cast_expression
+                    | '(' type_name ')' cast_expression
     '''
     #AST DONE - rule for 2 in sheet
     if (len(p) == 2):
@@ -389,9 +484,9 @@ def p_cast_expression(p):
 def p_mulitplicative_expression(p):
     '''
     multiplicative_expression : cast_expression
-	                          | multiplicative_expression '*' cast_expression
-	                          | multiplicative_expression '/' cast_expression
-	                          | multiplicative_expression '%' cast_expression
+                              | multiplicative_expression '*' cast_expression
+                              | multiplicative_expression '/' cast_expression
+                              | multiplicative_expression '%' cast_expression
     '''
     #AST DOne
     if (len(p) == 2):
@@ -401,7 +496,7 @@ def p_mulitplicative_expression(p):
         
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
@@ -416,14 +511,14 @@ def p_mulitplicative_expression(p):
             elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
                 p[0].type = 'char'
             else:
-                isError = 1
+                ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
             p[0].label = p[0].label + p[0].type
             p[0].node.attr['label'] = p[0].label
             p[0].type = [p[0].type]
         else :
-            isError = 1
+            ST.error = 1
             print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
         
 
@@ -434,8 +529,8 @@ def p_mulitplicative_expression(p):
 def p_additive_expression(p):
     '''
     additive_expression : multiplicative_expression
-	                    | additive_expression '+' multiplicative_expression
-	                    | additive_expression '-' multiplicative_expression
+                        | additive_expression '+' multiplicative_expression
+                        | additive_expression '-' multiplicative_expression
     '''
     # AST DOne
     
@@ -446,7 +541,7 @@ def p_additive_expression(p):
         
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
@@ -461,22 +556,38 @@ def p_additive_expression(p):
             elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
                 p[0].type = 'char'
             else:
-                isError = 1
+                ST.error = 1
                 print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
             p[0].label = p[0].label + p[0].type
             p[0].node.attr['label'] = p[0].label
             p[0].type = [p[0].type]
+        
+        elif p[1].type[0][-1] == '*' and p[3].type[0] in ['int', 'long int', 'char']:
+            p[0].label = p[0].label + p[1].type[0]
+            p[0].node.attr['label'] = p[0].label
+            p[0].type = p[1].type
+        
+        elif p[3].type[0][-1] == '*' and p[1].type[0] in ['int', 'long int', 'char'] and p[0].label=='+':
+            p[0].label = p[0].label + p[1].type[0]
+            p[0].node.attr['label'] = p[0].label
+            p[0].type = p[3].type
+        
+        elif p[3].type[0][-1] == '*' and p[1].type[0] in ['int', 'long int', 'char'] and p[0].label=='-':
+            ST.error = 1
+            print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+
         else :
-            isError = 1
+            ST.error = 1
             print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
         
 
 def p_shift_expression(p):
     '''
     shift_expression : additive_expression
-	                 | shift_expression LEFT_OP additive_expression
-	                 | shift_expression RIGHT_OP additive_expression
+                     | shift_expression LEFT_OP additive_expression
+                     | shift_expression RIGHT_OP additive_expression
     '''
     #AST DOne
     if (len(p) == 2):
@@ -487,7 +598,7 @@ def p_shift_expression(p):
 
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
@@ -495,7 +606,7 @@ def p_shift_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 
@@ -504,10 +615,10 @@ def p_shift_expression(p):
 def p_relational_expression(p):
     '''
     relational_expression : shift_expression
-	                      | relational_expression '<' shift_expression
-	                      | relational_expression '>' shift_expression
-	                      | relational_expression LE_OP shift_expression
-	                      | relational_expression GE_OP shift_expression
+                          | relational_expression '<' shift_expression
+                          | relational_expression '>' shift_expression
+                          | relational_expression LE_OP shift_expression
+                          | relational_expression GE_OP shift_expression
     '''
     # AST Done
     if (len(p) == 2):
@@ -515,7 +626,7 @@ def p_relational_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
@@ -531,7 +642,7 @@ def p_relational_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 
@@ -540,8 +651,8 @@ def p_relational_expression(p):
 def p_equality_expression(p):
     '''
     equality_expression : relational_expression
-	                    | equality_expression EQ_OP relational_expression
-	                    | equality_expression NE_OP relational_expression
+                        | equality_expression EQ_OP relational_expression
+                        | equality_expression NE_OP relational_expression
     '''
     # AST Done
     if (len(p) == 2):
@@ -549,7 +660,7 @@ def p_equality_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform equality check operation between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
@@ -565,13 +676,13 @@ def p_equality_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 def p_and_expression(p):
     '''
     and_expression : equality_expression
-	               | and_expression '&' equality_expression
+                   | and_expression '&' equality_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -579,22 +690,22 @@ def p_and_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
-            print(f'Cannot perform bitiwise and between expressions on line {p.lineno(2)}')
+            ST.error = 1
+            print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 
 def p_exclusive_or_expression(p):
     '''
     exclusive_or_expression : and_expression
-	                        | exclusive_or_expression '^' and_expression
+                            | exclusive_or_expression '^' and_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -602,7 +713,7 @@ def p_exclusive_or_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
@@ -610,12 +721,12 @@ def p_exclusive_or_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_inclusive_or_expression(p):
     '''
     inclusive_or_expression : exclusive_or_expression
-	                        | inclusive_or_expression '|' exclusive_or_expression
+                            | inclusive_or_expression '|' exclusive_or_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -623,7 +734,7 @@ def p_inclusive_or_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
@@ -631,12 +742,12 @@ def p_inclusive_or_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_logical_and_expression(p):
     '''
     logical_and_expression : inclusive_or_expression
-	                       | logical_and_expression AND_OP inclusive_or_expression
+                           | logical_and_expression AND_OP inclusive_or_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -644,7 +755,7 @@ def p_logical_and_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
@@ -652,12 +763,12 @@ def p_logical_and_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Logical and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 def p_logical_or_expression(p):
     '''
     logical_or_expression : logical_and_expression
-	                      | logical_or_expression OR_OP logical_and_expression
+                          | logical_or_expression OR_OP logical_and_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -665,7 +776,7 @@ def p_logical_or_expression(p):
     elif (len(p) == 4):
         global isError
         if p[1].type == None or p[3].type == None:
-            isError = 1
+            ST.error = 1
             print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
 
         elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
@@ -673,13 +784,13 @@ def p_logical_or_expression(p):
             p[0].type = ['int']
 
         else:
-            isError = 1
+            ST.error = 1
             print(f'Logical or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 def p_conditional_expression(p):
     '''
     conditional_expression : logical_or_expression
-	                       | logical_or_expression '?' expression ':' conditional_expression
+                           | logical_or_expression '?' expression ':' conditional_expression
     '''
     # AST Done
     if (len(p) == 2):
@@ -690,7 +801,7 @@ def p_conditional_expression(p):
 def p_assignment_expression(p):
     '''
     assignment_expression : conditional_expression
-	                      | unary_expression assignment_operator assignment_expression
+                          | unary_expression assignment_operator assignment_expression
     '''
     # AST Done
     if (len(p) == 2):
@@ -704,11 +815,11 @@ def p_assignment_expression(p):
                 
                 global isError
                 if p[1].isvar == 0:
-                    isError = 1
+                    ST.error = 1
                     print(f'Left hand side has to be a variable at line {p[2].lineno}')
 
                 elif 'const' in p[1].type:
-                    isError = 1
+                    ST.error = 1
                     print(f'Cannot assign value to read only variable at line {p[2].lineno}')
 
                 # Type mismatch arrays etc.
@@ -737,16 +848,16 @@ def p_assignment_expression(p):
 def p_assignment_operator(p):
     '''
     assignment_operator : '='
-	                    | MUL_ASSIGN
-	                    | DIV_ASSIGN
-	                    | MOD_ASSIGN
-	                    | ADD_ASSIGN
-	                    | SUB_ASSIGN
-	                    | LEFT_ASSIGN
-	                    | RIGHT_ASSIGN
-	                    | AND_ASSIGN
-	                    | XOR_ASSIGN
-	                    | OR_ASSIGN
+                        | MUL_ASSIGN
+                        | DIV_ASSIGN
+                        | MOD_ASSIGN
+                        | ADD_ASSIGN
+                        | SUB_ASSIGN
+                        | LEFT_ASSIGN
+                        | RIGHT_ASSIGN
+                        | AND_ASSIGN
+                        | XOR_ASSIGN
+                        | OR_ASSIGN
     '''
     # AST Done
     p[0] = Node(str(p[1]))
@@ -755,7 +866,7 @@ def p_assignment_operator(p):
 def p_expression(p):
     '''
     expression : assignment_expression
-	           | expression ',' assignment_expression
+               | expression ',' assignment_expression
     '''
     # AST done
     if (len(p) == 2):
@@ -776,7 +887,7 @@ def p_constant_expression(p):
 def p_declaration(p):
     '''
     declaration : declaration_specifiers ';'
-	            | declaration_specifiers init_declarator_list ';'
+                | declaration_specifiers init_declarator_list ';'
     '''
     if (len(p) == 3):
         p[0] = Node('TypeDecl')
@@ -788,11 +899,11 @@ def p_declaration(p):
 def p_declaration_specifiers(p):
     '''
     declaration_specifiers : storage_class_specifier
-	                       | storage_class_specifier declaration_specifiers
-	                       | type_specifier
-	                       | type_specifier declaration_specifiers
-	                       | type_qualifier
-	                       | type_qualifier declaration_specifiers
+                           | storage_class_specifier declaration_specifiers
+                           | type_specifier
+                           | type_specifier declaration_specifiers
+                           | type_qualifier
+                           | type_qualifier declaration_specifiers
     '''
     if (len(p) == 2):
         p[0] = p[1]
@@ -807,7 +918,7 @@ def p_declaration_specifiers(p):
 def p_init_declarator_list(p):
     '''
     init_declarator_list : init_declarator
-	                     | init_declarator_list ',' InitM1 init_declarator
+                         | init_declarator_list ',' InitM1 init_declarator
     '''
     #  Marker Here
     if (len(p) == 2):
@@ -827,7 +938,7 @@ def p_InitM1(p):
 def p_init_declarator(p):
     '''
     init_declarator : declarator
-	                | declarator '=' initializer
+                    | declarator '=' initializer
     '''
     if (len(p) == 2):
         p[1].removeGraph()
@@ -856,34 +967,67 @@ def p_init_declarator(p):
                 ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
         else:
             ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
+
+                # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
+
+        found, entry = ST.ReturnSymTabEntry(var_name, p.lineno(1))
+        # print(entry['line'])
+
+        data_type_count = 0
+        if 'int' in entry['type'] or 'short' in entry['type'] or 'long' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type']:
+            data_type_count += 1
+        if 'float' in entry['type']:
+            data_type_count += 1
+        if 'double' in entry['type']:
+            data_type_count += 1
+        if 'void' in entry['type']:
+            data_type_count += 1
+        if 'char' in entry['type']:
+            data_type_count += 1
+        if 'bool' in entry['type']:
+            data_type_count += 1
+        if 'long' in entry['type'] and 'short' in entry['type']:
+            data_type_count += 1
+        if 'signed' in entry['type'] and 'unsigned' in entry['type']:
+            data_type_count += 1
+        if 'double' in entry['type'] and 'long' in entry['type']:
+            data_type_count -= 1
+            if 'int' in entry['type'] or 'short' in entry['type'] or 'unsigned' in entry['type'] or 'signed' in entry['type']:
+                data_type_count += 1
+
+        if data_type_count > 1:    
+            ST.error = 1
+            print(entry)
+            print('Two or more conflicting data types specified for variable at line', entry['line']) 
+
     # <---------------XXXXX------------------>
 
 
 def p_storage_class_specifier(p):
     '''
     storage_class_specifier : TYPEDEF
-	                        | EXTERN
-	                        | STATIC
-	                        | AUTO
-	                        | REGISTER
+                            | EXTERN
+                            | STATIC
+                            | AUTO
+                            | REGISTER
     '''
     p[0] = Node(str(p[1]))
 
 def p_type_specifier(p):
     '''
     type_specifier : VOID
-	               | CHAR
-	               | SHORT
-	               | INT
-	               | LONG
-	               | FLOAT
+                   | CHAR
+                   | SHORT
+                   | INT
+                   | LONG
+                   | FLOAT
                    | BOOL
-	               | DOUBLE
-	               | SIGNED
-	               | UNSIGNED
-	               | struct_or_union_specifier
+                   | DOUBLE
+                   | SIGNED
+                   | UNSIGNED
+                   | struct_or_union_specifier
     '''
-    if str(p[1]) in ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
+    if str(p[1]) in ['void' , 'char', 'short', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
         p[0] = Node(str(p[1]))
         p[0].extraValues.append(str(p[1]))
     else:
@@ -892,7 +1036,7 @@ def p_type_specifier(p):
 def p_struct_or_union_specifier(p):
     '''
     struct_or_union_specifier : struct_or_union ID '{' markerStructFlag2 struct_declaration_list '}' markerStructFlag0
-	                          | struct_or_union ID
+                              | struct_or_union ID
     '''
     p[0] = p[1]
     if (len(p) == 8):
@@ -958,6 +1102,8 @@ def p_markerStructFlag2(p):
     ST.InsertSymbol(iden, line_num, type_name)
     ST.flag = 2
 
+
+
 def p_markerStructFlag0(p):
     '''
     markerStructFlag0 :
@@ -967,14 +1113,14 @@ def p_markerStructFlag0(p):
 def p_struct_or_union(p):
     '''
     struct_or_union : STRUCT
-	                | UNION
+                    | UNION
     '''
     p[0] = Node(str(p[1]))
 
 def p_struct_declaration_list(p):
     '''
     struct_declaration_list : struct_declaration
-	                        | struct_declaration_list struct_declaration
+                            | struct_declaration_list struct_declaration
     '''
 
     if (len(p) == 2):
@@ -997,9 +1143,9 @@ def p_struct_declaration(p):
 def p_specifier_qualifier_list(p):
     '''
     specifier_qualifier_list : type_specifier specifier_qualifier_list
-	                         | type_specifier
-	                         | type_qualifier specifier_qualifier_list
-	                         | type_qualifier
+                             | type_specifier
+                             | type_qualifier specifier_qualifier_list
+                             | type_qualifier
     '''
     # AST done
     if (len(p) == 2):
@@ -1015,7 +1161,7 @@ def p_specifier_qualifier_list(p):
 def p_struct_declarator_list(p):
     '''
     struct_declarator_list : struct_declarator
-	                       | struct_declarator_list ',' structDeclaratorMarker1 struct_declarator
+                           | struct_declarator_list ',' structDeclaratorMarker1 struct_declarator
     '''
     # AST done
     if (len(p) == 2):
@@ -1034,8 +1180,8 @@ def p_structDeclaratorMarker1(p):
 def p_struct_declarator(p):
     '''
     struct_declarator : declarator
-	                  | ':' constant_expression
-	                  | declarator ':' constant_expression
+                      | ':' constant_expression
+                      | declarator ':' constant_expression
     '''
     #AST done
     if (len(p) == 2):
@@ -1068,7 +1214,7 @@ def p_struct_declarator(p):
 def p_type_qualifier(p):
     '''
     type_qualifier : CONST
-	               | VOLATILE
+                   | VOLATILE
     '''
     # AST done
     p[0] = Node(str(p[1]))
@@ -1079,7 +1225,7 @@ def p_type_qualifier(p):
 def p_declarator(p):
     '''
     declarator : direct_declarator
-	           | pointer direct_declarator
+               | pointer direct_declarator
     '''
     #AST done
     if (len(p) == 2):
@@ -1093,7 +1239,7 @@ def p_declarator(p):
 def p_function_declarator(p):
     '''
     function_declarator : direct_declarator
-	                    | pointer direct_declarator
+                        | pointer direct_declarator
     '''
     #AST done
     if (len(p) == 2):
@@ -1106,12 +1252,12 @@ def p_function_declarator(p):
 def p_direct_declarator(p):
     '''
     direct_declarator : identifier
-	                  | '(' declarator ')'
-	                  | direct_declarator '[' ']'
-	                  | direct_declarator '(' markerFuncPush ')'
-	                  | direct_declarator '[' constant_expression ']'
-	                  | direct_declarator '(' markerFuncPush parameter_type_list ')'
-	                  | direct_declarator '(' identifier_list ')'
+                      | '(' declarator ')'
+                      | direct_declarator '[' ']'
+                      | direct_declarator '(' markerFuncPush ')'
+                      | direct_declarator '[' constant_expression ']'
+                      | direct_declarator '(' markerFuncPush parameter_type_list ')'
+                      | direct_declarator '(' identifier_list ')'
     '''
     # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
     if (len(p) == 2):
@@ -1160,9 +1306,9 @@ def p_markerFuncPush(p):
 def p_pointer(p):
     '''
     pointer : '*'
-	        | '*' type_qualifier_list
-	        | '*' pointer
-	        | '*' type_qualifier_list pointer
+            | '*' type_qualifier_list
+            | '*' pointer
+            | '*' type_qualifier_list pointer
     '''
     # AST done
     if (len(p) == 2):
@@ -1180,7 +1326,7 @@ def p_pointer(p):
 def p_type_qualifier_list(p):
     '''
     type_qualifier_list : type_qualifier
-	                    | type_qualifier_list type_qualifier
+                        | type_qualifier_list type_qualifier
     '''
     # AST doubt
     if len(p) == 2:
@@ -1195,7 +1341,7 @@ def p_type_qualifier_list(p):
 def p_parameter_type_list(p):
     '''
     parameter_type_list : parameter_list
-	                    | parameter_list ',' ELLIPSIS
+                        | parameter_list ',' ELLIPSIS
     '''
     # AST Done
     if (len(p) == 2):
@@ -1214,7 +1360,7 @@ def p_parameter_type_list(p):
 def p_parameter_list(p):
     '''
     parameter_list : parameter_declaration
-	               | parameter_list ',' parameter_declaration
+                   | parameter_list ',' parameter_declaration
     '''
     # AST Done
     if (len(p) == 2):
@@ -1226,7 +1372,7 @@ def p_parameter_list(p):
 def p_parameter_declaration_1(p):
     '''
     parameter_declaration : declaration_specifiers abstract_declarator
-	                      | declaration_specifiers
+                          | declaration_specifiers
     '''
     # AST done
     if len(p) == 2:
@@ -1248,7 +1394,7 @@ def p_parameter_declaration_2(p):
 def p_identifier_list(p):
     '''
     identifier_list : ID
-	                | identifier_list ',' ID
+                    | identifier_list ',' ID
     '''
     # AST Done
     if (len(p) == 2):
@@ -1261,7 +1407,7 @@ def p_identifier_list(p):
 def p_type_name(p):
     '''
     type_name : specifier_qualifier_list
-	          | specifier_qualifier_list abstract_declarator
+              | specifier_qualifier_list abstract_declarator
     '''
     # AST done
 
@@ -1273,8 +1419,8 @@ def p_type_name(p):
 def p_abstract_declarator(p):
     '''
     abstract_declarator : pointer
-	                    | direct_abstract_declarator
-	                    | pointer direct_abstract_declarator
+                        | direct_abstract_declarator
+                        | pointer direct_abstract_declarator
     '''
     # AST done
 
@@ -1285,15 +1431,15 @@ def p_abstract_declarator(p):
 
 def p_direct_abstract_declarator(p):
     '''
-	direct_abstract_declarator : '[' ']'
-	                           | '(' ')'
+    direct_abstract_declarator : '[' ']'
+                               | '(' ')'
                                | '(' abstract_declarator ')'
-	                           | '(' parameter_type_list ')'
-	                           | '[' constant_expression ']'
-	                           | direct_abstract_declarator '[' ']'
-	                           | direct_abstract_declarator '(' ')'
-	                           | direct_abstract_declarator '[' constant_expression ']'
-	                           | direct_abstract_declarator '(' parameter_type_list ')'
+                               | '(' parameter_type_list ')'
+                               | '[' constant_expression ']'
+                               | direct_abstract_declarator '[' ']'
+                               | direct_abstract_declarator '(' ')'
+                               | direct_abstract_declarator '[' constant_expression ']'
+                               | direct_abstract_declarator '(' parameter_type_list ')'
     '''
     # AST done
 
@@ -1324,7 +1470,7 @@ def p_direct_abstract_declarator(p):
 def p_initializer(p):
     '''
     initializer : assignment_expression
-	            | '{' initializer_list '}'
+                | '{' initializer_list '}'
                 | '{' initializer_list ',' '}'
     '''
     # AST done
@@ -1336,7 +1482,7 @@ def p_initializer(p):
 def p_initializer_list(p):
     '''
     initializer_list : initializer
-	                 | initializer_list ',' initializer
+                     | initializer_list ',' initializer
     '''
     # AST done
     if len(p) == 2:
@@ -1347,11 +1493,11 @@ def p_initializer_list(p):
 def p_statement(p):
     '''
     statement : labeled_statement
-	          | compound_statement
-	          | expression_statement
-	          | selection_statement
-	          | iteration_statement
-	          | jump_statement
+              | compound_statement
+              | expression_statement
+              | selection_statement
+              | iteration_statement
+              | jump_statement
     '''
     # AST Done
     p[0] = p[1]
@@ -1359,8 +1505,8 @@ def p_statement(p):
 def p_labeled_statement(p):
     '''
     labeled_statement : ID ':' statement
-	                  | CASE constant_expression ':' statement
-	                  | DEFAULT ':' statement
+                      | CASE constant_expression ':' statement
+                      | DEFAULT ':' statement
     '''
     # AST Done
     if (len(p) == 4):
@@ -1376,7 +1522,7 @@ def p_labeled_statement(p):
 def p_compound_statement(p):
     '''
     compound_statement : '{' markerCompStatPush '}' markerCompStatPop
-	                   | '{' markerCompStatPush block_item_list '}' markerCompStatPop
+                       | '{' markerCompStatPush block_item_list '}' markerCompStatPop
     '''
     if (len(p) == 5):
         p[0] = Node('EmptySCOPE')
@@ -1410,7 +1556,7 @@ def p_block_item_list(p):
 def p_block_item(p):
     '''
     block_item : declaration
-	            | statement
+                | statement
     '''
     # AST Done
     if (len(p) == 2):
@@ -1419,7 +1565,7 @@ def p_block_item(p):
 def p_expression_statement(p):
     '''
     expression_statement : ';'
-	                     | expression ';'
+                         | expression ';'
     '''
     # AST Done
     if len(p) == 2:
@@ -1430,8 +1576,8 @@ def p_expression_statement(p):
 def p_selection_statement(p):
     '''
     selection_statement : IF '(' expression ')' statement
-	                    | IF '(' expression ')' statement ELSE statement
-	                    | SWITCH '(' expression ')' statement
+                        | IF '(' expression ')' statement ELSE statement
+                        | SWITCH '(' expression ')' statement
     '''
     # AST done
     if(len(p) == 6):
@@ -1444,11 +1590,11 @@ def p_selection_statement(p):
 def p_iteration_statement(p):
     '''
     iteration_statement : WHILE '(' expression ')' statement
-	                    | DO statement WHILE '(' expression ')' ';'
-	                    | FOR '(' expression_statement expression_statement ')' statement
-	                    | FOR '(' expression_statement expression_statement expression ')' statement
-	                    | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
-	                    | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
+                        | DO statement WHILE '(' expression ')' ';'
+                        | FOR '(' expression_statement expression_statement ')' statement
+                        | FOR '(' expression_statement expression_statement expression ')' statement
+                        | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
+                        | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
     '''
     # AST done
     if len(p) == 6:
@@ -1481,10 +1627,10 @@ def p_markerForPop(p):
 def p_jump_statement(p):
     '''
     jump_statement : GOTO ID ';'
-	               | CONTINUE ';'
-	               | BREAK ';'
-	               | RETURN ';'
-	               | RETURN expression ';'
+                   | CONTINUE ';'
+                   | BREAK ';'
+                   | RETURN ';'
+                   | RETURN expression ';'
     '''
     # AST done
     if (len(p) == 3):
@@ -1507,7 +1653,7 @@ def p_start(p):
 def p_translation_unit(p):
     '''
     translation_unit : external_declaration
-	                 | translation_unit external_declaration
+                     | translation_unit external_declaration
     '''
     # AST done
     # Here
@@ -1525,7 +1671,7 @@ def p_translation_unit(p):
 def p_external_declaration(p):
     '''
     external_declaration : function_definition
-	                     | declaration
+                         | declaration
     '''
     # AST Done
     p[0] = p[1]
@@ -1620,7 +1766,7 @@ def p_markerFuncPop(p):
 def p_declaration_list(p):
     '''
     declaration_list : declaration
-	                 | declaration_list declaration
+                     | declaration_list declaration
     '''
     # AST done
     if (len(p) == 2):
