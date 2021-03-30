@@ -95,7 +95,7 @@ class CLexer(object):
         'FLOAT_CONSTANT',
         'INT_CONSTANT',
         'STRING_LITERAL',
-        'CONSTANT',
+        # 'CONSTANT',
         'ERROR',         #to denote any kind of scanning error
         
         # Operators
@@ -173,7 +173,7 @@ class CLexer(object):
     char_const = r'(\'(\\.|[^\\\'])+\')'
     @TOKEN(char_const)
     def t_CHAR_CONSTANT(self, t):
-        t.type = 'CONSTANT'
+        t.type = 'CHAR_CONSTANT'
         return t
 
     # Floating constants
@@ -183,7 +183,7 @@ class CLexer(object):
     @TOKEN(float_constant)
     def t_FLOAT_CONSTANT(self, t):
         t.value = float(t.value) # converting the lexeme to float value
-        t.type = 'CONSTANT'
+        t.type = 'FLOAT_CONSTANT'
         return t
 
     # Hexadecimal Constants
@@ -191,7 +191,7 @@ class CLexer(object):
     @TOKEN(hexa_const)
     def t_HEXA_CONSTANT(self, t):
         t.value = int(t.value, 16) # converting the lexeme to integer value
-        t.type = 'CONSTANT'
+        t.type = 'INT_CONSTANT'
         return t
 
     # Octal Constants
@@ -206,7 +206,7 @@ class CLexer(object):
     @TOKEN(octal_const)
     def t_OCTAL_CONSTANT(self, t):
         t.value = int(t.value, 8) # converting the lexeme to integer value
-        t.type = 'CONSTANT'
+        t.type = 'INT_CONSTANT'
         return t
 
     # Decimal Constants
@@ -214,7 +214,7 @@ class CLexer(object):
     @TOKEN(integer_const)
     def t_INT_CONSTANT(self, t):
         t.value = int(t.value) # converting the lexeme to integer value
-        t.type = 'CONSTANT'
+        t.type = 'INT_CONSTANT'
         return t
 
     # String Literals
