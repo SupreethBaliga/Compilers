@@ -121,6 +121,15 @@ ast_root = None # this will contain the root of the AST after it is built
 ST = SymbolTable()
 TT = TypeTable()
 
+dit = ['char', 'short', 'int', 'long int']
+dft = ['float', 'double', 'long double']
+iit = ['bool', 'char', 'short', 'int', 'long int']
+aat = ['bool', 'char', 'short', 'int', 'long int',
+      'float', 'double', 'long double']
+adt = ['bool', 'char', 'short', 'int', 'long int',
+      'float', 'double', 'long double',
+      'str', 'void']
+
 def p_primary_expression_1(p):
     '''
     primary_expression : ID
@@ -129,11 +138,28 @@ def p_primary_expression_1(p):
     if found: # Change this accordingly
 
 
+        if entry['check'] == 'FUNC':
+            
+            # print('BEGIN: ',entry)
+            # print()
+            # for i in entry['__scope__'][0]:
+            #     print(i)
+
+            p[0] = Node(str(p[1]['lexeme']))
+            p[0].type = []
+            p[0].type.append('func')
+            p[0].ret_type = entry['type']
+
+            # To add stuff here. What are the function's parameters??
+
+            return
+
+
         # Not considering short, signed, unsigned, bool for now, change later
 
-        for i in range(len(entry['type'])):
-            if entry['type'][i] in ['short', 'signed', 'unsigned', 'bool']:
-                entry['type'][i] = 'int'
+        # for i in range(len(entry['type'])):
+        #     if entry['type'][i] in ['short', 'signed', 'unsigned', 'bool']:
+        #         entry['type'][i] = 'int'
 
         # ----------------------------------------------------------------        
 
@@ -144,7 +170,8 @@ def p_primary_expression_1(p):
         
         p[0] = Node(str(p[1]['lexeme']))
         type_list = entry['type']
-        p[0].isvar = 1
+        if entry['check'] == 'VAR':
+            p[0].isvar = 1
 
         p[0].type = []
         if 'long' in type_list and 'int' in type_list:
@@ -153,16 +180,40 @@ def p_primary_expression_1(p):
                 if single_type != 'long' and single_type != 'int':
                     p[0].type.append(single_type)
         
+        elif 'long' in type_list and 'double' in type_list:
+            p[0].type.append('long double')
+            for single_type in type_list:
+                if single_type != 'long' and single_type != 'double':
+                    p[0].type.append(single_type)
+        
+        elif 'long' in type_list:
+            p[0].type.append('long int')
+            for single_type in type_list:
+                if single_type != 'long':
+                    p[0].type.append(single_type)
+
         elif 'int' in type_list:
             p[0].type.append('int')
             for single_type in type_list:
                 if single_type != 'int':
+                    p[0].type.append(single_type)
+
+        elif 'short' in type_list:
+            p[0].type.append('short')
+            for single_type in type_list:
+                if single_type != 'short':
                     p[0].type.append(single_type)
         
         elif 'char' in type_list:
             p[0].type.append('char')
             for single_type in type_list:
                 if single_type != 'char':
+                    p[0].type.append(single_type)
+        
+        elif 'bool' in type_list:
+            p[0].type.append('bool')
+            for single_type in type_list:
+                if single_type != 'bool':
                     p[0].type.append(single_type)
         
         elif 'str' in type_list:
@@ -181,8 +232,7 @@ def p_primary_expression_1(p):
             p[0].type.append('double')
             for single_type in type_list:
                 if single_type != 'double':
-                    if single_type != 'long':   # change later
-                        p[0].type.append(single_type)
+                    p[0].type.append(single_type)
 
         if isarr > 0:
             temp_type = []
@@ -195,6 +245,12 @@ def p_primary_expression_1(p):
                     temp_type.append(p[0].type[i])
             p[0].type = temp_type
 
+        if 'struct' in type_list:
+            p[0].type.append('struct')
+            for single_type in type_list:
+                if single_type != 'struct':
+                        p[0].type.append(single_type)     
+
 
         if '*' in type_list:
             temp_type = []
@@ -206,6 +262,24 @@ def p_primary_expression_1(p):
                     else:
                         temp_type.append(p[0].type[i])
             p[0].type = temp_type
+        
+
+
+        if 'struct' in p[0].type:
+            p[0].vars = entry['vars']
+
+        # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
+        # elif 'struct *' in p[0].type:
+        #     p[0].vars = entry['vars']
+        # # Remove when we started to give error at declaration of double/triple pointer to struct itself
+        # elif 'struct' in p[0].type[0]:
+        #     ST.error = 1
+        #     print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
+
+
+         
+
+
 
 
 
@@ -233,9 +307,6 @@ def p_identifer(p):
     p[0].isvar = 1
     ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
     ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
-
-
-
 
 
 
@@ -299,7 +370,7 @@ def p_postfix_expression(p):
             ST.error = 1
             print(f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
 
-        elif p[1].type[0]!= 'int' and p[1].type[0]!= 'long int' and p[1].type[0]!= 'char':
+        elif p[1].type[0] not in iit:
             ST.error = 1
             print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
 
@@ -323,38 +394,77 @@ def p_postfix_expression(p):
             p[0] = Node('.',[p[1],p[3]])
             # ----------------------------------------------------------
 
-            # print(p[1].type)
+            if 'struct' not in p[1].type:
+                ST.error = 1
+                print(f'Invalid request for member of object that is not a structure at line {p.lineno(2)}')
 
-            # print("Here")
-            # type of p[0]?
+            elif p3val not in p[1].vars:
+                ST.error = 1
+                print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
+            else:
+                p[0].type = p[1].vars[p3val]['type']
+
+            if 'struct' not in p[0].type:
+                p[0].isvar = 1
+
+
 
         elif p[2] == '(':
             p[0] = Node('FuncCall',[p[1]])
-            # type of p[0]?
+            if 'func' not in p[1].type:
+                ST.error = 1
+                print(f'Cannot call non-function at line {p.lineno(2)}')
+
+            else:
+                p[0].type = p[1].ret_type
+            
 
         elif p[2] == '->':
             p3val = p[3]['lexeme']
             p[3] = Node(str(p3val))
 
             p[0] = Node('->',[p[1],p[3]])
-            # type of p[0]?
+            
+            # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
+
+            # if 'struct *' not in p[1].type:
+            #     ST.error = 1
+            #     print(f'Invalid request for member of object that is not a pointer to a structure at line {p.lineno(2)}')
+            # elif p3val not in p[1].vars:
+            #     ST.error = 1
+            #     print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
+            # else:
+            #     p[0].type = p[1].vars[p3val]['type']
+
+
 
     elif (len(p) == 5):
         if p[2] == '(':
             p[0] = Node('FuncCall',[p[1],p[3]])
+
+            if 'func' not in p[1].type:
+                ST.error = 1
+                print(f'Cannot call non-function at line {p.lineno(2)}')
+
+            else:
+                p[0].type = p[1].ret_type
+
+                # to add stuff here
+                # how to check parameters of fucntion?
+
         elif p[2] == '[':
             
 
             flag = 0
             if 'int' in p[3].type:
-                flag = 1
+                flag = 1    
             elif 'long int' in p[3].type:
                 flag = 1
             elif 'char' in p[3].type:
                 flag = 1
 
             if flag==0:
-                ST.Error = 1
+                ST.error = 1
                 print(f'Invalid array subscript of type {p[3].type} at line {p.lineno(2)}')
             else:
                 if p[1].type[0][-1] != '*':
@@ -366,6 +476,7 @@ def p_postfix_expression(p):
                     p[0].type[0] = p[0].type[0][0:-1]
                     if p[0].type[0][-1] == ' ':
                         p[0].type[0] = p[0].type[0][0:-1]
+                        p[0].isvar = 1
 
 
 def p_argument_expression_list(p):
@@ -393,7 +504,6 @@ def p_unary_expression(p):
         p[0] = p[1]
     elif (len(p) == 3):
         if p[1] == '++' or p[1] == '--':
-            global isError
             if p[2].type == None:
                 ST.error = 1
                 print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
@@ -427,7 +537,6 @@ def p_unary_expression(p):
                 p[0].children.append(p[2])
                 G.add_edge(p[0].node,p[2].node)
                 
-                # print(p[1].label[-1])
 
                 if p[1].label[-1] in ['+', '-', '!']:
                     if p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
@@ -440,7 +549,6 @@ def p_unary_expression(p):
                         ST.error = 1
                         print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
 
-                    print(p[0].type)
 
                 elif p[1].label[-1] == '~':
                     if p[2].type[0] in ['int', 'long int', 'char']:
@@ -464,12 +572,18 @@ def p_unary_expression(p):
                              p[0].type[0] = p[0].type[0][:-1]
 
                 elif p[1].label[-1] == '&':
+
+                    # What to do for pointer to structs
+                    # if 'struct *' in p[2].type:
+
+
                     if p[2].isvar==0:
                         ST.error = 1
                         print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
 
                     else:
-                        p[0].type = ['int']
+                        p[0].type = ['int', 'unsigned']
+                        # How to check if this is pointer
 
 
 
@@ -518,29 +632,24 @@ def p_mulitplicative_expression(p):
     elif (len(p) == 4):
         p[0] = Node(str(p[2]),[p[1],p[3]])
         
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
-            if p[1].type[0] == 'double' or p[3].type[0] == 'double':
-                p[0].type = 'double'
-            elif p[1].type[0] == 'float' or p[3].type[0] == 'float':
-                p[0].type = 'float'
-            elif p[1].type[0] == 'long int' or p[3].type[0] == 'long int':
-                p[0].type = 'long int'
-            elif p[1].type[0] == 'int' or p[3].type[0] == 'int':
-                p[0].type = 'int'
-            elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
-                p[0].type = 'char'
-            else:
-                ST.error = 1
-                print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
+        elif p[1].type[0] in aat and p[3].type[0] in aat:
+            p[0].type = []
+            p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
+            if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
+                p[0].type.append('unsigned')
+            
 
-            p[0].label = p[0].label + p[0].type
+            p[0].label = p[0].label + '_' +  p[0].type[0]
+            if len(p[0].type)==2:
+                p[0].label = p[0].label + '_' +  p[0].type[1]
+
             p[0].node.attr['label'] = p[0].label
-            p[0].type = [p[0].type]
+
+
         else :
             ST.error = 1
             print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
@@ -563,41 +672,37 @@ def p_additive_expression(p):
     elif (len(p) == 4):
         p[0] = Node(str(p[2]),[p[1],p[3]])
         
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double']:
-            if p[1].type[0] == 'double' or p[3].type[0] == 'double':
-                p[0].type = 'double'
-            elif p[1].type[0] == 'float' or p[3].type[0] == 'float':
-                p[0].type = 'float'
-            elif p[1].type[0] == 'long int' or p[3].type[0] == 'long int':
-                p[0].type = 'long int'
-            elif p[1].type[0] == 'int' or p[3].type[0] == 'int':
-                p[0].type = 'int'
-            elif p[1].type[0] == 'char' or p[3].type[0] == 'char':
-                p[0].type = 'char'
-            else:
-                ST.error = 1
-                print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
+        elif p[1].type[0] in aat and p[3].type[0] in aat:
+            p[0].type = []
+            p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
+            if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
+                p[0].type.append('unsigned')
+            
 
-            p[0].label = p[0].label + p[0].type
+            p[0].label = p[0].label + '_' +  p[0].type[0]
+            if len(p[0].type)==2:
+                p[0].label = p[0].label + '_' +  p[0].type[1]
+
             p[0].node.attr['label'] = p[0].label
-            p[0].type = [p[0].type]
+
+
+            
         
-        elif p[1].type[0][-1] == '*' and p[3].type[0] in ['int', 'long int', 'char']:
+        elif p[1].type[0][-1] == '*' and p[3].type[0] in iit:
             p[0].label = p[0].label + p[1].type[0]
             p[0].node.attr['label'] = p[0].label
             p[0].type = p[1].type
         
-        elif p[3].type[0][-1] == '*' and p[1].type[0] in ['int', 'long int', 'char'] and p[0].label=='+':
+        elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='+':
             p[0].label = p[0].label + p[1].type[0]
             p[0].node.attr['label'] = p[0].label
             p[0].type = p[3].type
         
-        elif p[3].type[0][-1] == '*' and p[1].type[0] in ['int', 'long int', 'char'] and p[0].label=='-':
+        elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='-':
             ST.error = 1
             print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
@@ -620,14 +725,18 @@ def p_shift_expression(p):
         
         
 
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+        elif p[1].type[0] in iit and p[3].type[0] in iit:
             p[0] = Node(str(p[2]),[p[1],p[3]])
-            p[0].type = ['int']
+            if iit.index(p[1].type[0]) <= 3:
+                p[0].type = ['int']
+            else:
+                p[0].type = ['long int']
+            if 'unsigned' in p[1].type:
+                p[0].type.append('unsigned')
 
         else:
             ST.error = 1
@@ -648,22 +757,24 @@ def p_relational_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
+        elif p[1].type[0] in aat and p[3].type[0] in aat :
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
-            if p[1].type[0] in ['float', 'double'] or p[3].type[0] in ['float', 'double']:
-                if p[1].type[0] == 'double' or p[3].type[0] == 'double':
-                    p[0].type = ['double']
-                else:
-                    p[0].type = ['float']
+            
+            p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+            if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                p[0].label = p[0].label + '_' +  'unsigned'
+                p[0].node.attr['label'] = p[0].label
+        
         elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
+            p[0].label += 'str'
+            p[0].node.attr['label'] = p[0].label
 
         else:
             ST.error = 1
@@ -682,22 +793,19 @@ def p_equality_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform equality check operation between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double'] :
+        elif p[1].type[0] in aat and p[3].type[0] in aat :
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
-            if p[1].type[0] in ['float', 'double'] or p[3].type[0] in ['float', 'double']:
-                if p[1].type[0] == 'double' or p[3].type[0] == 'double':
-                    p[0].type = ['double']
-                else:
-                    p[0].type = ['float']
+
         elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
+            p[0].label += 'str'
+            p[0].node.attr['label'] = p[0].label
 
         else:
             ST.error = 1
@@ -712,14 +820,17 @@ def p_and_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+        elif p[1].type[0] in iit and p[3].type[0] in iit:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
+            if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:  
+                p[0].type = ['long int']
+            if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                p[0].type.append('unsigned')
 
         else:
             ST.error = 1
@@ -735,14 +846,17 @@ def p_exclusive_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+        elif p[1].type[0] in iit and p[3].type[0] in iit:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
+            if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
+                p[0].type = ['long int']
+            if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                p[0].type.append('unsigned')
 
         else:
             ST.error = 1
@@ -756,18 +870,22 @@ def p_inclusive_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char'] and p[3].type[0] in ['int', 'long int', 'char']:
+        elif p[1].type[0] in iit and p[3].type[0] in iit:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
+            if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
+                p[0].type = ['long int']
+            if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                p[0].type.append('unsigned')
 
         else:
             ST.error = 1
             print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
 def p_logical_and_expression(p):
     '''
     logical_and_expression : inclusive_or_expression
@@ -777,18 +895,15 @@ def p_logical_and_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
+        else:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
 
-        else:
-            ST.error = 1
-            print(f'Logical and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
 def p_logical_or_expression(p):
     '''
     logical_or_expression : logical_and_expression
@@ -798,18 +913,14 @@ def p_logical_or_expression(p):
     if (len(p) == 2):
         p[0] = p[1]
     elif (len(p) == 4):
-        global isError
         if p[1].type == None or p[3].type == None:
             ST.error = 1
             print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
 
-        elif p[1].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str'] and p[3].type[0] in ['int', 'long int', 'char', 'float', 'double', 'str']:
+        else:
             p[0] = Node(str(p[2]),[p[1],p[3]])
             p[0].type = ['int']
 
-        else:
-            ST.error = 1
-            print(f'Logical or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
 def p_conditional_expression(p):
     '''
@@ -837,7 +948,6 @@ def p_assignment_expression(p):
 
                 
                 
-                global isError
                 if p[1].isvar == 0:
                     ST.error = 1
                     print(f'Left hand side has to be a variable at line {p[2].lineno}')
@@ -846,8 +956,20 @@ def p_assignment_expression(p):
                     ST.error = 1
                     print(f'Cannot assign value to read only variable at line {p[2].lineno}')
 
-                # Type mismatch arrays etc.
-                # elif p[1] is array/pointer, then no assignment
+                elif p[1].type[0] in aat and p[3].type[0] not in aat:
+                    ST.error = 1
+                    print(f'Type mismatch while assigning value at line {p[2].lineno}')
+                
+                elif p[1].type[0] not in aat and p[3].type[0] in aat:
+                    ST.error = 1
+                    print(f'Type mismatch while assigning value at line {p[2].lineno}')
+                
+                elif p[1].type[0][-1] == '*' and p[3].type[0] not in iit :    
+                    ST.error = 1
+                    print(f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
+                
+                
+
 
                 else:
                     G.add_edge(p[0].node,p[1].node)
@@ -997,32 +1119,44 @@ def p_init_declarator(p):
         found, entry = ST.ReturnSymTabEntry(var_name, p.lineno(1))
         # print(entry['line'])
 
-        data_type_count = 0
-        if 'int' in entry['type'] or 'short' in entry['type'] or 'long' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type']:
-            data_type_count += 1
-        if 'float' in entry['type']:
-            data_type_count += 1
-        if 'double' in entry['type']:
-            data_type_count += 1
-        if 'void' in entry['type']:
-            data_type_count += 1
-        if 'char' in entry['type']:
-            data_type_count += 1
-        if 'bool' in entry['type']:
-            data_type_count += 1
-        if 'long' in entry['type'] and 'short' in entry['type']:
-            data_type_count += 1
-        if 'signed' in entry['type'] and 'unsigned' in entry['type']:
-            data_type_count += 1
-        if 'double' in entry['type'] and 'long' in entry['type']:
-            data_type_count -= 1
-            if 'int' in entry['type'] or 'short' in entry['type'] or 'unsigned' in entry['type'] or 'signed' in entry['type']:
-                data_type_count += 1
+        temp_type_list = []
+        for single_type in entry['type']:
+            if single_type != '*':
+                temp_type_list.append(single_type)
 
-        if data_type_count > 1:    
+        if len(temp_type_list) != len(set(temp_type_list)):
             ST.error = 1
-            # print(entry)
-            print('Two or more conflicting data types specified for variable at line', entry['line']) 
+            print('variables cannot have duplicating type of declarations at line', entry['line'])
+        
+
+        if 'long' in entry['type'] and 'short' in entry['type']:
+            ST.error = 1
+            print('variable cannot be both long and short at line', entry['line'])
+        elif 'unsigned' in entry['type'] and 'signed' in entry['type']:
+            ST.error = 1
+            print('variable cannot be both signed and unsigned at line', entry['line'])
+        else:
+            data_type_count = 0
+            if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type'] or 'char' in entry['type']:
+                data_type_count += 1
+            if 'bool' in  entry['type']:
+                data_type_count += 1
+            if 'float' in entry['type']:
+                data_type_count += 1
+            if 'double' in entry['type']:
+                data_type_count += 1
+            if 'void' in entry['type']:
+                data_type_count += 1
+            if data_type_count > 1:    
+                ST.error = 1
+                print('Two or more conflicting data types specified for variable at line', entry['line']) 
+
+            if 'long' in entry['type']:
+                if 'char' in entry['type'] or 'bool' in  entry['type'] or 'float' in  entry['type'] or 'void' in  entry['type']:
+                    ST.error = 1
+                    print('Two or more conflicting data types specified for variable at line', entry['line'])
+
+
 
     # <---------------XXXXX------------------>
 
