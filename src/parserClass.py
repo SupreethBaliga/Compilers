@@ -400,12 +400,12 @@ def p_postfix_expression(p):
 
             elif p3val not in p[1].vars:
                 ST.error = 1
-                print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
+                print(f'Invalid request for member of object that does not belong to then structure at {p.lineno(2)}')
             else:
                 p[0].type = p[1].vars[p3val]['type']
 
-            if 'struct' not in p[0].type:
-                p[0].isvar = 1
+                if 'struct' not in p[0].type:
+                    p[0].isvar = 1
 
 
 
@@ -450,7 +450,7 @@ def p_postfix_expression(p):
                 p[0].type = p[1].ret_type
 
                 # to add stuff here
-                # how to check parameters of fucntion?
+                # how to check parameters of function?
 
         elif p[2] == '[':
             
@@ -566,6 +566,7 @@ def p_unary_expression(p):
                         ST.error = 1
                         print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                     else:
+                        p[0].isvar = 1
                         p[0].type = p[2].type
                         p[0].type[0] = p[0].type[0][:-1]
                         if p[0].type[0][-1] == ' ':
