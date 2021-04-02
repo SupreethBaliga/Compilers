@@ -400,7 +400,7 @@ def p_postfix_expression(p):
 
             elif p3val not in p[1].vars:
                 ST.error = 1
-                print(f'Invalid request for member of object that does not belong to then structure at {p.lineno(2)}')
+                print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
             else:
                 p[0].type = p[1].vars[p3val]['type']
 
