@@ -961,7 +961,7 @@ def p_assignment_expression(p):
                     ST.error = 1
                     print(f'Type mismatch while assigning value at line {p[2].lineno}')
                 
-                elif p[1].type[0] not in aat and p[3].type[0] in aat:
+                elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                     ST.error = 1
                     print(f'Type mismatch while assigning value at line {p[2].lineno}')
                 
@@ -969,7 +969,9 @@ def p_assignment_expression(p):
                     ST.error = 1
                     print(f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
                 
-                
+                elif p[1].type[0][-1] == '*' and p[3].type[0] in iit and p[2].label[0] not in ['+', '-', '=']: # and p[2] is multiplicative
+                    ST.error = 1
+                    print(f'Incompatible operands to binary operator {p[2].label}, pointer and {p[3].type} at line {p[2].lineno}')
 
 
                 else:
