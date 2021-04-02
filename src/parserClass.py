@@ -1878,11 +1878,15 @@ def p_markerFunc1(p):
     # print('This is end of the function')
 
     ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+    param_nums = 0 
     for key in p[0].variables.keys():
         if not key == function_name:
             ST.ModifySymbol(key, "type", p[0].variables[key])
+            ST.ModifySymbol(key, "check", "PARAM")
+            param_nums += 1
         else:
             ST.ModifySymbol(key, "type", p[0].variables[key][1:])
+    ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
     # Add code before this
     #  <----------------------XXXXXX------------------>
 
@@ -1911,11 +1915,15 @@ def p_markerFunc2(p):
     # items in the list will be return type.
 
     ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+    param_nums = 0 
     for key in p[0].variables.keys():
         if not key == function_name:
             ST.ModifySymbol(key, "type", p[0].variables[key])
+            ST.ModifySymbol(key, "check", "PARAM")
+            param_nums += 1
         else:
             ST.ModifySymbol(key, "type", p[0].variables[key][1:])
+    ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
     #  <----------------------XXXX------------------>
 
 def p_markerFuncPop(p):
