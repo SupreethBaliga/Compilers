@@ -140,28 +140,22 @@ def p_primary_expression_1(p):
 
         if entry['check'] == 'FUNC':
             
-            # print('BEGIN: ',entry)
-            # print()
-            # for i in entry['__scope__'][0]:
-            #     print(i)
+
 
             p[0] = Node(str(p[1]['lexeme']))
             p[0].type = []
             p[0].type.append('func')
             p[0].ret_type = entry['type']
-
-            # To add stuff here. What are the function's parameters??
-
+            p[0].param_nums = entry['PARAM_NUMS']
+            p[0].params = []
+            for var in entry['__scope__'][0]:
+                if var == 'StructOrUnion':
+                    p[0].structorunion = entry['__scope__'][0][var]
+                    continue
+                if entry['__scope__'][0][var]['check'] == 'PARAM':
+                    p[0].params.append(entry['__scope__'][0][var])
             return
 
-
-        # Not considering short, signed, unsigned, bool for now, change later
-
-        # for i in range(len(entry['type'])):
-        #     if entry['type'][i] in ['short', 'signed', 'unsigned', 'bool']:
-        #         entry['type'][i] = 'int'
-
-        # ----------------------------------------------------------------        
 
         isarr = 0
         for i in range(len(entry['type'])):
@@ -337,7 +331,6 @@ def p_CharConst(p):
 
 
 
-
 def p_StringConst(p):
     '''
     StringConst : STRING_LITERAL
@@ -415,6 +408,11 @@ def p_postfix_expression(p):
                 ST.error = 1
                 print(f'Cannot call non-function at line {p.lineno(2)}')
 
+            elif p[1].param_nums != 0:
+                ST.error = 1
+                print(f'{p[1].param_nums} Parameters required to call function at line {p.lineno(2)} ')
+
+
             else:
                 p[0].type = p[1].ret_type
             
@@ -446,11 +444,33 @@ def p_postfix_expression(p):
                 ST.error = 1
                 print(f'Cannot call non-function at line {p.lineno(2)}')
 
+            elif p[3].param_nums != p[1].param_nums:
+                ST.error = 1
+                print(f'Incorrect number of parameters (given: {p[3].param_nums}, required: {p[1].param_nums}) at line  {p.lineno(2)}')
             else:
+                ctr = -1
+                for i in p[1].params:
+                    ctr += 1
+                    print(i, p[3].params[ctr])
+                    if '*' in i['type'] and p[3].params[ctr][0] in dft:
+                        ST.error = 1
+                        print(f'Cannot assign float value to pointer at line {p.lineno(2)}')
+                        return
+                    if 'struct' in i['type'][0]  and 'struct' not in p[3].params[ctr]:
+                        ST.error = 1
+                        print(f'Cannot assign non-struct value to struct object at line {p.lineno(2)}')
+                        return
+                    if 'struct' not in i['type'][0]  and 'struct' in p[3].params[ctr]:
+                        ST.error = 1
+                        print(f'Cannot assign struct value to non-struct  at line {p.lineno(2)}')
+                        return
+                    if 'struct' in i['type'][0]  and 'struct'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
+                        ST.error = 1
+                        print(f'Cannot assign struct value between incompatible objects at line {p.lineno(2)}')
+                        return
                 p[0].type = p[1].ret_type
+                
 
-                # to add stuff here
-                # how to check parameters of function?
 
         elif p[2] == '[':
             
@@ -487,8 +507,21 @@ def p_argument_expression_list(p):
     # AST Done
     if (len(p) == 2):
         p[0] = p[1]
+        p[0].param_nums = 1
+        p[0].params = []
+        p[0].params.append(p[1].type) 
+        p[0].type = ['arg list']
+
+        # print("Here", p[0].params) 
+
     elif (len(p) == 4):
         p[0] = Node(',',[p[1],p[3]])
+        p[0].param_nums = p[1].param_nums + 1
+        p[0].type = ['arg list']
+        p[0].params = p[1].params
+        p[0].params.append(p[3].type)
+
+        # print("Here2", p[0].params) 
 
 def p_unary_expression(p):
     '''
@@ -949,13 +982,21 @@ def p_assignment_expression(p):
 
                 
                 
-                if p[1].isvar == 0:
+                if p[1].isvar == 0 and 'struct' not  in p[1].type[0]:
                     ST.error = 1
                     print(f'Left hand side has to be a variable at line {p[2].lineno}')
 
                 elif 'const' in p[1].type:
                     ST.error = 1
                     print(f'Cannot assign value to read only variable at line {p[2].lineno}')
+
+                elif p[1].type == None or p[3].type == None:
+                    ST.error = 1;
+                    print(f'Cannot perform assignment at line {p[2].lineno}')
+
+                elif 'struct' in p[1].type and 'struct' in p[3].type and p[1].type[1] != p[3].type[1]:
+                    ST.error = 1;
+                    print(f'Incompatible struct types to perform assignment at line {p[2].lineno}')
 
                 elif p[1].type[0] in aat and p[3].type[0] not in aat:
                     ST.error = 1
@@ -982,6 +1023,7 @@ def p_assignment_expression(p):
                     G.add_subgraph([p[1].node,p[3].node], rank='same')
                     p[0].children.append(p[1])
                     p[0].children.append(p[3])
+                    p[0].type = p[1].type
 
             else:
                 G.add_edge(p[0].node,p[1].node)
