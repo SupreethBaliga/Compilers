@@ -1126,9 +1126,11 @@ class CParser():
                     | declaration_specifiers init_declarator_list ';'
         '''
         if (len(p) == 3):
-            p[0] = Node('TypeDecl')
+            #  This rule is used when declaring structs and union
+            p[0] = Node('TypeDecl',createAST=False)
         elif (len(p) == 4):
-            p[0] = Node('TypeDecl',[p[2]])
+            # p[0] = Node('TypeDecl',[p[2]])
+            p[0] = p[2]
         p[1].removeGraph()
         # Need to remove the nodes for declaration_specifiers
 
@@ -1771,15 +1773,19 @@ class CParser():
             # Doubt here
             p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
         elif len(p) == 3:
-            p[0] = Node('ParDecl',[p[1],p[2]])
+            p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
+            p[1].removeGraph()
+            p[2].removeGraph()
 
     def p_parameter_declaration_2(self, p):
         '''
         parameter_declaration : declaration_specifiers declarator
         '''
         # AST done
-        p[0] = Node('ParDecl',[p[1],p[2]])
+        p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
         p[0].variables = p[2].variables
+        p[1].removeGraph()
+        p[2].removeGraph()
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
         
@@ -2111,14 +2117,15 @@ class CParser():
         # AST doubt
         if (len(p) == 7):
             # Add AST Node for EMPTY SCOPE? (check other places too)
-            p[0] = Node('FUNC',[p[1],p[2]])
+            p[0] = Node('FUNC',[p[2]])
         elif (len(p) == 8):
             if p[3] == '{':
-                p[0] = Node('FUNC',[p[1],p[2],Node('SCOPE', [p[5]])])
+                p[0] = Node('FUNC',[p[2],Node('SCOPE', [p[5]])])
             else:
-                p[0] = Node('FUNC',[p[1],p[2],p[3]])
+                p[0] = Node('FUNC',[p[2],p[3]])
         elif len(p) == 9:
-            p[0] = Node('FUNC',[p[1],p[2],p[3],Node('SCOPE', [p[6]])])
+            p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
+        p[1].removeGraph()
 
     def p_markerFunc1(self, p):
         '''
