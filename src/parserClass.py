@@ -162,6 +162,8 @@ class CParser():
                     if var == 'StructOrUnion':
                         p[0].structorunion = entry['__scope__'][0][var]
                         continue
+                    if type(entry['__scope__'][0][var] == list):
+                        continue
                     if entry['__scope__'][0][var]['check'] == 'PARAM':
                         p[0].params.append(entry['__scope__'][0][var])
                 return
@@ -686,13 +688,11 @@ class CParser():
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
                     p[0].type.append('unsigned')
                 
-
-                p[0].label = p[0].label + '_' +  p[0].type[0]
+                p[0].label = p[0].label +  p[0].type[0]
                 if len(p[0].type)==2:
-                    p[0].label = p[0].label + '_' +  p[0].type[1]
+                    p[0].label = p[0].label + ' ' +  p[0].type[1]
 
                 p[0].node.attr['label'] = p[0].label
-
 
             else :
                 self.ST.error = 1
@@ -727,9 +727,9 @@ class CParser():
                     p[0].type.append('unsigned')
                 
 
-                p[0].label = p[0].label + '_' +  p[0].type[0]
+                p[0].label = p[0].label +  p[0].type[0]
                 if len(p[0].type)==2:
-                    p[0].label = p[0].label + '_' +  p[0].type[1]
+                    p[0].label = p[0].label + ' ' +  p[0].type[1]
 
                 p[0].node.attr['label'] = p[0].label
 
@@ -777,10 +777,15 @@ class CParser():
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 if iit.index(p[1].type[0]) <= 3:
                     p[0].type = ['int']
+                    p[0].label += 'int'
                 else:
                     p[0].type = ['long int']
+                    p[0].label += 'long int'
                 if 'unsigned' in p[1].type:
                     p[0].type.append('unsigned')
+                    p[0].label += ' unsigned'
+
+                p[0].node.attr['label'] = p[0].label
 
             else:
                 self.ST.error = 1
@@ -871,10 +876,16 @@ class CParser():
             elif p[1].type[0] in iit and p[3].type[0] in iit:
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
-                if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:  
+                if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
+                    p[0].label += 'long int'
+                else:
+                    p[0].label += 'int'
+
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
+                    p[0].label += ' unsigned'
+                p[0].node.attr['label'] = p[0].label
 
             else:
                 self.ST.error = 1
@@ -899,8 +910,14 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
+                    p[0].label += 'long int'
+                else:
+                    p[0].label += 'int'
+
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
+                    p[0].label += ' unsigned'
+                p[0].node.attr['label'] = p[0].label
 
             else:
                 self.ST.error = 1
@@ -923,8 +940,14 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
+                    p[0].label += 'long int'
+                else:
+                    p[0].label += 'int'
+
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
+                    p[0].label += ' unsigned'
+                p[0].node.attr['label'] = p[0].label
 
             else:
                 self.ST.error = 1
@@ -1034,6 +1057,18 @@ class CParser():
                         p[0].children.append(p[1])
                         p[0].children.append(p[3])
                         p[0].type = p[1].type
+
+                        if 'struct' in p[0].type:
+                            p[0].label += 'struct';
+                        elif p[0].type[0][-1] == '*':
+                            p[0].label += 'int unsigned'
+                        else:
+                            p[0].label += p[0].type[0]
+                            if 'unsigned' in p[0].type:
+                                p[0].label += ' unsigned'
+
+                        p[0].node.attr['label'] = p[0].label
+
 
                 else:
                     G.add_edge(p[0].node,p[1].node)
