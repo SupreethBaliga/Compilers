@@ -58,7 +58,6 @@ do
     fi
     
     python3 src/parserClass.py $file
-    # python3 src/primitive_parser.py $file  # For testing using primitive parser.py
  
     RETVAL=$?
 

@@ -21,11 +21,8 @@ class CLexer(object):
         filename, but the lexer will update it upon #line
         directives.
     """
-    def __init__(self, error_func, on_lbrace_func, on_rbrace_func,
-                 type_lookup_func):
+    def __init__(self, error_func, type_lookup_func):
         self.error_func = error_func
-        self.on_lbrace_func = on_lbrace_func
-        self.on_rbrace_func = on_rbrace_func
         self.type_lookup_func = type_lookup_func
 
         # Keeps track of the last token returned from self.token()
@@ -294,16 +291,11 @@ def error_func(msg, row, col):
     global isError
     isError = 1
 
-def on_lbrace_func():
-    pass
-
-def on_rbrace_func():
-    pass
 
 def type_lookup_func():
     return False
 
-clex = CLexer(error_func, on_lbrace_func, on_rbrace_func, type_lookup_func)
+clex = CLexer(error_func, type_lookup_func)
 
 
 # DRIVER CODE
