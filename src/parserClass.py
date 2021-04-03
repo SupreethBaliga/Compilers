@@ -281,12 +281,6 @@ class CParser():
             #     print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
 
 
-            
-
-
-
-
-
 
     def p_primary_expression(self,p):
         '''
@@ -449,7 +443,7 @@ class CParser():
         elif (len(p) == 5):
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
-
+                
                 if 'func' not in p[1].type:
                     self.ST.error = 1
                     print(f'Cannot call non-function at line {p.lineno(2)}')
@@ -1158,10 +1152,11 @@ class CParser():
         
         # Types added
         for var_name in p[0].variables:
+            print(p[0].variables[var_name])
             if not p[0].variables[var_name]:
                 return
-            elif p[0].variables[var_name][0] in ['struct', 'union']:
-                found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][1], p[0].variables[var_name][0], p.lineno(1))
+            elif p[0].variables[var_name][-1] in ['struct', 'union']:
+                found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
                 if found:
                     self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(1))
                     self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(1))
@@ -1296,12 +1291,11 @@ class CParser():
             if self.ST.TT.ReturnTypeTabEntry(p[2].label, p[0].label, p.lineno(2)) is None:
                 self.ST.error = True
             else:
-                p[0].extraValues.append(p[1].label)
                 p[0].extraValues.append(p2val)
+                p[0].extraValues.append(p[1].label)
                 G.add_edge(p[0].node, p[2].node)
                 p[0].children.append(p[2])
-            # checking if the given type exists in type table
-            # print(p[0].label, p[2].label) 
+            
             
         
     def p_markerStructFlag2(self, p):
@@ -1861,6 +1855,7 @@ class CParser():
         start : translation_unit
         '''
         p[0] = p[1]
+        self.AST_ROOT = p[0]
         self.ST.StoreResults()
 
     def p_translation_unit(self, p):

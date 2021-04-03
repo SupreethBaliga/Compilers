@@ -155,3 +155,4 @@ class SymbolTable() :
             else:
                 print(f'Error: The variable {iden} on line {statement_line} is not declared.')
                 self.error = True
+                return None,None
