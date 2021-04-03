@@ -1138,8 +1138,6 @@ class CParser():
                             | storage_class_specifier declaration_specifiers
                             | type_specifier
                             | type_specifier declaration_specifiers
-                            | type_qualifier
-                            | type_qualifier declaration_specifiers
         '''
         if (len(p) == 2):
             p[0] = p[1]
@@ -1405,9 +1403,7 @@ class CParser():
 
     def p_storage_class_specifier(self, p):
         '''
-        storage_class_specifier : TYPEDEF
-                                | EXTERN
-                                | STATIC
+        storage_class_specifier : STATIC
                                 | AUTO
                                 | REGISTER
         '''
@@ -1543,8 +1539,6 @@ class CParser():
         '''
         specifier_qualifier_list : type_specifier specifier_qualifier_list
                                 | type_specifier
-                                | type_qualifier specifier_qualifier_list
-                                | type_qualifier
         '''
         # AST done
         if (len(p) == 2):
@@ -1610,14 +1604,15 @@ class CParser():
         
         # <--------------XXXXXXX---------------->
 
-    def p_type_qualifier(self, p):
-        '''
-        type_qualifier : CONST
-                    | VOLATILE
-        '''
-        # AST done
-        p[0] = Node(str(p[1]))
-        p[0].extraValues.append(str(p[1]))
+    # Commenting the rule for const and volatile
+    # def p_type_qualifier(self, p):
+    #     '''
+    #     type_qualifier : CONST
+    #                 | VOLATILE
+    #     '''
+    #     # AST done
+    #     p[0] = Node(str(p[1]))
+    #     p[0].extraValues.append(str(p[1]))
 
     # To be done from here
 
@@ -1705,9 +1700,7 @@ class CParser():
     def p_pointer(self, p):
         '''
         pointer : '*'
-                | '*' type_qualifier_list
                 | '*' pointer
-                | '*' type_qualifier_list pointer
         '''
         # AST done
         if (len(p) == 2):
@@ -1722,20 +1715,20 @@ class CParser():
             p[0].extraValues = p[2].extraValues + p[3].extraValues
             p[0].extraValues.append("*")
 
-    def p_type_qualifier_list(self, p):
-        '''
-        type_qualifier_list : type_qualifier
-                            | type_qualifier_list type_qualifier
-        '''
-        # AST doubt
-        if len(p) == 2:
-            p[0] = p[1]
-        elif len(p) == 3:
-            p[0] = p[2]
-            if ((p[1] is not None) and (p[1].node is not None)):
-                G.add_edge(p[0].node, p[1].node)
-                p[0].children.append(p[1])
-            p[0].extraValues += p[1].extraValues
+    # def p_type_qualifier_list(self, p):
+    #     '''
+    #     type_qualifier_list : type_qualifier
+    #                         | type_qualifier_list type_qualifier
+    #     '''
+    #     # AST doubt
+    #     if len(p) == 2:
+    #         p[0] = p[1]
+    #     elif len(p) == 3:
+    #         p[0] = p[2]
+    #         if ((p[1] is not None) and (p[1].node is not None)):
+    #             G.add_edge(p[0].node, p[1].node)
+    #             p[0].children.append(p[1])
+    #         p[0].extraValues += p[1].extraValues
 
     def p_parameter_type_list(self, p):
         '''
