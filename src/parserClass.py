@@ -275,12 +275,12 @@ class CParser():
                 p[0].vars = entry['vars']
 
             # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
-            # elif 'struct *' in p[0].type:
-            #     p[0].vars = entry['vars']
-            # # Remove when we started to give error at declaration of double/triple pointer to struct itself
-            # elif 'struct' in p[0].type[0]:
-            #     self.ST.error = 1
-            #     print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
+            elif 'struct *' in p[0].type:
+                p[0].vars = entry['vars']
+            # Remove when we started to give error at declaration of double/triple pointer to struct itself
+            elif 'struct' in p[0].type[0]:
+                self.ST.error = 1
+                print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
 
 
 
@@ -431,14 +431,14 @@ class CParser():
                 
                 # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
 
-                # if 'struct *' not in p[1].type:
-                #     self.ST.error = 1
-                #     print(f'Invalid request for member of object that is not a pointer to a structure at line {p.lineno(2)}')
-                # elif p3val not in p[1].vars:
-                #     self.ST.error = 1
-                #     print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
-                # else:
-                #     p[0].type = p[1].vars[p3val]['type']
+                if 'struct *' not in p[1].type:
+                    self.ST.error = 1
+                    print(f'Invalid request for member of object that is not a pointer to a structure at line {p.lineno(2)}')
+                elif p3val not in p[1].vars:
+                    self.ST.error = 1
+                    print(f'Invalid request for member of object that does not belong to the structure at {p.lineno(2)}')
+                else:
+                    p[0].type = p[1].vars[p3val]['type']
 
 
 
@@ -446,7 +446,7 @@ class CParser():
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
                 
-                if 'func' not in p[1].type:
+                if p[1] == None or 'func' not in p[1].type:
                     self.ST.error = 1
                     print(f'Cannot call non-function at line {p.lineno(2)}')
 
@@ -518,7 +518,6 @@ class CParser():
             p[0].params.append(p[1].type) 
             p[0].type = ['arg list']
 
-            # print("Here", p[0].params) 
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
@@ -527,7 +526,6 @@ class CParser():
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
 
-            # print("Here2", p[0].params) 
 
     def p_unary_expression(self,p):
         '''
@@ -617,9 +615,13 @@ class CParser():
                         # if 'struct *' in p[2].type:
 
 
-                        if p[2].isvar==0:
+                        if 'struct' != p[2].type[0] and p[2].isvar==0:
                             self.ST.error = 1
                             print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
+                        elif 'struct' == p[2].type[0]:
+                            p[0].type = p[2].type
+                            p[0].type[0] += ' *'
+
 
                         else:
                             p[0].type = ['int', 'unsigned']
@@ -1021,6 +1023,10 @@ class CParser():
                         self.ST.error = 1;
                         print(f'Cannot perform assignment at line {p[2].lineno}')
 
+                    elif 'struct' in p[1].type and 'struct' not in p[3].type:
+                        self.ST.error = 1;
+                        print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p[2].lineno}')
+
                     elif 'struct' in p[1].type and 'struct' in p[3].type and p[1].type[1] != p[3].type[1]:
                         self.ST.error = 1;
                         print(f'Incompatible struct types to perform assignment at line {p[2].lineno}')
@@ -1181,13 +1187,15 @@ class CParser():
         p[0].extraValues = p[-1].extraValues
         for val in p[0].extraValues:
             p[0].addTypeInDict(val)
+
         # for key in p[0].variables.keys():
         #     print("The key is: " + key)
-        #     print(p[0].variables[key])
+        #     print('  ', p[0].variables[key])
+        # print(p[3].type)
         
         # Types added
         for var_name in p[0].variables:
-            print(p[0].variables[var_name])
+            # print(p[0].variables[var_name])
             if not p[0].variables[var_name]:
                 return
             elif p[0].variables[var_name][-1] in ['struct', 'union']:
@@ -1202,7 +1210,6 @@ class CParser():
                     # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
 
             found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-            # print(entry['line'])
 
             temp_type_list = []
             for single_type in entry['type']:
@@ -1240,6 +1247,156 @@ class CParser():
                     if 'char' in entry['type'] or 'bool' in  entry['type'] or 'float' in  entry['type'] or 'void' in  entry['type']:
                         self.ST.error = 1
                         print('Two or more conflicting data types specified for variable at line', entry['line'])
+
+                
+
+            if (len(p) == 4):
+
+                # print(p[1])
+
+                # return
+
+
+
+
+                isarr = 0
+                for i in range(len(entry['type'])):
+                    if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
+                        isarr += 1
+                
+                type_list = entry['type']
+                if entry['check'] == 'VAR':
+                    p[1].isvar = 1
+
+                p[1].type = []
+                if 'long' in type_list and 'int' in type_list:
+                    p[1].type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'int':
+                            p[1].type.append(single_type)
+                
+                elif 'long' in type_list and 'double' in type_list:
+                    p[1].type.append('long double')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'double':
+                            p[1].type.append(single_type)
+                
+                elif 'long' in type_list:
+                    p[1].type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long':
+                            p[1].type.append(single_type)
+
+                elif 'int' in type_list:
+                    p[1].type.append('int')
+                    for single_type in type_list:
+                        if single_type != 'int':
+                            p[1].type.append(single_type)
+
+                elif 'short' in type_list:
+                    p[1].type.append('short')
+                    for single_type in type_list:
+                        if single_type != 'short':
+                            p[1].type.append(single_type)
+                
+                elif 'char' in type_list:
+                    p[1].type.append('char')
+                    for single_type in type_list:
+                        if single_type != 'char':
+                            p[1].type.append(single_type)
+                
+                elif 'bool' in type_list:
+                    p[1].type.append('bool')
+                    for single_type in type_list:
+                        if single_type != 'bool':
+                            p[1].type.append(single_type)
+                
+                elif 'str' in type_list:
+                    p[1].type.append('str')
+                    for single_type in type_list:
+                        if single_type != 'str':
+                            p[1].type.append(single_type)
+                
+                elif 'float' in type_list:
+                    p[1].type.append('float')
+                    for single_type in type_list:
+                        if single_type != 'float':
+                            p[1].type.append(single_type)
+
+                elif 'double' in type_list:
+                    p[1].type.append('double')
+                    for single_type in type_list:
+                        if single_type != 'double':
+                            p[1].type.append(single_type)
+
+                if isarr > 0:
+                    temp_type = []
+                    temp_type.append(p[1].type[0]+' ')
+                    for i in range(isarr):
+                        temp_type[0] += '*'
+
+                    for i in range(len(p[1].type)):
+                        if i>isarr:
+                            temp_type.append(p[1].type[i])
+                    p[1].type = temp_type
+
+                if 'struct' in type_list:
+                    p[1].type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[1].type.append(single_type)     
+
+
+                if '*' in type_list:
+                    temp_type = []
+                    temp_type.append(p[1].type[0]+' *')
+                    for i in range(len(p[1].type)):
+                        if i>=2:
+                            if p[1].type[i] == '*':
+                                temp_type[0] += '*'
+                            else:
+                                temp_type.append(p[1].type[i])
+                    p[1].type = temp_type
+                
+
+
+                if 'struct' in p[1].type:
+                    p[1].vars = entry['vars']
+
+                # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
+                elif 'struct *' in p[1].type:
+                    p[1].vars = entry['vars']
+                # Remove when we started to give error at declaration of double/triple pointer to struct itself
+                elif 'struct' in p[1].type[0]:
+                    self.ST.error = 1
+                    print(f'Multilevel pointer for structures not allowed at line {p.lineno(2)}') 
+
+
+
+
+                if 'struct' in p[1].type and 'struct' not in p[3].type:
+                    self.ST.error = 1;
+                    print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p.lineno(2)}')
+
+                elif 'struct' in p[1].type and 'struct' in p[3].type and p[1].type[1] != p[3].type[1]:
+                    self.ST.error = 1;
+                    print(f'Incompatible struct types to perform assignment at line {p.lineno(2)}')
+
+                elif p[1].type[0] in aat and p[3].type[0] not in aat:
+                    self.ST.error = 1
+                    print(f'Type mismatch while assigning value at line {p.lineno(2)}')
+                
+                elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
+                    self.ST.error = 1
+                    print(f'Type mismatch while assigning value at line {p.lineno(2)}')
+                
+                elif p[1].type[0][-1] == '*' and p[3].type[0] not in iit :    
+                    self.ST.error = 1
+                    print(f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
+
+
+
+
 
 
 
@@ -1877,13 +2034,45 @@ class CParser():
         # AST done
         if (len(p) == 3):
             p[0] = Node(str(p[1]).upper())
+            if p[1] == 'return':
+                found = list(self.ST.Table[0])
+                functype = self.ST.Table[0][found[-1]]['type']
+
+                if functype != ['void']:
+                    self.ST.error = 1
+                    print(f'Need an argument to return of type {functype} at line {p.lineno(1)}')
+
+
+
         else:
             if(p[1] == 'return'):
                 p[0] = Node('RETURN',[p[2]])
+                found = list(self.ST.Table[0])
+                functype = self.ST.Table[0][found[-1]]['type']
+                # print(found[-1])
+                # print('here', self.ST.Table[0][found[-1]]['type'])
+                # print(functype, p[2].type)
+                
+
+                if '*' in functype and '*' not in p[2].type[0] and p[2].type[0] not in iit :
+                    self.ST.error = 1
+                    print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
+
+
+                elif functype[0] in aat and p[2].type[0] not in aat:
+                    self.ST.error = 1
+                    print(f'Type mismatch while returning value at line {p.lineno(1)}')
+                    
+                elif functype == ['void'] and p[2].type[0] != 'void':
+                    self.ST.error = 1
+                    print(f'Cannot return non-void type at line {p.lineno(1)}')
+                    
+
             else:
                 p2val = p[2]['lexeme']
                 p[2] = Node(str(p2val))
                 p[0] = Node('GOTO',[p[2]])
+
 
     def p_start(self, p):
         '''
