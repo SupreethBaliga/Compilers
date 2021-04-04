@@ -142,7 +142,6 @@ sizes = {
     'bool': 1,
     'void': 0
 }
-
 class CParser():
     tokens = CLexer.tokens
     def __init__(self):
@@ -175,10 +174,11 @@ class CParser():
                     if var == 'StructOrUnion':
                         p[0].structorunion = entry['__scope__'][0][var]
                         continue
-                    if type(entry['__scope__'][0][var] == list):
+                    if var == '__scope__':
                         continue
                     if entry['__scope__'][0][var]['check'] == 'PARAM':
                         p[0].params.append(entry['__scope__'][0][var])
+
                 return
 
 
@@ -396,7 +396,14 @@ class CParser():
 
             else:
                 p[0] = Node('POST' + str(p[2]),[p[1]])
-                p[0].type = p[1].type
+
+                if iit.index(p[1].type[0]) < 3:
+                    p[0].type = ['int']
+                    p[0].type += p[1].type[1:]
+                    p[1].totype = p[0].type
+                else:
+                    p[0].type = p[1].type
+
 
         elif (len(p) == 4):
             if p[2] == '.':
@@ -469,8 +476,14 @@ class CParser():
                 else:
                     ctr = -1
                     for i in p[1].params:
+
+
                         ctr += 1
-                        print(i, p[3].params[ctr])
+
+                        # found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
+
+                        print(i['type'], p[3].params[ctr])
+
                         if '*' in i['type'] and p[3].params[ctr][0] in dft:
                             self.ST.error = 1
                             print(f'Cannot assign float value to pointer at line {p.lineno(2)}')
@@ -487,6 +500,10 @@ class CParser():
                             self.ST.error = 1
                             print(f'Cannot assign struct value between incompatible objects at line {p.lineno(2)}')
                             return
+
+
+
+
                     p[0].type = p[1].ret_type
                     
 
@@ -574,7 +591,13 @@ class CParser():
                     print(f'Cannot use increment/decrement operator on constant at line {p.lineno(1)}')
                 else:
                     p[0] = Node('PRE' + str(p[1]),[p[2]])
-                    p[0].type = p[2].type
+
+                    if iit.index(p[2].type[0]) < 3:
+                        p[0].type = ['int']
+                        p[0].type += p[2].type[1:]
+                        p[2].totype = p[0].type
+                    else:
+                        p[0].type = p[2].type
 
             elif p[1] == 'sizeof':
                 p[0] = Node('SIZEOF',[p[2]])
@@ -696,6 +719,10 @@ class CParser():
             elif '*' in p[2].type and p[4].type[0] not in iit :    
                 self.ST.error = 1
                 print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
+
+            p[4].totype = p[2].type
+
+            # To do: Uniformity in totype
             
 
 
@@ -724,6 +751,21 @@ class CParser():
                 p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
                     p[0].type.append('unsigned')
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type
+
                 
                 p[0].label = p[0].label +  p[0].type[0]
                 if len(p[0].type)==2:
@@ -762,7 +804,20 @@ class CParser():
                 p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
                     p[0].type.append('unsigned')
-                
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type           
 
                 p[0].label = p[0].label +  p[0].type[0]
                 if len(p[0].type)==2:
@@ -822,6 +877,15 @@ class CParser():
                     p[0].type.append('unsigned')
                     p[0].label += ' unsigned'
 
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+
+
                 p[0].node.attr['label'] = p[0].label
 
             else:
@@ -851,16 +915,49 @@ class CParser():
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 
-                p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
-                if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                p[0].label = p[0].label + ' ' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                flag = 0
+                if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
+                    flag = 1
                     p[0].label = p[0].label + '_' +  'unsigned'
                     p[0].node.attr['label'] = p[0].label
+
+
+                
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type: 
+                    p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                    if flag:
+                        p[1].totype.append('unsigned')
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type:
+                    p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                    if flag:
+                        p[3].totype.append('unsigned')
+
+
             
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 p[0].label += 'str'
                 p[0].node.attr['label'] = p[0].label
+
+            elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
+                self.ST.error = 1
+                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+            elif p[3].type[0][-1] == '*' and p[1].type[0] in dft:
+                self.ST.error = 1
+                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+            elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type:
+                p[0] = Node(str(p[2]),[p[1],p[3]])
+                p[0].type = ['int']
+                p[0].label += ' *'
+                p[0].node.attr['label'] = p[0].label      
+
+                p[1].totype = ['int', 'unsigned']      
+                p[3].totype = ['int', 'unsigned']      
+
 
             else:
                 self.ST.error = 1
@@ -881,17 +978,54 @@ class CParser():
         elif (len(p) == 4):
             if p[1].type == None or p[3].type == None:
                 self.ST.error = 1
-                print(f'Cannot perform equality check operation between expressions on line {p.lineno(2)}')
+                print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in aat and p[3].type[0] in aat :
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
+                
+                p[0].label = p[0].label + ' ' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                flag = 0
+                if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
+                    flag = 1
+                    p[0].label = p[0].label + '_' +  'unsigned'
+                    p[0].node.attr['label'] = p[0].label
 
+
+                
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type: 
+                    p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                    if flag:
+                        p[1].totype.append('unsigned')
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type:
+                    p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                    if flag:
+                        p[3].totype.append('unsigned')
+
+
+            
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 p[0].label += 'str'
                 p[0].node.attr['label'] = p[0].label
+
+            elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
+                self.ST.error = 1
+                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+            elif p[3].type[0][-1] == '*' and p[1].type[0] in dft:
+                self.ST.error = 1
+                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+            elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type:
+                p[0] = Node(str(p[2]),[p[1],p[3]])
+                p[0].type = ['int']
+                p[0].label += ' *'
+                p[0].node.attr['label'] = p[0].label      
+
+                p[1].totype = ['int', 'unsigned']      
+                p[3].totype = ['int', 'unsigned']     
 
             else:
                 self.ST.error = 1
@@ -915,14 +1049,30 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
-                    p[0].label += 'long int'
+                    p[0].label += ' long int'
                 else:
-                    p[0].label += 'int'
+                    p[0].label += ' int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
                     p[0].label += ' unsigned'
                 p[0].node.attr['label'] = p[0].label
+
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type    
+
 
             else:
                 self.ST.error = 1
@@ -956,6 +1106,20 @@ class CParser():
                     p[0].label += ' unsigned'
                 p[0].node.attr['label'] = p[0].label
 
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type    
+
             else:
                 self.ST.error = 1
                 print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
@@ -985,6 +1149,22 @@ class CParser():
                     p[0].type.append('unsigned')
                     p[0].label += ' unsigned'
                 p[0].node.attr['label'] = p[0].label
+
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p[0].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type    
+
 
             else:
                 self.ST.error = 1
@@ -1098,6 +1278,13 @@ class CParser():
                         p[0].children.append(p[1])
                         p[0].children.append(p[3])
                         p[0].type = p[1].type
+
+                        isin = True
+                        for single_type in p[0].type:
+                            if single_type not in p[3].type:
+                                isin = False
+                        if isin == False:
+                            p[3].totype = p[0].type    
 
                         if 'struct' in p[0].type:
                             p[0].label += 'struct';
@@ -1235,7 +1422,6 @@ class CParser():
         # print(p[3].type)
         
         for var_name in p[0].variables:
-            
             #Updating type
             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
                 found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
@@ -1260,7 +1446,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "varclass", "Local Static", p.lineno(1))
                 else:
                     self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(1))
-            
+
             # updating sizes
             if p[0].variables[var_name]:
                 #handling arrays
@@ -1298,7 +1484,6 @@ class CParser():
             # updating sizes to be allocated based on the type
 
             # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
-
 
             found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
 
@@ -1495,6 +1680,7 @@ class CParser():
         '''
         p[0] = Node(str(p[1]))
         p[0].extraValues.append(str(p[1]))
+
 
     def p_type_specifier(self, p):
         '''
