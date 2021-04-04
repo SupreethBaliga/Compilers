@@ -1177,7 +1177,7 @@ class CParser():
                 G.add_edge(p[0].node, p[2].node)
                 p[0].children.append(p[2])
 
-            p[0].extraValues += p[2].extraValues
+            p[0].extraValues = p[2].extraValues + p[0].extraValues
 
     def p_init_declarator_list(self, p):
         '''
@@ -1431,6 +1431,7 @@ class CParser():
                                 | REGISTER
         '''
         p[0] = Node(str(p[1]))
+        p[0].extraValues.append(str(p[1]))
 
     def p_type_specifier(self, p):
         '''
