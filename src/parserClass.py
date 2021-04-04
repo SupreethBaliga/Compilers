@@ -160,7 +160,9 @@ class CParser():
         if found: # Change this accordingly
 
 
+
             if entry['check'] == 'FUNC':
+
                 
 
 
@@ -189,7 +191,7 @@ class CParser():
             
             p[0] = Node(str(p[1]['lexeme']))
             type_list = entry['type']
-            if entry['check'] == 'VAR':
+            if entry['check'] == 'VAR' or entry['check'] == 'PARAM':
                 p[0].isvar = 1
 
             p[0].type = []
@@ -543,6 +545,8 @@ class CParser():
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
+            if p[1] == None:
+                return
             p[0].param_nums = 1
             p[0].params = []
             p[0].params.append(p[1].type) 
@@ -551,6 +555,8 @@ class CParser():
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
+            if p[1] == None:
+                return
             p[0].param_nums = p[1].param_nums + 1
             p[0].type = ['arg list']
             p[0].params = p[1].params
@@ -1230,7 +1236,6 @@ class CParser():
             if ((p[1] is not None) and (p[1].node is not None)):
                 if ((p[3] is not None) and (p[3].node is not None)):
 
-                    
                     
                     if p[1].isvar == 0 and 'struct' not  in p[1].type[0]:
                         self.ST.error = 1
