@@ -59,7 +59,6 @@ class CLexer(object):
         'do'        : 'DO',
         'double'    : 'DOUBLE',
         'else'      : 'ELSE',
-        'extern'    : 'EXTERN',
         'float'     : 'FLOAT',
         'for'       : 'FOR',
         'goto'      : 'GOTO',
