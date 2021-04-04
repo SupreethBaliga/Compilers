@@ -1746,8 +1746,8 @@ class CParser():
             p[0].extraValues = p[2].extraValues
             p[0].extraValues.append("*")
             p[0].type = ['*']
-            if p[1].type:
-                for single_type in p[1].type:
+            if p[2].type:
+                for single_type in p[2].type:
                     p[0].type.append(single_type)
         elif (len(p) == 4):
             p[0] = Node('PTR',[p[2],p[3]])
@@ -2187,7 +2187,7 @@ class CParser():
         elif len(p) == 9:
             p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
         p[1].removeGraph()
-        
+
     def p_markerFunc1(self, p):
         '''
         markerFunc1 : 
