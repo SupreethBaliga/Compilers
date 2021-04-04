@@ -156,3 +156,9 @@ class SymbolTable() :
                 print(f'Error: The variable {iden} on line {statement_line} is not declared.')
                 self.error = True
                 return None,None
+        
+    def isGlobal(self, iden):
+        if len(self.Table) == 0:
+            return True
+        else:
+            return False

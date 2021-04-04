@@ -74,11 +74,9 @@ class CLexer(object):
         'static'    : 'STATIC',
         'struct'    : 'STRUCT',
         'switch'    : 'SWITCH',
-        'typedef'   : 'TYPEDEF',
         'union'     : 'UNION',
         'unsigned'  : 'UNSIGNED',
         'void'      : 'VOID',
-        'volatile'  : 'VOLATILE',
         'while'     : 'WHILE'
     }
 
