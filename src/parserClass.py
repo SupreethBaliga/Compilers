@@ -657,9 +657,37 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 5):
             p[0] = Node('CAST',[p[2],p[4]])
-
-            # Change this for pointers
             p[0].type = p[2].type
+
+
+            if p[2].type == None or p[4].type == None:
+                self.ST.error = 1;
+                print(f'Cannot perform casting at line {p.lineno(1)}')
+
+            elif 'struct' in p[2].type and '*' not in p[2].type and 'struct' not in p[4].type:
+                self.ST.error = 1;
+                print(f'Cannot cast non-struct value {p[4].type} to struct type {p[2].type} at line {p.lineno(1)}')
+
+            elif 'struct' in p[2].type and 'struct' in p[4].type and p[4].type[1] not in p[2].type:
+                self.ST.error = 1;
+                print(f'Incompatible struct types to perform casting at line {p.lineno(1)}')
+
+            elif p[2].type[0] in aat and p[4].type[0] not in aat:
+                self.ST.error = 1
+                print(f'Type mismatch while casting value at line {p.lineno(1)}')
+            
+            elif p[2].type[0] not in aat and '*' not in p[2].type and p[3].type[0] in aat:
+                self.ST.error = 1
+                print(f'Type mismatch while casting value at line {p.lineno(1)}')
+            
+            elif '*' in p[2].type and p[4].type[0] not in iit :    
+                self.ST.error = 1
+                print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
+            
+
+
+
+
 
     def p_mulitplicative_expression(self,p):
         '''
@@ -1126,7 +1154,7 @@ class CParser():
                     | declaration_specifiers init_declarator_list ';'
         '''
         if (len(p) == 3):
-            #  This rule is used when declaring structs and union
+             #  This rule is used when declaring structs and union
             p[0] = Node('TypeDecl',createAST=False)
         elif (len(p) == 4):
             # p[0] = Node('TypeDecl',[p[2]])
@@ -1252,12 +1280,7 @@ class CParser():
 
             if (len(p) == 4):
 
-                # print(p[1])
-
-                # return
-
-
-
+                
 
                 isarr = 0
                 for i in range(len(entry['type'])):
@@ -1398,8 +1421,6 @@ class CParser():
 
 
 
-
-
         # <---------------XXXXX------------------>
 
 
@@ -1428,6 +1449,8 @@ class CParser():
         if str(p[1]) in ['void' , 'char', 'short', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
             p[0] = Node(str(p[1]))
             p[0].extraValues.append(str(p[1]))
+            p[0].type = []
+            p[0].type.append(str(p[1]))
         else:
             p[0] = p[1]
 
@@ -1437,6 +1460,8 @@ class CParser():
                                 | struct_or_union ID
         '''
         p[0] = p[1]
+        p[0].type += [p[2]['lexeme']]
+
         if (len(p) == 8):
             p2val = p[2]['lexeme']
             p[2] = Node(str(p2val))
@@ -1513,6 +1538,8 @@ class CParser():
                         | UNION
         '''
         p[0] = Node(str(p[1]))
+        p[0].type = [str(p[1]).lower()]
+        
 
     def p_struct_declaration_list(self, p):
         '''
@@ -1547,6 +1574,9 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 3):
             p[0] = p[1]
+
+            for single_type in p[2].type:
+                p[0].type.append(single_type)
 
             if ((p[2] is not None) and (p[2].node is not None)):
                 G.add_edge(p[0].node, p[2].node)
@@ -1615,6 +1645,8 @@ class CParser():
     #     # AST done
     #     p[0] = Node(str(p[1]))
     #     p[0].extraValues.append(str(p[1]))
+        # p[0].type = []
+        # p[0].type.append(str(p[1]))
 
     # To be done from here
 
@@ -1708,14 +1740,26 @@ class CParser():
         if (len(p) == 2):
             p[0] = Node('PTR')
             p[0].extraValues.append("*")
+            p[0].type = ['*']
         elif (len(p) == 3):
             p[0] = Node('PTR',[p[2]])
             p[0].extraValues = p[2].extraValues
             p[0].extraValues.append("*")
+            p[0].type = ['*']
+            if p[1].type:
+                for single_type in p[1].type:
+                    p[0].type.append(single_type)
         elif (len(p) == 4):
             p[0] = Node('PTR',[p[2],p[3]])
             p[0].extraValues = p[2].extraValues + p[3].extraValues
             p[0].extraValues.append("*")
+            p[0].type = ['*']
+            if p[1].type:
+                for single_type in p[1].type:
+                    p[0].type.append(single_type)
+            if p[2].type:
+                for single_type in p[2].type:
+                    p[0].type.append(single_type)
 
     # def p_type_qualifier_list(self, p):
     #     '''
@@ -1811,8 +1855,18 @@ class CParser():
 
         if len(p) == 2:
             p[0] = Node('TypeName',[p[1]])
+            p[0].type = p[1].type
         else:
             p[0] = Node('TypeName',[p[1],p[2]])
+            p[0].type = p[1].type
+
+            if not p[0].type:
+                p[0].type = []
+
+            if p[2].type:
+                for single_type in p[2].type:
+                    p[0].type.append(single_type)
+
 
     def p_abstract_declarator(self, p):
         '''
@@ -1824,8 +1878,15 @@ class CParser():
 
         if len(p) == 2:
             p[0] = Node('AbsDecl',[p[1]])
+            p[0].type = p[1].type
+
         else:
             p[0] = Node('AbsDecl',[p[1],p[2]])
+            p[0].type = p[1].type
+            if p[2].type:
+                for single_type in p[2].type:
+                    p[0].type.append(single_type)
+
 
     def p_direct_abstract_declarator(self, p):
         '''
@@ -2126,7 +2187,7 @@ class CParser():
         elif len(p) == 9:
             p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
         p[1].removeGraph()
-
+        
     def p_markerFunc1(self, p):
         '''
         markerFunc1 : 
