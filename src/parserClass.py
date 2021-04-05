@@ -265,6 +265,7 @@ class CParser():
                     if i>isarr:
                         temp_type.append(p[0].type[i])
                 p[0].type = temp_type
+                p[0].type.append('arr')
 
             if 'struct' in type_list:
                 p[0].type.append('struct')
@@ -293,7 +294,7 @@ class CParser():
             elif 'struct *' in p[0].type:
                 p[0].vars = entry['vars']
             # Remove when we started to give error at declaration of double/triple pointer to struct itself
-            elif 'struct' in p[0].type[0]:
+            elif p[0].type and 'struct' in p[0].type[0]:
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
 
@@ -1236,18 +1237,21 @@ class CParser():
             if ((p[1] is not None) and (p[1].node is not None)):
                 if ((p[3] is not None) and (p[3].node is not None)):
 
+                    if p[1].type == None or p[3].type == None:
+                        self.ST.error = 1;
+                        print(f'Cannot perform assignment at line {p[2].lineno}')
+
+                    elif 'arr' in p[1].type:
+                        self.ST.error = 1
+                        print(f'Cannot perform assignment to array type at line {p[2].lineno}')
                     
-                    if p[1].isvar == 0 and 'struct' not  in p[1].type[0]:
+                    elif p[1].isvar == 0 and 'struct' not  in p[1].type[0]:
                         self.ST.error = 1
                         print(f'Left hand side has to be a variable at line {p[2].lineno}')
 
                     elif 'const' in p[1].type:
                         self.ST.error = 1
                         print(f'Cannot assign value to read only variable at line {p[2].lineno}')
-
-                    elif p[1].type == None or p[3].type == None:
-                        self.ST.error = 1;
-                        print(f'Cannot perform assignment at line {p[2].lineno}')
 
                     elif 'struct' in p[1].type and 'struct' not in p[3].type:
                         self.ST.error = 1;
@@ -1257,6 +1261,10 @@ class CParser():
                         self.ST.error = 1;
                         print(f'Incompatible struct types to perform assignment at line {p[2].lineno}')
 
+                    elif p[1].type in [None, []] or p[3].type in [None, []] :
+                        self.ST.error = 1
+                        print(f'Type mismatch while assigning value at line {p[2].lineno}')
+                    
                     elif p[1].type[0] in aat and p[3].type[0] not in aat:
                         self.ST.error = 1
                         print(f'Type mismatch while assigning value at line {p[2].lineno}')
@@ -1265,7 +1273,7 @@ class CParser():
                         self.ST.error = 1
                         print(f'Type mismatch while assigning value at line {p[2].lineno}')
                     
-                    elif p[1].type[0][-1] == '*' and p[3].type[0] not in iit :    
+                    elif p[1].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit :    
                         self.ST.error = 1
                         print(f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
                     
@@ -1622,6 +1630,7 @@ class CParser():
                         if i>isarr:
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
+                    p[1].type.append('arr')
 
                 if 'struct' in type_list:
                     p[1].type.append('struct')
@@ -1641,6 +1650,11 @@ class CParser():
                                 temp_type.append(p[1].type[i])
                     p[1].type = temp_type
                 
+                if p[1] == None or p[3] == None or p[1].type == None or p[3].type == None:
+                    self.ST.error = 1;
+                    print(f'Cannot perform assignment at line {p.lineno(2)}')
+                    return
+
 
 
                 if 'struct' in p[1].type:
@@ -1672,10 +1686,16 @@ class CParser():
                 elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                     self.ST.error = 1
                     print(f'Type mismatch while assigning value at line {p.lineno(2)}')
+
+                elif 'arr' in p[1].type and 'init_list' not in p[3].type:
+                    self.ST.error = 1
+                    print(f'Invalid array initialization at line {p.lineno(2)}')
                 
-                elif p[1].type[0][-1] == '*' and p[3].type[0] not in iit :    
+                elif 'arr' not in p[1].type and p[1].type[0][-1] == '*' and p[3].type[0] not in iit :    
                     self.ST.error = 1
                     print(f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
+
+
 
 
 
@@ -1896,7 +1916,7 @@ class CParser():
         for var_name in p[0].variables.keys():
             self.ST.ModifySymbol(var_name, 'type', p[0].variables[var_name], p.lineno(0))
             self.ST.ModifySymbol(var_name, "varclass", "Struct Local", p.lineno(0))
-                
+
             # updating sizes
             if p[0].variables[var_name]:
                 #handling arrays
@@ -2234,6 +2254,7 @@ class CParser():
             p[0] = p[1]
         elif len(p) == 4 or len(p) == 5:
             p[0] = Node('{}',[p[2]])
+            p[0].type = ['init_list']
 
     def p_initializer_list(self, p):
         '''
