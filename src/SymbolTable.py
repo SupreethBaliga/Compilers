@@ -23,6 +23,7 @@ class SymbolTable() :
         self.TopScope = OrderedDict()
         self.TT = TypeTable()
         self.error = False
+        self.offset = 0
         self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
     
     def InsertSymbol(self, iden, line_num, type_name=None):
@@ -116,19 +117,39 @@ class SymbolTable() :
         return TScope
 
     def PrintTable(self):
-        print(json.dumps(self.Table, indent=2))
+        print(json.dumps(self.Table[0], indent=2))
 
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:
             found, entry = self.FindSymbolInCurrentScope(iden)
             if found:
                 self.TopScope[iden][field] = val
+                if field == "sizeAllocInBytes":
+                    if len(self.Table) > 0:
+                        self.TopScope[iden]["offset"] = self.offset
+                        self.offset += val
+                elif field == "vars":
+                    if len(self.Table) > 0:
+                        curOffset = 0
+                        for var in self.TopScope[iden][field]:
+                            self.TopScope[iden][field][var]["offset"] = curOffset
+                            curOffset += self.TopScope[iden][field][var]["sizeAllocInBytes"]
                 return True
 
             else:
                 found, entry = self.FindSymbolInTable(iden,2)
                 if found:
                     found[field] = val
+                    if field == "sizeAllocInBytes":
+                        if len(self.Table) > 0:
+                            self.TopScope[iden]["offset"] = self.offset
+                        self.offset += val
+                    elif field == "vars":
+                        if len(self.Table) > 0:
+                            curOffset = 0
+                            for var in self.TopScope[iden][field]:
+                                self.TopScope[iden][field][var]["offset"] = curOffset
+                                curOffset += self.TopScope[iden][field][var]["sizeAllocInBytes"]
                     return True
                 else:
                     if statement_line:

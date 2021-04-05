@@ -2047,6 +2047,7 @@ class CParser():
         '''
         p[0] = None
         self.ST.PushScope()
+        self.ST.offset = 0
 
     def p_pointer(self, p):
         '''
