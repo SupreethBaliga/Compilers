@@ -2527,15 +2527,71 @@ class CParser():
         #     print(p[0].variables[key])
         # print('This is end of the function')
 
-        self.ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+        self.ST.ModifySymbol(function_name, 'check', "FUNC", p.lineno(0)) # says that this entry is a function
         param_nums = 0 
-        for key in p[0].variables.keys():
-            if not key == function_name:
-                self.ST.ModifySymbol(key, "type", p[0].variables[key])
-                self.ST.ModifySymbol(key, "check", "PARAM")
+        for var_name in p[0].variables.keys():
+            if not var_name == function_name:
+                self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name], p.lineno(0))
+                self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
+
+                #updating variable class
+                if p[0].variables[var_name]:
+                    isGlobal = self.ST.isGlobal(var_name)
+                    isStatic = False
+                    if 'static' in p[0].variables[var_name]:
+                        isStatic = True
+                    if isGlobal & isStatic:
+                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno())
+                    elif isGlobal:
+                        self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
+                    elif isStatic:
+                        self.ST.ModifySymbol(var_name, "varclass", "Local Static", p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
+
+                # updating sizes
+                if p[0].variables[var_name]:
+                    #handling arrays
+                    multiplier = 1
+                    for type_name in p[0].variables[var_name]:
+                        if type_name[0]=='[' and type_name[-1]==']':
+                            multiplier *= int(type_name[1:-1])
+                        else:
+                            break
+
+                    if '*' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
+                    elif 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                        struct_size = 0
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                        if found:
+                            for var in found['vars']:
+                                struct_size += found['vars'][var]['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                    elif 'long' in p[0].variables[var_name]:
+                        if 'int' in p[0].variables[var_name]:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
+                        elif 'double' in p[0].variables[var_name]:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long double"], p.lineno(0))
+                        else:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long"], p.lineno(0))
+                    elif 'float' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["float"], p.lineno(0))
+                    elif 'double' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["double"], p.lineno(0))
+                    elif 'short' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["short"], p.lineno(0))
+                    elif 'int' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["int"], p.lineno(0))
+                    elif 'char' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["char"], p.lineno(0))
+                    elif 'bool' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
             else:
-                self.ST.ModifySymbol(key, "type", p[0].variables[key][1:])
+                self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         # Add code before this
         #  <----------------------XXXXXX------------------>
@@ -2564,15 +2620,71 @@ class CParser():
         # The first item in the list will be "Function Name" and thereafter the rest of the
         # items in the list will be return type.
 
-        self.ST.ModifySymbol(function_name, 'check', "FUNC") # says that this entry is a function
+        self.ST.ModifySymbol(function_name, 'check', "FUNC", p.lineno(0)) # says that this entry is a function
         param_nums = 0 
-        for key in p[0].variables.keys():
-            if not key == function_name:
-                self.ST.ModifySymbol(key, "type", p[0].variables[key])
-                self.ST.ModifySymbol(key, "check", "PARAM")
+        for var_name in p[0].variables.keys():
+            if not var_name == function_name:
+                self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name], p.lineno(0))
+                self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
+
+                #updating variable class
+                if p[0].variables[var_name]:
+                    isGlobal = self.ST.isGlobal(var_name)
+                    isStatic = False
+                    if 'static' in p[0].variables[var_name]:
+                        isStatic = True
+                    if isGlobal & isStatic:
+                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno())
+                    elif isGlobal:
+                        self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
+                    elif isStatic:
+                        self.ST.ModifySymbol(var_name, "varclass", "Local Static", p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
+
+                # updating sizes
+                if p[0].variables[var_name]:
+                    #handling arrays
+                    multiplier = 1
+                    for type_name in p[0].variables[var_name]:
+                        if type_name[0]=='[' and type_name[-1]==']':
+                            multiplier *= int(type_name[1:-1])
+                        else:
+                            break
+
+                    if '*' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
+                    elif 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                        struct_size = 0
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                        if found:
+                            for var in found['vars']:
+                                struct_size += found['vars'][var]['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                    elif 'long' in p[0].variables[var_name]:
+                        if 'int' in p[0].variables[var_name]:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
+                        elif 'double' in p[0].variables[var_name]:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long double"], p.lineno(0))
+                        else:
+                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long"], p.lineno(0))
+                    elif 'float' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["float"], p.lineno(0))
+                    elif 'double' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["double"], p.lineno(0))
+                    elif 'short' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["short"], p.lineno(0))
+                    elif 'int' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["int"], p.lineno(0))
+                    elif 'char' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["char"], p.lineno(0))
+                    elif 'bool' in p[0].variables[var_name]:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
             else:
-                self.ST.ModifySymbol(key, "type", p[0].variables[key][1:])
+                self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         #  <----------------------XXXX------------------>
 
