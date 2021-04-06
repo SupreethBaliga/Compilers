@@ -156,6 +156,8 @@ class CParser():
         '''
         primary_expression : ID
         '''
+        if self.isError :
+            return
         found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
         if found: # Change this accordingly
 
@@ -316,6 +318,8 @@ class CParser():
                         | StringConst
                         | '(' expression ')'
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -326,6 +330,8 @@ class CParser():
         '''
         identifier : ID
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]['lexeme']))
         p[0].variables[p[0].label] = []
         p[0].isvar = 1
@@ -338,6 +344,8 @@ class CParser():
         '''
         IntegerConst : INT_CONSTANT
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].type = ['int']
         
@@ -347,6 +355,8 @@ class CParser():
         '''
         FloatConst : FLOAT_CONSTANT
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].type = ['float']
 
@@ -356,6 +366,8 @@ class CParser():
         '''
         CharConst : CHAR_CONSTANT
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].type = ['char']
 
@@ -365,6 +377,8 @@ class CParser():
         '''
         StringConst : STRING_LITERAL
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].type = ['str']
 
@@ -381,6 +395,8 @@ class CParser():
                         | postfix_expression '[' expression ']'
                         | postfix_expression '(' argument_expression_list ')'
         '''
+        if self.isError :
+            return
         # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
         if (len(p) == 2):
             p[0] = p[1]
@@ -557,6 +573,8 @@ class CParser():
         argument_expression_list : assignment_expression
                                 | argument_expression_list ',' assignment_expression
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -587,6 +605,8 @@ class CParser():
                         | unary_operator cast_expression
                         | SIZEOF '(' type_name ')'
         '''
+        if self.isError :
+            return
         # AST DONE - check sheet for rule 2- preinc,3- predec,5
         if (len(p) == 2):
             p[0] = p[1]
@@ -706,6 +726,8 @@ class CParser():
                     | '~'
                     | '!'
         '''
+        if self.isError :
+            return
         # AST DONE
         p[0] = Node('UNARY' + str(p[1]))
         p[0].lineno = p.lineno(1)
@@ -715,6 +737,8 @@ class CParser():
         cast_expression : unary_expression
                         | '(' type_name ')' cast_expression
         '''
+        if self.isError :
+            return
         #AST DONE - rule for 2 in sheet
         if (len(p) == 2):
             p[0] = p[1]
@@ -763,6 +787,8 @@ class CParser():
                                 | multiplicative_expression '/' cast_expression
                                 | multiplicative_expression '%' cast_expression
         '''
+        if self.isError :
+            return
         #AST DOne
         if (len(p) == 2):
             p[0] = p[1]
@@ -815,6 +841,8 @@ class CParser():
                             | additive_expression '+' multiplicative_expression
                             | additive_expression '-' multiplicative_expression
         '''
+        if self.isError :
+            return
         # AST DOne
         
         if (len(p) == 2):
@@ -881,6 +909,8 @@ class CParser():
                         | shift_expression LEFT_OP additive_expression
                         | shift_expression RIGHT_OP additive_expression
         '''
+        if self.isError :
+            return
         #AST DOne
         if (len(p) == 2):
             p[0] = p[1]
@@ -930,6 +960,8 @@ class CParser():
                             | relational_expression LE_OP shift_expression
                             | relational_expression GE_OP shift_expression
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -999,6 +1031,8 @@ class CParser():
                             | equality_expression EQ_OP relational_expression
                             | equality_expression NE_OP relational_expression
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1063,6 +1097,8 @@ class CParser():
         and_expression : equality_expression
                     | and_expression '&' equality_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1111,6 +1147,8 @@ class CParser():
         exclusive_or_expression : and_expression
                                 | exclusive_or_expression '^' and_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1155,6 +1193,8 @@ class CParser():
         inclusive_or_expression : exclusive_or_expression
                                 | inclusive_or_expression '|' exclusive_or_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1202,6 +1242,8 @@ class CParser():
         logical_and_expression : inclusive_or_expression
                             | logical_and_expression AND_OP inclusive_or_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1220,6 +1262,8 @@ class CParser():
         logical_or_expression : logical_and_expression
                             | logical_or_expression OR_OP logical_and_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1238,6 +1282,8 @@ class CParser():
         conditional_expression : logical_or_expression
                             | logical_or_expression '?' expression ':' conditional_expression
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1249,6 +1295,8 @@ class CParser():
         assignment_expression : conditional_expression
                             | unary_expression assignment_operator assignment_expression
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1356,6 +1404,8 @@ class CParser():
                             | XOR_ASSIGN
                             | OR_ASSIGN
         '''
+        if self.isError :
+            return
         # AST Done
         p[0] = Node(str(p[1]))
         p[0].lineno = p.lineno(1)
@@ -1365,6 +1415,8 @@ class CParser():
         expression : assignment_expression
                 | expression ',' assignment_expression
         '''
+        if self.isError :
+            return
         # AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1377,6 +1429,8 @@ class CParser():
         '''
         constant_expression : conditional_expression
         '''
+        if self.isError :
+            return
         p[0] = p[1]
 
     ## grammar for all expressions done
@@ -1386,6 +1440,8 @@ class CParser():
         declaration : declaration_specifiers ';'
                     | declaration_specifiers init_declarator_list ';'
         '''
+        if self.isError :
+            return
         if (len(p) == 3):
              #  This rule is used when declaring structs and union
             p[0] = Node('TypeDecl',createAST=False)
@@ -1402,6 +1458,8 @@ class CParser():
                             | type_specifier
                             | type_specifier declaration_specifiers
         '''
+        if self.isError :
+            return
         if (len(p) == 2):
             p[0] = p[1]
             # print(p[0].type)
@@ -1428,6 +1486,8 @@ class CParser():
         init_declarator_list : init_declarator
                             | init_declarator_list ',' InitM1 init_declarator
         '''
+        if self.isError :
+            return
         #  Marker Here
         if (len(p) == 2):
             p[0] = p[1]
@@ -1439,6 +1499,8 @@ class CParser():
         '''
         InitM1 : 
         '''
+        if self.isError :
+            return
         p[0] = Node('',createAST=False)
         p[0].extraValues = p[-2].extraValues
 
@@ -1448,6 +1510,8 @@ class CParser():
         init_declarator : declarator
                         | declarator '=' initializer
         '''
+        if self.isError :
+            return
         if (len(p) == 2):
             p[1].removeGraph()
             p[0] = p[1]
@@ -1502,12 +1566,19 @@ class CParser():
 
                 if '*' in p[0].variables[var_name]:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(1))
-                elif 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                elif 'struct' in p[0].variables[var_name] :
                     struct_size = 0
                     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
                     if found:
                         for var in found['vars']:
                             struct_size += found['vars'][var]['sizeAllocInBytes']
+                    self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                elif 'union' in p[0].variables[var_name]:
+                    struct_size = 0
+                    found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                    if found:
+                        for var in found['vars']:
+                            struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                 elif 'long' in p[0].variables[var_name]:
                     if 'int' in p[0].variables[var_name]:
@@ -1742,6 +1813,8 @@ class CParser():
                                 | AUTO
                                 | REGISTER
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].extraValues.append(str(p[1]))
         p[0].line = p.lineno(1)
@@ -1761,6 +1834,8 @@ class CParser():
                     | UNSIGNED
                     | struct_or_union_specifier
         '''
+        if self.isError :
+            return
         if str(p[1]) in ['void' , 'char', 'short', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']:
             p[0] = Node(str(p[1]))
             p[0].extraValues.append(str(p[1]))
@@ -1777,6 +1852,8 @@ class CParser():
         struct_or_union_specifier : struct_or_union ID '{' markerStructFlag2 struct_declaration_list '}' markerStructFlag0
                                 | struct_or_union ID
         '''
+        if self.isError :
+            return
         p[0] = p[1]
         p[0].type += [p[2]['lexeme']]
 
@@ -1835,6 +1912,8 @@ class CParser():
         '''
         markerStructFlag2 :
         '''
+        if self.isError :
+            return
         iden = p[-2]['lexeme']
         type_name = p[-3].label.upper()
         line_num = p[-2]['additional']['line']
@@ -1848,6 +1927,8 @@ class CParser():
         '''
         markerStructFlag0 :
         '''
+        if self.isError :
+            return
         self.ST.flag = 0
 
     def p_struct_or_union(self, p):
@@ -1855,6 +1936,8 @@ class CParser():
         struct_or_union : STRUCT
                         | UNION
         '''
+        if self.isError :
+            return
         p[0] = Node(str(p[1]))
         p[0].type = [str(p[1]).lower()]
         p[0].line = p.lineno(1)
@@ -1865,6 +1948,8 @@ class CParser():
         struct_declaration_list : struct_declaration
                                 | struct_declaration_list struct_declaration
         '''
+        if self.isError :
+            return
 
         if (len(p) == 2):
             p[0] = p[1]
@@ -1879,6 +1964,8 @@ class CParser():
         '''
         struct_declaration : specifier_qualifier_list struct_declarator_list ';'
         '''
+        if self.isError :
+            return
         p[0] = Node('StructOrUnionDec',[p[1],p[2]])
 
         # Here p[1] has the datatypes like int, float ......
@@ -1888,6 +1975,8 @@ class CParser():
         specifier_qualifier_list : type_specifier specifier_qualifier_list
                                 | type_specifier
         '''
+        if self.isError :
+            return
         # AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1907,6 +1996,8 @@ class CParser():
         struct_declarator_list : struct_declarator
                             | struct_declarator_list ',' structDeclaratorMarker1 struct_declarator
         '''
+        if self.isError :
+            return
         # AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -1918,6 +2009,8 @@ class CParser():
         '''
         structDeclaratorMarker1 :
         '''
+        if self.isError :
+            return
         p[0] = Node('',createAST=False)
         p[0].extraValues = p[-2].extraValues
 
@@ -1927,6 +2020,8 @@ class CParser():
                         | ':' constant_expression
                         | declarator ':' constant_expression
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2009,6 +2104,8 @@ class CParser():
         declarator : direct_declarator
                 | pointer direct_declarator
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2023,6 +2120,8 @@ class CParser():
         function_declarator : direct_declarator
                             | pointer direct_declarator
         '''
+        if self.isError :
+            return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2041,6 +2140,8 @@ class CParser():
                         | direct_declarator '(' markerFuncPush parameter_type_list ')'
                         | direct_declarator '(' identifier_list ')'
         '''
+        if self.isError :
+            return
         # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
         if (len(p) == 2):
             # ID
@@ -2082,6 +2183,8 @@ class CParser():
         '''
         markerFuncPush :
         '''
+        if self.isError :
+            return
         p[0] = None
         self.ST.PushScope()
         self.ST.offset = 0
@@ -2091,6 +2194,8 @@ class CParser():
         pointer : '*'
                 | '*' pointer
         '''
+        if self.isError :
+            return
         # AST done
         if (len(p) == 2):
             p[0] = Node('PTR')
@@ -2136,6 +2241,8 @@ class CParser():
         parameter_type_list : parameter_list
                             | parameter_list ',' ELLIPSIS
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2155,6 +2262,8 @@ class CParser():
         parameter_list : parameter_declaration
                     | parameter_list ',' parameter_declaration
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2167,6 +2276,8 @@ class CParser():
         parameter_declaration : declaration_specifiers abstract_declarator
                             | declaration_specifiers
         '''
+        if self.isError :
+            return
         # AST done
         if len(p) == 2:
             # Doubt here
@@ -2180,6 +2291,8 @@ class CParser():
         '''
         parameter_declaration : declaration_specifiers declarator
         '''
+        if self.isError :
+            return
         # AST done
         p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
         p[0].variables = p[2].variables
@@ -2193,6 +2306,8 @@ class CParser():
         identifier_list : ID
                         | identifier_list ',' ID
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = Node(str(p[1]['lexeme']))
@@ -2206,6 +2321,8 @@ class CParser():
         type_name : specifier_qualifier_list
                 | specifier_qualifier_list abstract_declarator
         '''
+        if self.isError :
+            return
         # AST done
 
         if len(p) == 2:
@@ -2229,6 +2346,8 @@ class CParser():
                             | direct_abstract_declarator
                             | pointer direct_abstract_declarator
         '''
+        if self.isError :
+            return
         # AST done
 
         if len(p) == 2:
@@ -2255,6 +2374,8 @@ class CParser():
                                 | direct_abstract_declarator '[' constant_expression ']'
                                 | direct_abstract_declarator '(' parameter_type_list ')'
         '''
+        if self.isError :
+            return
         # AST done
 
         if (len(p) == 3):
@@ -2287,6 +2408,8 @@ class CParser():
                     | '{' initializer_list '}'
                     | '{' initializer_list ',' '}'
         '''
+        if self.isError :
+            return
         # AST done
         if len(p) == 2:
             p[0] = p[1]
@@ -2299,6 +2422,8 @@ class CParser():
         initializer_list : initializer
                         | initializer_list ',' initializer
         '''
+        if self.isError :
+            return
         # AST done
         if len(p) == 2:
             p[0] = p[1]
@@ -2314,6 +2439,8 @@ class CParser():
                 | iteration_statement
                 | jump_statement
         '''
+        if self.isError :
+            return
         # AST Done
         p[0] = p[1]
 
@@ -2323,6 +2450,8 @@ class CParser():
                         | CASE constant_expression ':' statement
                         | DEFAULT ':' statement
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 4):
             if (p[1] == 'default'):
@@ -2339,6 +2468,8 @@ class CParser():
         compound_statement : '{' markerCompStatPush '}' markerCompStatPop
                         | '{' markerCompStatPush block_item_list '}' markerCompStatPop
         '''
+        if self.isError :
+            return
         if (len(p) == 5):
             p[0] = Node('EmptySCOPE')
         elif (len(p) == 6):
@@ -2348,12 +2479,16 @@ class CParser():
         '''
         markerCompStatPush :
         '''
+        if self.isError :
+            return
         self.ST.PushScope()
 
     def p_markerCompStatPop(self, p):
         '''
         markerCompStatPop :
         '''
+        if self.isError :
+            return
         self.ST.PopScope()
 
     def p_block_item_list(self, p):
@@ -2361,6 +2496,8 @@ class CParser():
         block_item_list : block_item
                         | block_item_list block_item
         '''
+        if self.isError :
+            return
         # AST done
 
         if (len(p) == 2):
@@ -2373,6 +2510,8 @@ class CParser():
         block_item : declaration
                     | statement
         '''
+        if self.isError :
+            return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
@@ -2382,6 +2521,8 @@ class CParser():
         expression_statement : ';'
                             | expression ';'
         '''
+        if self.isError :
+            return
         # AST Done
         if len(p) == 2:
             p[0] = Node('EmptyExprStmt')
@@ -2394,6 +2535,8 @@ class CParser():
                             | IF '(' expression ')' statement ELSE statement
                             | SWITCH '(' expression ')' statement
         '''
+        if self.isError :
+            return
         # AST done
         if(len(p) == 6):
             p[0] = Node(str(p[1]).upper(),[p[3],p[5]])
@@ -2411,6 +2554,8 @@ class CParser():
                             | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
                             | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
         '''
+        if self.isError :
+            return
         # AST done
         if len(p) == 6:
             p[0] = Node('WHILE',[p[3],p[5]])
@@ -2431,12 +2576,16 @@ class CParser():
         '''
         markerForPush :
         '''
+        if self.isError :
+            return
         self.ST.PushScope()
 
     def p_markerForPop(self, p):
         '''
         markerForPop :
         '''
+        if self.isError :
+            return
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
@@ -2447,6 +2596,8 @@ class CParser():
                     | RETURN ';'
                     | RETURN expression ';'
         '''
+        if self.isError :
+            return
         # AST done
         if (len(p) == 3):
             p[0] = Node(str(p[1]).upper())
@@ -2494,6 +2645,8 @@ class CParser():
         '''
         start : translation_unit
         '''
+        if self.isError :
+            return
         p[0] = p[1]
         self.AST_ROOT = p[0]
         self.ST.StoreResults()
@@ -2503,6 +2656,8 @@ class CParser():
         translation_unit : external_declaration
                         | translation_unit external_declaration
         '''
+        if self.isError :
+            return
         # AST done
         # Here
         # Hack to restrict single source node
@@ -2521,6 +2676,8 @@ class CParser():
         external_declaration : function_definition
                             | declaration
         '''
+        if self.isError :
+            return
         # AST Done
         p[0] = p[1]
 
@@ -2531,6 +2688,8 @@ class CParser():
                             | declaration_specifiers function_declarator '{' markerFunc2 '}' markerFuncPop
                             | declaration_specifiers function_declarator '{' markerFunc2 block_item_list '}' markerFuncPop
         '''
+        if self.isError :
+            return
         # AST doubt
         line = 0
         if (len(p) == 7):
@@ -2595,6 +2754,8 @@ class CParser():
         '''
         markerFunc1 : 
         '''
+        if self.isError :
+            return
         # self.ST.PopScope()
 
         p[0] = Node('',createAST=False)
@@ -2686,6 +2847,8 @@ class CParser():
         '''
         markerFunc2 : 
         '''
+        if self.isError :
+            return
         # self.ST.PopScope()
         p[0] = Node('',createAST=False)
         p[0].variables = p[-2].variables
@@ -2777,6 +2940,8 @@ class CParser():
         '''
         markerFuncPop :
         '''
+        if self.isError :
+            return
         self.ST.PopScope()
 
     def p_declaration_list(self, p):
@@ -2785,6 +2950,8 @@ class CParser():
                         | declaration_list declaration
         '''
         # AST done
+        if self.isError :
+            return
         if (len(p) == 2):
             p[0] = Node(';',[p[1]])
         elif (len(p) == 3):
@@ -2792,9 +2959,7 @@ class CParser():
 
     def p_error(self, p):
         print(f'Error found while parsing in line {p.lineno}!')
-        print(f'Error found. Aborting parsing of {sys.argv[1]}....')
         self.isError = 1
-        sys.exit(1)
 
 #######################driver code
 if len(sys.argv) == 1:
