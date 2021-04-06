@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from TypeTable import TypeTable
 import json
+import copy
 
 # Structure of each entry of the symbol table --
 # line: contains the line number where variable was declared
@@ -121,8 +122,35 @@ class SymbolTable() :
             self.TopScope = None
         return TScope
 
+    def DelStructOrUnion(self, tmp):
+        for item in tmp["__scope__"]:
+            item.pop('StructOrUnion', None)
+            if "__scope__" in item:
+                self.DelStructOrUnion(item)
+
     def PrintTable(self):
-        print(json.dumps(self.Table[0], indent=2))
+        # print(json.dumps(self.Table[0], indent=2))
+
+        print("Global Symbol Table : ")
+        for key, value in self.Table[0].items():
+            if key != "StructOrUnion":
+                print(key)
+                for key2, value2 in value.items():
+                    if key2 != "__scope__":
+                        print(f'"{key2}" : {value2}')
+                print("\n")
+
+        for key, value in self.Table[0].items():
+            if "__scope__" in value:
+                print(f'Local Symbol Table for "{key}":')
+
+                tmp = copy.deepcopy(value["__scope__"][0])
+                del tmp['StructOrUnion']
+                if "__scope__" in tmp:
+                    self.DelStructOrUnion(tmp)
+
+                print(json.dumps(tmp, indent=2))
+                print("\n")
 
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:
