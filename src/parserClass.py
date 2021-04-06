@@ -56,10 +56,11 @@ class Node:
         '''
         for key in self.variables.keys():
             self.variables[key].append(type)
-    # def print_val(self):
-    #     for child in self.children:
-    #         child.print_val()
-    #     print(self.label)
+    
+    def print_val(self):
+        for child in self.children:
+            child.print_val()
+        print(self.label)
     
     # def should_make_node(self):
     #     for child in self.children:
@@ -146,7 +147,7 @@ class CParser():
     tokens = CLexer.tokens
     def __init__(self):
         self.ST = SymbolTable()
-        self.AST_ROOT = None
+        self.AST_ROOT = Node("SourceNode")
         self.isError = 0
 
     def build(self):
@@ -2705,8 +2706,7 @@ class CParser():
         '''
         if self.isError :
             return
-        p[0] = p[1]
-        self.AST_ROOT = p[0]
+        p[0] = self.AST_ROOT
         self.ST.StoreResults()
 
     def p_translation_unit(self, p):
@@ -2717,17 +2717,16 @@ class CParser():
         if self.isError :
             return
         # AST done
-        # Here
-        # Hack to restrict single source node
-        # <------XXXXX-------> do this once the type adding thing done
-        p[0] = 'SourceNode'
+        p[0] = self.AST_ROOT
 
         if (len(p) == 2):
             if ((p[1] is not None) and (p[1].node is not None)):
-                G.add_edge(p[0] , p[1].node)
+                G.add_edge(p[0].node , p[1].node)
+                self.AST_ROOT.children.append(p[1])
         elif (len(p) == 3):
             if ((p[2] is not None) and (p[2].node is not None)):
-                G.add_edge(p[0], p[2].node)
+                G.add_edge(p[0].node, p[2].node)
+                self.AST_ROOT.children.append(p[2])
 
     def p_external_declaration(self, p):
         '''
@@ -3019,6 +3018,9 @@ class CParser():
         print(f'Error found while parsing in line {p.lineno}!')
         self.isError = 1
 
+    def printTree(self):
+        self.AST_ROOT.print_val()
+
 #######################driver code
 if len(sys.argv) == 1:
     print('No file given as input')
@@ -3040,11 +3042,11 @@ tokens = clex.tokens
 clex.lexer.lineno = 1
 
 # driver code for parser
-parser = CParser()
-parser.build()
 G = pgv.AGraph(strict=False, directed=True)
 G.layout(prog='circo')
 itr = 0 # Global var to give unique IDs to nodes of the graph
+parser = CParser()
+parser.build()
 result = parser.parser.parse(data, lexer=clex.lexer)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
@@ -3059,3 +3061,4 @@ else:
     print('Output file is: ' + fileNameCore + '.ps')
     G.write(outputFile)
     parser.ST.PrintTable()
+    # parser.printTree()
