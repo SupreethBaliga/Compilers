@@ -74,7 +74,7 @@ class TypeTable() :
 
     
     def ModifySymbol(self, iden, field, val, statement_line, path):
-        print(f"here inside modify symbol for {iden} of line {statement_line}")
+        # print(f"here inside modify symbol for {iden} of line {statement_line}")
         if path == 1:
             found = self.FindSymbolInCurrentScope(iden)
             if found:
