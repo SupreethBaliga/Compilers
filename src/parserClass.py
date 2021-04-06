@@ -1261,7 +1261,7 @@ class CParser():
                         self.ST.error = 1;
                         print(f'Cannot perform assignment at line {p[2].lineno}')
 
-                    elif 'arr' in p[1].type:
+                    elif p[1].type[0][-1] == '*' and 'arr' in p[1].type:
                         self.ST.error = 1
                         print(f'Cannot perform assignment to array type at line {p[2].lineno}')
                     
