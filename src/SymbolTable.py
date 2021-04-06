@@ -24,6 +24,7 @@ class SymbolTable() :
         self.TT = TypeTable()
         self.error = False
         self.offset = 0
+        self.offsetList = []
         self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
     
     def InsertSymbol(self, iden, line_num, type_name=None):
@@ -74,6 +75,8 @@ class SymbolTable() :
 
     def PushScope(self):
 
+        self.offsetList.append(self.offset)
+        self.offset = 0
         if len(self.Table) == 0:
             self.Table.append(self.TopScope)
             TopScopeName = list(self.TopScope.items())[-1][0]
@@ -109,6 +112,8 @@ class SymbolTable() :
         self.TT.PopScope()
         self.error = self.error or self.TT.error
         TScope = self.TopScope
+        self.offset = self.offsetList[-1]
+        self.offsetList.pop()
 
         if len(self.Table) > 0:
             self.TopScope = self.Table.pop()
@@ -143,7 +148,7 @@ class SymbolTable() :
                     if field == "sizeAllocInBytes":
                         if len(self.Table) > 0:
                             self.TopScope[iden]["offset"] = self.offset
-                        self.offset += val
+                            self.offset += val
                     elif field == "vars":
                         if len(self.Table) > 0:
                             curOffset = 0

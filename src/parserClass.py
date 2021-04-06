@@ -2693,7 +2693,7 @@ class CParser():
         '''
         markerFuncPop :
         '''
-        self.ST.PopScope();
+        self.ST.PopScope()
 
     def p_declaration_list(self, p):
         '''
@@ -2708,7 +2708,9 @@ class CParser():
 
     def p_error(self, p):
         print(f'Error found while parsing in line {p.lineno}!')
+        print(f'Error found. Aborting parsing of {sys.argv[1]}....')
         self.isError = 1
+        sys.exit(1)
 
 
 #######################driver code
