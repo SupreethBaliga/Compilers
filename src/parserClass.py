@@ -161,9 +161,15 @@ class CParser():
 
 
 
+            try :
+                entry['type']
+            except:
+                self.ST.error = 1
+                print(f'Self referencing variables not allowed at line {p.lineno(1)}')
+                return
+
             if entry['check'] == 'FUNC':
 
-                
 
 
                 p[0] = Node(str(p[1]['lexeme']))
@@ -185,6 +191,8 @@ class CParser():
 
 
             isarr = 0
+            # print(entry)
+            # print(entry['type'])
             for i in range(len(entry['type'])):
                 if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
                     isarr += 1
@@ -415,7 +423,6 @@ class CParser():
 
                 p[0] = Node('.',[p[1],p[3]])
                 # ----------------------------------------------------------
-
                 if 'struct' not in p[1].type:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a structure at line {p.lineno(2)}')
@@ -485,7 +492,10 @@ class CParser():
 
                         # found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
 
-                        print(i['type'], p[3].params[ctr])
+                        if p[3].params == None or p[3].params[0]==None:
+                            self.ST.error = 1
+                            print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
+                            return
 
                         if '*' in i['type'] and p[3].params[ctr][0] in dft:
                             self.ST.error = 1
@@ -513,6 +523,10 @@ class CParser():
 
             elif p[2] == '[':
                 
+                if p[3] == None:
+                    self.ST.error = 1
+                    print(f'Invalid array subscript at line {p.lineno(2)}')
+                    return
 
                 flag = 0
                 if 'int' in p[3].type:
@@ -583,12 +597,10 @@ class CParser():
                     print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
                 elif 'const' in p[2].type:
                     self.ST.error = 1
-                    # print(p[1].isTerminal)
                     print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
 
                 elif p[2].type[0]!= 'int' and p[2].type[0]!= 'long int' and p[2].type[0]!= 'char':
                     self.ST.error = 1
-                    # print(p[1].isTerminal)
                     print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
                 elif p[2].isTerminal == False:
                     self.ST.error = 1
@@ -616,6 +628,13 @@ class CParser():
                 if ((p[2] is not None) and (p[2].node is not None)):
                     p[0].children.append(p[2])
                     G.add_edge(p[0].node,p[2].node)
+
+                    if p[2].type == None:
+                        self.ST.error = 1
+                        print(f'Cannot perform unary operation at line {p[1].lineno}')
+                        return
+
+
                     
 
                     if p[1].label[-1] in ['+', '-', '!']:
@@ -651,6 +670,7 @@ class CParser():
                             p[0].type[0] = p[0].type[0][:-1]
                             if p[0].type[0][-1] == ' ':
                                 p[0].type[0] = p[0].type[0][:-1]
+                            p[0].vars = p[2].vars
 
                     elif p[1].label[-1] == '&':
 
@@ -1384,13 +1404,24 @@ class CParser():
         '''
         if (len(p) == 2):
             p[0] = p[1]
+            # print(p[0].type)
         elif (len(p) == 3):
             p[0] = p[1]
             if ((p[2] is not None) and (p[2].node is not None)):
                 G.add_edge(p[0].node, p[2].node)
                 p[0].children.append(p[2])
+                if p[2].type:
+                    p[0].type += p[2].type
 
             p[0].extraValues = p[2].extraValues + p[0].extraValues
+
+        if p[0].type and 'struct' in p[0].type and len(p[0].type) >2:
+            self.ST.error = 1
+            print(f'Cannot have type specifiers for struct type at line {p[1].line}')
+
+
+
+
 
     def p_init_declarator_list(self, p):
         '''
@@ -1432,7 +1463,6 @@ class CParser():
         # for key in p[0].variables.keys():
         #     print("The key is: " + key)
         #     print('  ', p[0].variables[key])
-        # print(p[3].type)
         
         for var_name in p[0].variables:
             #Updating type
@@ -1534,6 +1564,8 @@ class CParser():
                 if 'double' in entry['type']:
                     data_type_count += 1
                 if 'void' in entry['type']:
+                    data_type_count += 1
+                if 'struct' in entry['type']:
                     data_type_count += 1
                 if data_type_count > 1:    
                     self.ST.error = 1
@@ -1712,6 +1744,7 @@ class CParser():
         '''
         p[0] = Node(str(p[1]))
         p[0].extraValues.append(str(p[1]))
+        p[0].line = p.lineno(1)
 
 
     def p_type_specifier(self, p):
@@ -1733,8 +1766,11 @@ class CParser():
             p[0].extraValues.append(str(p[1]))
             p[0].type = []
             p[0].type.append(str(p[1]))
+            p[0].line = p.lineno(1)
         else:
             p[0] = p[1]
+            p[0].line = p[1].line
+
 
     def p_struct_or_union_specifier(self, p):
         '''
@@ -1821,6 +1857,7 @@ class CParser():
         '''
         p[0] = Node(str(p[1]))
         p[0].type = [str(p[1]).lower()]
+        p[0].line = p.lineno(1)
         
 
     def p_struct_declaration_list(self, p):
@@ -2495,17 +2532,64 @@ class CParser():
                             | declaration_specifiers function_declarator '{' markerFunc2 block_item_list '}' markerFuncPop
         '''
         # AST doubt
+        line = 0
         if (len(p) == 7):
             # Add AST Node for EMPTY SCOPE? (check other places too)
             p[0] = Node('FUNC',[p[2]])
+            line = 3
+
         elif (len(p) == 8):
             if p[3] == '{':
                 p[0] = Node('FUNC',[p[2],Node('SCOPE', [p[5]])])
+                line = 3
             else:
                 p[0] = Node('FUNC',[p[2],p[3]])
+                line = 4
         elif len(p) == 9:
             p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
+            line = 4
         p[1].removeGraph()
+
+        # found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+
+        temp_type_list = []
+        for single_type in p[1].type:
+            if single_type != '*':
+                temp_type_list.append(single_type)
+
+        if len(temp_type_list) != len(set(temp_type_list)):
+            self.ST.error = 1
+            print('Function type cannot have duplicating type of declarations at line', p.lineno(line))
+        
+
+        if 'long' in p[1].type and 'short' in p[1].type:
+            self.ST.error = 1
+            print('Function type cannot be both long and short at line', p.lineno(line))
+        elif 'unsigned' in p[1].type and 'signed' in p[1].type:
+            self.ST.error = 1
+            print('Function type cannot be both signed and unsigned at line', p.lineno(line))
+        else:
+            data_type_count = 0
+            if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type or 'char' in p[1].type:
+                data_type_count += 1
+            if 'bool' in  p[1].type:
+                data_type_count += 1
+            if 'float' in p[1].type:
+                data_type_count += 1
+            if 'double' in p[1].type:
+                data_type_count += 1
+            if 'void' in p[1].type:
+                data_type_count += 1
+            if 'struct' in p[1].type:
+                data_type_count += 1
+            if data_type_count > 1:    
+                self.ST.error = 1
+                print('Two or more conflicting data types specified for function at line', p.lineno(line)) 
+
+            if 'long' in p[1].type:
+                if 'char' in p[1].type or 'bool' in  p[1].type or 'float' in  p[1].type or 'void' in  p[1].type:
+                    self.ST.error = 1
+                    print('Two or more conflicting data types specified for function at line', p.lineno(line))
 
     def p_markerFunc1(self, p):
         '''
@@ -2711,7 +2795,6 @@ class CParser():
         print(f'Error found. Aborting parsing of {sys.argv[1]}....')
         self.isError = 1
         sys.exit(1)
-
 
 #######################driver code
 if len(sys.argv) == 1:
