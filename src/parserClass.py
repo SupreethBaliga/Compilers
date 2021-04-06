@@ -1410,7 +1410,7 @@ class CParser():
             if ((p[2] is not None) and (p[2].node is not None)):
                 G.add_edge(p[0].node, p[2].node)
                 p[0].children.append(p[2])
-                if p[2].type:
+                if p[2].type and p[0].type:
                     p[0].type += p[2].type
 
             p[0].extraValues = p[2].extraValues + p[0].extraValues
