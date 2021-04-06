@@ -1,5 +1,5 @@
 from collections import OrderedDict
-
+import copy
 ## This handles the struct and union case
 # NOTE: WE HAVE PUT A RESTRICTION THAT A STRUCT AND UNION CANNOT HAVE THE SAME IDENTIFIER
 # It's a dictionary with the key as the struct name and the value as another dict
@@ -74,6 +74,7 @@ class TypeTable() :
 
     
     def ModifySymbol(self, iden, field, val, statement_line, path):
+        print(f"here inside modify symbol for {iden} of line {statement_line}")
         if path == 1:
             found = self.FindSymbolInCurrentScope(iden)
             if found:
@@ -105,7 +106,7 @@ class TypeTable() :
         found = self.FindSymbolInCurrentScope(iden)
         if found:
             if found['check'].lower() == type_name:
-                return found
+                return copy.deepcopy(found)
             else:
                 print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
                 self.error = True
@@ -114,7 +115,7 @@ class TypeTable() :
             found = self.FindSymbolInTable(iden, 2)
             if found:
                 if found['check'].lower() == type_name:
-                    return found
+                    return copy.deepcopy(found)
                 else:
                     print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
                     self.error = True
