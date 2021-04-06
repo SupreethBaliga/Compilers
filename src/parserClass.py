@@ -1290,6 +1290,68 @@ class CParser():
         elif (len(p) == 6):
             p[0] = Node('TERNARY',[p[1],p[3],p[5]])
 
+            if 'struct' in p[1].type or 'union' in p[1].type:
+                self.ST.error = 1
+                print(f'Struct / Union type variable not allowed as first operand of ternary operator')
+                return
+
+
+            elif p[3].type in [None, []] or p[5].type in [None, []] :
+                self.ST.error = 1;
+                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+
+            elif 'struct' in p[3].type and 'struct' not in p[5].type:
+                self.ST.error = 1;
+                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+
+            elif 'struct' in p[5].type and 'struct' not in p[3].type:
+                self.ST.error = 1;
+                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+
+            elif 'struct' in p[3].type and 'struct' in p[5].type and p[3].type[1] != p[5].type[1]:
+                self.ST.error = 1;
+                print(f'Incompatible struct types to perform conditional operation at line {p.lineno(2)}')
+            
+            elif p[3].type[0] not in aat and p[3].type[0][-1] != '*' and p[5].type[0] in aat:
+                self.ST.error = 1
+                print(f'Type mismatch while performing conditional operation at line {p.lineno(2)}')
+            
+            elif p[3].type[0][-1] == '*' and p[5].type[0][-1] != '*' and p[5].type[0]  not in iit :    
+                self.ST.error = 1
+                print(f'Incompatible conditional operation between pointer and {p[5].type} at line {p.lineno(2)}')
+
+            elif p[5].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit :    
+                self.ST.error = 1
+                print(f'Incompatible conditional operation between pointer and {p[3].type} at line {p.lineno(2)}')
+            
+            if p[3].type == p[5].type:
+                p[0].type = p[3].type
+                return
+
+            if p[3].type[0][-1] == '*' or p[5].type[0][-1] == '*':
+                p[0].type = ['int', 'unsigned']
+                return
+            if 'str' in p[3].type:
+                p[0].type = p[5].type
+                return
+
+            if 'str' in p[5].type:
+                p[0].type = p[3].type
+                return
+
+            if p[3].type[0] in aat and p[5].type[0] in aat:
+                p[0].type = []
+                p[0].type.append[aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                if 'unsigned' in p[3].type or unsigned in p[5].type and p[0].type[0] in dit:
+                    p[0].type.append('unsigned')
+                return
+
+            self.ST.error = 1
+            print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+
+
+
+
     def p_assignment_expression(self, p):
         '''
         assignment_expression : conditional_expression
@@ -1331,11 +1393,7 @@ class CParser():
 
                     elif p[1].type in [None, []] or p[3].type in [None, []] :
                         self.ST.error = 1
-                        print(f'Type mismatch while assigning value at line {p[2].lineno}')
-                    
-                    elif p[1].type[0] in aat and p[3].type[0] not in aat:
-                        self.ST.error = 1
-                        print(f'Type mismatch while assigning value at line {p[2].lineno}')
+                        print(f'Type mismatch while assigning value at line {p[2].lineno}') 
                     
                     elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                         self.ST.error = 1
