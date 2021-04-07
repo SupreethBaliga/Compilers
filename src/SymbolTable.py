@@ -123,10 +123,18 @@ class SymbolTable() :
         return TScope
 
     def DelStructOrUnion(self, tmp):
+        list_copy = []
         for item in tmp["#scope"]:
             item.pop('#StructOrUnion', None)
             if "#scope" in item:
                 self.DelStructOrUnion(item)
+            if not item:
+                continue
+            list_copy.append(item)
+        if len(list_copy) == 0:
+            tmp.pop('#scope', None)
+        else:
+            tmp['#scope'] = list_copy
 
     def PrintTable(self):
         # print(json.dumps(self.Table[0], indent=2))
@@ -142,15 +150,15 @@ class SymbolTable() :
 
         for key, value in self.Table[0].items():
             if "#scope" in value:
-                print(f'Local Symbol Table for "{key}":')
-
                 tmp = copy.deepcopy(value["#scope"][0])
                 del tmp['#StructOrUnion']
                 if "#scope" in tmp:
                     self.DelStructOrUnion(tmp)
 
-                print(json.dumps(tmp, indent=2))
-                print("\n")
+                if len(tmp) > 0:
+                    print(f'Local Symbol Table for "{key}":')
+                    print(json.dumps(tmp, indent=2))
+                    print("\n")
 
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:
