@@ -1931,7 +1931,8 @@ class CParser():
                 multiplier = 1
                 for type_name in p[0].variables[var_name]:
                     if type_name[0]=='[' and type_name[-1]==']':
-                        multiplier *= int(type_name[1:-1])
+                        if type_name[1:-1] != '':
+                            multiplier *= int(type_name[1:-1])
                     else:
                         break
 
@@ -1980,14 +1981,31 @@ class CParser():
             found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
 
             temp_type_list = []
+            temp2_type_list = []
+            nums_arr = []
+
             for single_type in entry['type']:
                 if single_type != '*':
                     temp_type_list.append(single_type)
+                    if single_type[0] != '[' or single_type[-1] != ']':
+                        temp2_type_list.append(single_type)
 
-            if len(temp_type_list) != len(set(temp_type_list)):
+                if single_type[0] == '[' and single_type[-1] == ']':
+                    if single_type[1:-1] == '':
+                        self.ST.error = 1
+                        print('Cannot have empty indices for array declarations at line', entry['line'])
+                    elif int(single_type[1:-1]) <= 0:
+                        self.ST.error = 1
+                        print('Cannot have non-positive integers for array declarations at line', entry['line'])
+                    
+
+
+
+
+            if len(temp2_type_list) != len(set(temp2_type_list)):
                 self.ST.error = 1
                 print('variables cannot have duplicating type of declarations at line', entry['line'])
-            
+
 
             if 'long' in entry['type'] and 'short' in entry['type']:
                 self.ST.error = 1
@@ -2210,7 +2228,7 @@ class CParser():
 
                 p[0].node.attr['label'] = p[0].label
 
-                
+
 
 
 
@@ -2615,6 +2633,15 @@ class CParser():
                 p[0] = Node('DDArrSub',[p[1]])
                 p[0].variables = p[1].variables
                 p[0].addTypeInDict("[]")
+                
+                try:
+                    p[0].arrs = p[1].arrs
+                except:
+                    p[0].arrs = []
+                
+                p[0].arrs.append('empty')
+
+                # print('Hi')
         elif (len(p) == 5):
             if (p[2] == '('):
                 if(p[3] == None):
@@ -2833,7 +2860,7 @@ class CParser():
                                 | '[' constant_expression ']'
                                 | direct_abstract_declarator '[' ']'
                                 | direct_abstract_declarator '(' ')'
-                                | direct_abstract_declarator '[' constant_expression ']'
+                                | direct_abstract_declarator '[' IntegerConst ']'
                                 | direct_abstract_declarator '(' parameter_type_list ')'
         '''
         if self.isError :
@@ -3212,6 +3239,22 @@ class CParser():
                     self.ST.error = 1
                     print('Two or more conflicting data types specified for function at line', p.lineno(line))
 
+        # print(p[2].variables)
+        for token in p[2].variables:
+            temp_type = p[2].variables[token]
+            if 'Function Name' not in temp_type:
+                temp_type_arr = []
+                for single_type in temp_type:
+                    if single_type[0] == '[' and single_type[-1]==']':
+                        temp_type_arr.append(single_type[1:-1])
+                for i in range(len(temp_type_arr)):
+                    if temp_type_arr[i] == '' and i != 0:
+                        self.ST.error = 1
+                        print('Multidimensional array must have bound for all dimensions except first at line ', p.lineno(line))
+                    if temp_type_arr[i] != '' and int(temp_type_arr[i]) <= 0:
+                        self.ST.error = 1
+                        print('Array bound cannot be non-positive at line ', p.lineno(line))
+
 
 
     def p_markerFunc1(self, p):
@@ -3361,7 +3404,8 @@ class CParser():
                     multiplier = 1
                     for type_name in p[0].variables[var_name]:
                         if type_name[0]=='[' and type_name[-1]==']':
-                            multiplier *= int(type_name[1:-1])
+                            if type_name[1:-1] != '':
+                                multiplier *= int(type_name[1:-1])
                         else:
                             break
 
