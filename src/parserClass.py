@@ -2188,6 +2188,31 @@ class CParser():
                     print(f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
 
 
+                p[0].type = p[1].type
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p[0].type    
+
+                if 'struct' in p[0].type:
+                    p[0].label += 'struct'
+                elif 'union' in p[0].type:
+                    p[0].label += 'union'
+                elif p[0].type[0][-1] == '*':
+                    p[0].label += 'int unsigned'
+                else:
+                    p[0].label += p[0].type[0]
+                    if 'unsigned' in p[0].type:
+                        p[0].label += ' unsigned'
+
+                p[0].node.attr['label'] = p[0].label
+
+                
+
+
 
 
 
