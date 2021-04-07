@@ -3435,6 +3435,7 @@ result = parser.parser.parse(data, lexer=clex.lexer)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
 outputFile = 'dot/' + fileNameCore + '.dot'
+outputFileSymbolTable = open('ST/' + fileNameCore + '.txt',"w")
 
 if parser.isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
@@ -3444,6 +3445,9 @@ elif parser.ST.error:
 else:
     print('Output file is: ' + fileNameCore + '.ps')
     G.write(outputFile)
+    orig_stdout = sys.stdout
+    sys.stdout = outputFileSymbolTable
     parser.ST.PrintTable()
+    sys.stdout = orig_stdout
     # parser.printTree()
 

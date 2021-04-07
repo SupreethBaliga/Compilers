@@ -56,6 +56,11 @@ do
     then
       mkdir tmp
     fi
+
+    if [ ! -d "./ST" ];
+    then
+      mkdir ST
+    fi
     
     python3 src/parserClass.py $file
  
