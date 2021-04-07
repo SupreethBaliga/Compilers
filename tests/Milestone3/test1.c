@@ -1,21 +1,22 @@
-struct a {
-    int b;
-    int c;
-};
+// test for checking for loop and while loops
 
-union u {
-    int* a;
-    float *k;
-};
+int func(int a, float b) {
+    float c = (a + b)/2;
+    int d = (int) c;
+    return d;
+}
 
 int main() {
-    struct b{
-        int c; 
-        int d;
-    };
+    int k,a=0;
+    k=10;
+    for(int i=0;i<k;i++) {
+        a++;
+    }
 
-    struct y{
-        int k,l;
-    };
+    while(k>=0) {
+        int s;
+        a++;
+        k--;
+    }
     return 0;
 }

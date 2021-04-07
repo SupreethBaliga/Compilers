@@ -180,14 +180,14 @@ class CParser():
                 p[0].ret_type = entry['type']
                 p[0].param_nums = entry['PARAM_NUMS']
                 p[0].params = []
-                for var in entry['__scope__'][0]:
-                    if var == 'StructOrUnion':
-                        p[0].structorunion = entry['__scope__'][0][var]
+                for var in entry['#scope'][0]:
+                    if var == '#StructOrUnion':
+                        p[0].structorunion = entry['#scope'][0][var]
                         continue
-                    if var == '__scope__':
+                    if var == '#scope':
                         continue
-                    if entry['__scope__'][0][var]['check'] == 'PARAM':
-                        p[0].params.append(entry['__scope__'][0][var])
+                    if entry['#scope'][0][var]['check'] == 'PARAM':
+                        p[0].params.append(entry['#scope'][0][var])
 
                 return
 

@@ -53,7 +53,6 @@ class CLexer(object):
         'break'     : 'BREAK',
         'case'      : 'CASE',
         'char'      : 'CHAR',
-        'const'     : 'CONST',
         'continue'  : 'CONTINUE',
         'default'   : 'DEFAULT',
         'do'        : 'DO',
