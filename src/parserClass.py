@@ -3289,7 +3289,14 @@ class CParser():
         param_nums = 0 
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
-                self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name], p.lineno(0))
+                if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
+                    if found:
+                        self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
+                        self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
+                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
                 self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
 
@@ -3300,7 +3307,7 @@ class CParser():
                     if 'static' in p[0].variables[var_name]:
                         isStatic = True
                     if isGlobal & isStatic:
-                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno())
+                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno(0))
                     elif isGlobal:
                         self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
                     elif isStatic:
@@ -3314,18 +3321,26 @@ class CParser():
                     multiplier = 1
                     for type_name in p[0].variables[var_name]:
                         if type_name[0]=='[' and type_name[-1]==']':
-                            multiplier *= int(type_name[1:-1])
+                            if type_name[1:-1] != '':
+                                multiplier *= int(type_name[1:-1])
                         else:
                             break
 
                     if '*' in p[0].variables[var_name]:
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
-                    elif 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                    elif 'struct' in p[0].variables[var_name] :
                         struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
                         if found:
                             for var in found['vars']:
                                 struct_size += found['vars'][var]['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                    elif 'union' in p[0].variables[var_name]:
+                        struct_size = 0
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+                        if found:
+                            for var in found['vars']:
+                                struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
                     elif 'long' in p[0].variables[var_name]:
                         if 'int' in p[0].variables[var_name]:
@@ -3384,7 +3399,14 @@ class CParser():
         param_nums = 0 
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
-                self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name], p.lineno(0))
+                if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
+                    if found:
+                        self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
+                        self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
+                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+                    else:
+                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
                 self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
 
@@ -3395,7 +3417,7 @@ class CParser():
                     if 'static' in p[0].variables[var_name]:
                         isStatic = True
                     if isGlobal & isStatic:
-                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno())
+                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno(0))
                     elif isGlobal:
                         self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
                     elif isStatic:
@@ -3416,12 +3438,19 @@ class CParser():
 
                     if '*' in p[0].variables[var_name]:
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
-                    elif 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                    elif 'struct' in p[0].variables[var_name] :
                         struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
                         if found:
                             for var in found['vars']:
                                 struct_size += found['vars'][var]['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                    elif 'union' in p[0].variables[var_name]:
+                        struct_size = 0
+                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+                        if found:
+                            for var in found['vars']:
+                                struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
                     elif 'long' in p[0].variables[var_name]:
                         if 'int' in p[0].variables[var_name]:
