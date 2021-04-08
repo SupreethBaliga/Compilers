@@ -144,6 +144,9 @@ sizes = {
 }
 class CParser():
     tokens = CLexer.tokens
+    tokens.remove("ERROR")
+    tokens.remove("HEXA_CONSTANT")
+    tokens.remove("OCTAL_CONSTANT")
     def __init__(self):
         self.ST = SymbolTable()
         self.AST_ROOT = Node("SourceNode")
