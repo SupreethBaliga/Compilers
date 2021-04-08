@@ -2222,8 +2222,10 @@ class CParser():
                     p[0].label += 'struct'
                 elif 'union' in p[0].type:
                     p[0].label += 'union'
-                elif p[0].type[0][-1] == '*':
+                elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
                     p[0].label += 'int unsigned'
+                elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
+                    p[0].label += p[0].type[0] + ' arr'
                 else:
                     p[0].label += p[0].type[0]
                     if 'unsigned' in p[0].type:
