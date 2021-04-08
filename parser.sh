@@ -61,6 +61,16 @@ do
     then
       mkdir ST
     fi
+
+    if [ ! -d "./ASTgraphs" ];
+    then
+      mkdir ASTgraphs
+    fi
+
+    if [ ! -d "./dot" ];
+    then
+      mkdir dot
+    fi
     
     python3 src/parserClass.py $file
  

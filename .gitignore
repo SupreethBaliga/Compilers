@@ -12,5 +12,3 @@ primitiveParser/parserOld.py
 
 # Ignore parser dump files
 tmp/
-dot/
-ASTgraphs/

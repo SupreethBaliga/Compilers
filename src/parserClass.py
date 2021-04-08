@@ -3506,15 +3506,17 @@ result = parser.parser.parse(data, lexer=clex.lexer)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
 outputFile = 'dot/' + fileNameCore + '.dot'
-outputFileSymbolTable = open('ST/' + fileNameCore + '.txt',"w")
 
 if parser.isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)
 elif parser.ST.error:
+    print(f'Error in semantic analysis.')
     sys.exit(1) 
 else:
-    print('Output file is: ' + fileNameCore + '.ps')
+    outputFileSymbolTable = open('ST/' + fileNameCore + '.txt',"w")
+    print('Output AST file is: ' + fileNameCore + '.ps')
+    print('Output Symbol Table file is: ' + fileNameCore + '.txt')
     G.write(outputFile)
     orig_stdout = sys.stdout
     sys.stdout = outputFileSymbolTable
