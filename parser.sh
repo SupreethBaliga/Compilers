@@ -80,8 +80,8 @@ done
 
 if [ $dump = false ] && [ ! -z "$(ls -A ./tmp)" ]; 
 then
-    echo "Removing parser dump files"
-    rm -vr tmp/
+    # echo "Removing parser dump files"
+    rm -r tmp/
 fi;
 
 exit $STATUS

@@ -150,7 +150,7 @@ class CParser():
         self.isError = 0
 
     def build(self):
-        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp')
+        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp',debug=False)
 
     def p_primary_expression_1(self,p):
         '''
@@ -2960,7 +2960,7 @@ class CParser():
         if self.isError :
             return
         if (len(p) == 5):
-            p[0] = Node('EmptySCOPE')
+            p[0] = Node('EmptySCOPE',createAST = False)
         elif (len(p) == 6):
             p[0] = Node('SCOPE',[p[3]])
 

@@ -82,14 +82,14 @@ class CLexer(object):
         'ID',            # identifier
         #'WS',           # denotes whitespace // may have to modify this 
                          # to keep newline, space and tab separate to keep track of col no.
-        'HEXA_CONSTANT',
-        'OCTAL_CONSTANT',
+        # 'HEXA_CONSTANT',
+        # 'OCTAL_CONSTANT',
         'CHAR_CONSTANT',
         'FLOAT_CONSTANT',
         'INT_CONSTANT',
         'STRING_LITERAL',
         # 'CONSTANT',
-        'ERROR',         #to denote any kind of scanning error
+        # 'ERROR',         #to denote any kind of scanning error
         
         # Operators
         'ELLIPSIS',      # "..."
