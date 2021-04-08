@@ -1270,6 +1270,8 @@ class CParser():
                     flag = 1
                     p[0].label = p[0].label + '_' +  'unsigned'
                     p[0].node.attr['label'] = p[0].label
+                else:
+                    p[0].node.attr['label'] = p[0].label
 
 
                 
@@ -2232,11 +2234,6 @@ class CParser():
                         p[0].label += ' unsigned'
 
                 p[0].node.attr['label'] = p[0].label
-
-
-
-
-
 
 
 
