@@ -971,7 +971,10 @@ class CParser():
                             p[0].type[0] = p[0].type[0][:-1]
                             if p[0].type[0][-1] == ' ':
                                 p[0].type[0] = p[0].type[0][:-1]
-                            p[0].vars = p[2].vars
+                            try:
+                                p[0].vars = p[2].vars
+                            except:
+                                pass
 
                     elif p[1].label[-1] == '&':
 
@@ -1644,7 +1647,7 @@ class CParser():
 
             if p[3].type[0] in aat and p[5].type[0] in aat:
                 p[0].type = []
-                p[0].type.append[aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
+                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if 'unsigned' in p[3].type or 'unsigned' in p[5].type and p[0].type[0] in dit:
                     p[0].type.append('unsigned')
                 return
