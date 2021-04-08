@@ -165,7 +165,6 @@ class CParser():
         if found: # Change this accordingly
 
 
-
             try :
                 entry['type']
             except:
@@ -1590,6 +1589,10 @@ class CParser():
                 print(f'Struct / Union type variable not allowed as first operand of ternary operator')
                 return
 
+            elif p[3] == None or p[5]==None:
+                self.ST.error = 1;
+                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+                return
 
             elif p[3].type in [None, []] or p[5].type in [None, []] :
                 self.ST.error = 1;
@@ -3295,8 +3298,8 @@ class CParser():
                         self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
                         self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
                         self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
-                    else:
-                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+                else:
+                    self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
                 self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
 
@@ -3405,8 +3408,8 @@ class CParser():
                         self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
                         self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
                         self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
-                    else:
-                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+                else:
+                    self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
                 self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
                 param_nums += 1
 
