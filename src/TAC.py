@@ -12,12 +12,12 @@ class TAC():
 
     def newtemp(self):
         self.temp_count += 1
-        temp_name = '__tmp' + str(self.temp_count) + '__'
+        temp_name = '_tmp' + str(self.temp_count) + '_'
         return temp_name
 
     def newlabel(self):
         self.label_count += 1
-        label_name = '__lab' + str(self.label_count) + '__'
+        label_name = '_lab' + str(self.label_count) + '_'
 
     def makelist(self, line_num = None):
         patch_list = []

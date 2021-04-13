@@ -30,7 +30,7 @@ class Node:
         self.type = type
         self.isvar = isvar
         self.isTerminal = False
-
+        self.temp = ''
         # TAC lists
         self.truelist = []
         self.falselist = []
@@ -67,10 +67,11 @@ class Node:
         '''
         for key in self.variables.keys():
             self.variables[key].append(type)
+
     def print_val(self):
         for child in self.children:
             child.print_val()
-        print(self.label)
+        self.node.attr['label'] += '\n' + str(self.temp)
     
     def removeGraph(self):
         for child in self.children:
@@ -460,6 +461,12 @@ class CParser():
                 else:
                     p[0].type = p[1].type
 
+                #tac
+                if self.ST.error:
+                    return
+                
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit(p[0].label, p[0].temp, p[1].temp)
 
         elif (len(p) == 4):
             if p[2] == '.':
@@ -609,7 +616,11 @@ class CParser():
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
 
-
+                #tac
+                if self.ST.error:
+                    return
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('.', p[0].label, p[1].label, p[3].label)
 
             elif p[2] == '(':
                 p[0] = Node('FuncCall',[p[1]])
@@ -625,6 +636,7 @@ class CParser():
                 else:
                     p[0].type = p[1].ret_type
                 
+                ############################## DO TAC HEREE LATER
 
             elif p[2] == '->':
                 p3val = p[3]['lexeme']
@@ -632,8 +644,6 @@ class CParser():
 
                 p[0] = Node('->',[p[1],p[3]])
                 
-                # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
-
                 if 'struct *' not in p[1].type and 'union *' not in p[1].type:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a pointer to a structure or union at line {p.lineno(2)}')
@@ -777,6 +787,12 @@ class CParser():
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
 
+                # tac
+                if self.ST.error:
+                    return
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('.', p[0].label, p[1].label, p[3].label)
+
 
 
         elif (len(p) == 5):
@@ -838,7 +854,7 @@ class CParser():
 
                     p[0].type = p[1].ret_type
                     
-
+                ############################ DOO TACCC
 
             elif p[2] == '[':
                 
@@ -869,6 +885,7 @@ class CParser():
                         if p[0].type[0][-1] == ' ':
                             p[0].type[0] = p[0].type[0][0:-1]
                             p[0].isvar = 1
+                ############################ DOO TACCC
 
 
     def p_argument_expression_list(self,p):
@@ -898,6 +915,8 @@ class CParser():
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
 
+
+            ######## DOOOO TACCCC (Required?)
 
     def p_unary_expression(self,p):
         '''
@@ -1269,9 +1288,6 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            
-            
-
             if p[1].type == None or p[3].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
@@ -1294,15 +1310,17 @@ class CParser():
                         isin = False
                 if isin == False:
                     p[1].totype = p[0].type
-
-
-
                 p[0].node.attr['label'] = p[0].label
 
             else:
                 self.ST.error = 1
                 print(f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
-
+            
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
 
 
 
@@ -1348,8 +1366,6 @@ class CParser():
                     if flag:
                         p[3].totype.append('unsigned')
 
-
-            
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
@@ -1371,15 +1387,17 @@ class CParser():
                 p[0].node.attr['label'] = p[0].label      
 
                 p[1].totype = ['int', 'unsigned']      
-                p[3].totype = ['int', 'unsigned']      
-
+                p[3].totype = ['int', 'unsigned'] 
 
             else:
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-
-    # 10 rules done till here
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
 
     def p_equality_expression(self, p):
         '''
@@ -1418,8 +1436,6 @@ class CParser():
                     p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
                     if flag:
                         p[3].totype.append('unsigned')
-
-
             
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
@@ -1447,6 +1463,12 @@ class CParser():
             else:
                 self.ST.error = 1
                 print(f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
 
     def p_and_expression(self, p):
         '''
@@ -1492,11 +1514,15 @@ class CParser():
                 if isin == False:
                     p[3].totype = p[0].type    
 
-
             else:
                 self.ST.error = 1
                 print(f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
 
     def p_exclusive_or_expression(self, p):
         '''
@@ -1544,6 +1570,13 @@ class CParser():
             else:
                 self.ST.error = 1
                 print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+    
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+    
     def p_inclusive_or_expression(self, p):
         '''
         inclusive_or_expression : exclusive_or_expression
@@ -1588,11 +1621,16 @@ class CParser():
                 if isin == False:
                     p[3].totype = p[0].type    
 
-
             else:
                 self.ST.error = 1
                 print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            
     def p_logical_and_expression(self, p):
         '''
         logical_and_expression : inclusive_or_expression
@@ -3582,6 +3620,7 @@ else:
     outputFileSymbolTable = open('ST/' + fileNameCore + '.txt',"w")
     print('Output AST file is: ' + fileNameCore + '.ps')
     print('Output Symbol Table file is: ' + fileNameCore + '.txt')
+    parser.AST_ROOT.print_val()
     G.write(outputFile)
     orig_stdout = sys.stdout
     sys.stdout = outputFileSymbolTable
