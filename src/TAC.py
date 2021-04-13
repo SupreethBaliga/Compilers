@@ -1,5 +1,8 @@
 # operator dest operand1 operand2 - structure of the 3AC
 
+# For cast expression: 'cast' <dest> <tmp_to_caste> <type_to_caste_to>
+# for unary expression: 'op' <dest> <tmp1> <none>
+
 class TAC():
     def __init__(self):
         self.final_code = []
@@ -38,15 +41,13 @@ class TAC():
         else:
             return [oper, dest, op1, op2]
 
-    def emit(self, oper, dest, op1, op2, SymTab):
-        self.final_code.append(quad(oper, dest, op1, op2))
+    def emit(self, oper, dest, op1=None, op2=None):
+        self.final_code.append(self.quad(oper, dest, op1, op2))
         self.nextstat += 1
     
     def get_sym(self, ST, iden):
         if iden is None:
             return None
-        elif iden.isdigt():
-            return iden
         else:
             ## here it is confirmed that iden exists in ST since semantic checks done
             found, entry = ST.ReturnSymTabEntry(iden)

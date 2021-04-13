@@ -6,6 +6,7 @@ import sys
 # Get the token map from lexer
 from lexerClass import CLexer
 from SymbolTable import SymbolTable
+from TAC import TAC
 
 ############## Helper Functions ###########
 def new_node():
@@ -156,6 +157,7 @@ class CParser():
     tokens.remove("OCTAL_CONSTANT")
     def __init__(self):
         self.ST = SymbolTable()
+        self.TAC = TAC()
         self.AST_ROOT = Node("SourceNode")
         self.isError = 0
 
@@ -321,6 +323,8 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
 
+        # Three address code
+        p[0].temp = self.TAC.get_sym(self.ST, p[0].label)
 
 
     def p_primary_expression(self,p):
@@ -361,7 +365,10 @@ class CParser():
             return
         p[0] = Node(str(p[1]))
         p[0].type = ['int']
-        
+        if self.ST.error:
+            return
+        p[0].temp = self.TAC.newtemp()
+        self.TAC.emit('=int', p[0].temp, p[1])
 
 
     def p_FloatConst(self,p):
@@ -372,7 +379,10 @@ class CParser():
             return
         p[0] = Node(str(p[1]))
         p[0].type = ['float']
-
+        if self.ST.error:
+            return
+        p[0].temp = self.TAC.newtemp()
+        self.TAC.emit('=float', p[0].temp, p[1])
 
 
     def p_CharConst(self,p):
@@ -383,7 +393,10 @@ class CParser():
             return
         p[0] = Node(str(p[1]))
         p[0].type = ['char']
-
+        if self.ST.error:
+            return
+        p[0].temp = self.TAC.newtemp()
+        self.TAC.emit('=char', p[0].temp, p[1])
 
 
     def p_StringConst(self,p):
@@ -394,7 +407,10 @@ class CParser():
             return
         p[0] = Node(str(p[1]))
         p[0].type = ['str']
-
+        if self.ST.error:
+            return
+        p[0].temp = self.TAC.newtemp()
+        self.TAC.emit('=str', p[0].temp, p[1])
 
 
     def p_postfix_expression(self,p):
@@ -925,10 +941,20 @@ class CParser():
                     else:
                         p[0].type = p[2].type
 
+                #tac
+                if self.ST.error:
+                    return
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
+
             elif p[1] == 'sizeof':
                 p[0] = Node('SIZEOF',[p[2]])
                 p[0].type = ['int']
-                # not sure
+                # tac
+                if self.ST.error:
+                    return
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('sizeof', p[0].temp, p[2].temp)
 
             else:
                 p[0] = p[1]
@@ -1000,12 +1026,23 @@ class CParser():
                             p[0].type = ['int', 'unsigned']
                             # How to check if this is pointer
 
+                #tac
+                if self.ST.error:
+                    return
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
 
         elif (len(p) == 5):
             p[0] = Node('SIZEOF',[p[3]])
             p[0].type = ['int']
             # not sure
+            
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit('sizeof', p[0].temp, p[3].type)
 
     def p_unary_operator(self, p):
         '''
@@ -1073,6 +1110,12 @@ class CParser():
 
             # To do: Uniformity in totype
             
+            #TAC
+            if self.ST.error:
+                return
+            
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit('cast',p[0].temp, p[4].temp, p[4].totype)
 
 
 
@@ -1128,6 +1171,11 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
             
+            #TAC
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
 
 
             
@@ -1199,6 +1247,14 @@ class CParser():
             else :
                 self.ST.error = 1
                 print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+            
+            #Three address code
+            if self.ST.error:
+                return
+
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+
             
 
     def p_shift_expression(self, p):
@@ -1765,7 +1821,12 @@ class CParser():
                 if ((p[3] is not None) and (p[3].node is not None)):
                     p[0].onlyAddEdge([p[3]])
                     # Complete when p[1] may be None
-                    
+
+            if self.ST.error:
+                return
+            p[0].temp = self.TAC.newtemp()
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)        
+            
     def p_assignment_operator(self, p):
         '''
         assignment_operator : '='
@@ -3526,5 +3587,6 @@ else:
     sys.stdout = outputFileSymbolTable
     parser.ST.PrintTable()
     sys.stdout = orig_stdout
+    parser.TAC.print_code() # remove later
     # parser.printTree()
 
