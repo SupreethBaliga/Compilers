@@ -29,6 +29,14 @@ class Node:
         self.type = type
         self.isvar = isvar
         self.isTerminal = False
+
+        # TAC lists
+        self.truelist = []
+        self.falselist = []
+        self.nextlist = []
+        self.beginlist = []
+
+
         if children is None:
             self.isTerminal = True
         if children:
@@ -46,6 +54,8 @@ class Node:
         if (self.createAST == True) :
             self.makeGraph()
     
+        self.tacListAdd()
+        
         self.variables = dict()
         # The key of the dictionary  will be variable name and the value will be a tuple consisting of type
         self.extraValues = []
@@ -61,11 +71,6 @@ class Node:
             child.print_val()
         print(self.label)
     
-    # def should_make_node(self):
-    #     for child in self.children:
-    #         if child.node:
-    #             return True
-    #     return False
     def removeGraph(self):
         for child in self.children:
             if child.node :
@@ -96,30 +101,32 @@ class Node:
                 G.add_edge(self.children[i].node,self.children[i+1].node,style='invis')
 
             G.add_subgraph(listNode,rank='same')
+    
+    def tacListAdd(self):
+        newchildren = []
+        for child in self.children:
+            if ((child is not None) and (child.node is not None)):
+                newchildren.append(child)
+        self.children = newchildren
+        for child in self.children:
+            self.truelist += child.truelist
+            self.falselist += child.falselist
+            self.nextlist += child.nextlist
+            self.beginlist += child.beginlist
+    
+    def onlyAddEdge(self,extraChildren):
+        listNode = []
+        for child in extraChildren:
+            G.add_edge(self.node,child.node)
+            listNode.append(child.node)
 
-# This denotes an entry of the symbol table
-# class SymTabEntry:
+        for i in range(0,len(extraChildren)-1):
+            G.add_edge(extraChildren[i].node,extraChildren[i+1].node,style='invis')
+        G.add_subgraph(listNode,rank='same')
 
-#     def __init__(self, name, type=None, attributes=None):
-#         self.name = name
-#         if type:
-#             self.type = type
-#         else:
-#             self.type = None
+        self.children += extraChildren
         
-#         if attributes:
-#             self.attributes = attributes
-#         else:
-#             attributes = {}
 
-# ######## Important Global Variables
-
-# symtab = {}  # right now a global var. If class based parser, then it will become an attribute
-# ast_root = None # this will contain the root of the AST after it is built
-############## Grammar Rules ##############
-### Might have to convert it into class based code
-# ST = SymbolTable()
-# TT = TypeTable()
 
 dit = ['char', 'short', 'int', 'long int']
 dft = ['float', 'double', 'long double']
@@ -926,8 +933,7 @@ class CParser():
             else:
                 p[0] = p[1]
                 if ((p[2] is not None) and (p[2].node is not None)):
-                    p[0].children.append(p[2])
-                    G.add_edge(p[0].node,p[2].node)
+                    p[0].onlyAddEdge(p[2])
 
                     if p[2].type == None:
                         self.ST.error = 1
@@ -1727,13 +1733,7 @@ class CParser():
 
 
                     else:
-                        G.add_edge(p[0].node,p[1].node)
-                        G.add_edge(p[0].node,p[3].node)
-
-                        G.add_edge(p[1].node,p[3].node,style='invis')
-                        G.add_subgraph([p[1].node,p[3].node], rank='same')
-                        p[0].children.append(p[1])
-                        p[0].children.append(p[3])
+                        p[0].onlyAddEdge([p[1],p[3]])
                         p[0].type = p[1].type
 
                         isin = True
@@ -1758,14 +1758,12 @@ class CParser():
 
 
                 else:
-                    G.add_edge(p[0].node,p[1].node)
-                    p[0].children.append(p[1])
+                    p[0].onlyAddEdge([p[1]])
                     # Complete when p[3] may be None
 
             else:
                 if ((p[3] is not None) and (p[3].node is not None)):
-                    G.add_edge(p[0].node,p[3].node)
-                    p[0].children.append(p[3])
+                    p[0].onlyAddEdge([p[3]])
                     # Complete when p[1] may be None
                     
     def p_assignment_operator(self, p):
@@ -1844,8 +1842,7 @@ class CParser():
         elif (len(p) == 3):
             p[0] = p[1]
             if ((p[2] is not None) and (p[2].node is not None)):
-                G.add_edge(p[0].node, p[2].node)
-                p[0].children.append(p[2])
+                p[0].onlyAddEdge([p[2]])
                 if p[2].type and p[0].type:
                     p[0].type += p[2].type
 
@@ -2306,28 +2303,19 @@ class CParser():
 
             if ((p[2] is not None) and (p[2].node is not None)):
                 if ((p[5] is not None) and (p[5].node is not None)):
-                    G.add_edge(p[0].node,p[2].node)
-                    G.add_edge(p[0].node,p[5].node)
-
-                    G.add_edge(p[2].node,p[5].node,style='invis')
-                    G.add_subgraph([p[2].node,p[5].node], rank='same')
-                    p[0].children.append(p[2])
-                    p[0].children.append(p[5])
+                    p[0].onlyAddEdge([p[2],p[5]])
                 else:
-                    G.add_edge(p[0].node,p[2].node)
-                    p[0].children.append(p[2])
+                    p[0].onlyAddEdge([p[2]])
             else:
                 if ((p[5] is not None) and (p[5].node is not None)):
-                    G.add_edge(p[0].node,p[5].node)
-                    p[0].children.append(p[5])
+                    p[0].onlyAddEdge([p[5]])
 
         elif (len(p) == 7): # not needed anymore
             p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
             p[0].label = p[0].node.attr['label']
         
             if ((p[3] is not None) and (p[3].node is not None)):
-                G.add_edge(p[0].node, p[3].node)
-                p[0].children.append(p[3])
+                p[0].onlyAddEdge([p[3]])
 
 
         elif (len(p) == 3):
@@ -2343,9 +2331,8 @@ class CParser():
             else:
                 p[0].extraValues.append(p2val)
                 p[0].extraValues.append(p[1].label)
-                G.add_edge(p[0].node, p[2].node)
-                p[0].children.append(p[2])
-            
+                
+                p[0].onlyAddEdge([p[2]])
             
         
     def p_markerStructFlag2(self, p):
@@ -2397,8 +2384,7 @@ class CParser():
             p[0] = p[2]
 
             if ((p[1] is not None) and (p[1].node is not None)):
-                G.add_edge(p[0].node, p[1].node)
-                p[0].children.append(p[1])
+                p[0].onlyAddEdge([p[1]])
 
     def p_struct_declaration(self, p):
         '''
@@ -2475,8 +2461,7 @@ class CParser():
                 p[0].type.append(single_type)
 
             if ((p[2] is not None) and (p[2].node is not None)):
-                G.add_edge(p[0].node, p[2].node)
-                p[0].children.append(p[2])
+                p[0].onlyAddEdge([p[2]])
                 p[0].extraValues += p[2].extraValues
 
     def p_struct_declarator_list(self, p):
@@ -2718,20 +2703,6 @@ class CParser():
                 for single_type in p[2].type:
                     p[0].type.append(single_type)
 
-    # def p_type_qualifier_list(self, p):
-    #     '''
-    #     type_qualifier_list : type_qualifier
-    #                         | type_qualifier_list type_qualifier
-    #     '''
-    #     # AST doubt
-    #     if len(p) == 2:
-    #         p[0] = p[1]
-    #     elif len(p) == 3:
-    #         p[0] = p[2]
-    #         if ((p[1] is not None) and (p[1].node is not None)):
-    #             G.add_edge(p[0].node, p[1].node)
-    #             p[0].children.append(p[1])
-    #         p[0].extraValues += p[1].extraValues
 
     def p_parameter_type_list(self, p):
         '''
@@ -3159,12 +3130,10 @@ class CParser():
 
         if (len(p) == 2):
             if ((p[1] is not None) and (p[1].node is not None)):
-                G.add_edge(p[0].node , p[1].node)
-                self.AST_ROOT.children.append(p[1])
+                p[0].onlyAddEdge([p[1]])
         elif (len(p) == 3):
             if ((p[2] is not None) and (p[2].node is not None)):
-                G.add_edge(p[0].node, p[2].node)
-                self.AST_ROOT.children.append(p[2])
+                p[0].onlyAddEdge([p[2]])
 
     def p_external_declaration(self, p):
         '''
