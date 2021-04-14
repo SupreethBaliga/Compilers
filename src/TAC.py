@@ -1,5 +1,5 @@
 # operator dest operand1 operand2 - structure of the 3AC
-
+# For empty paramater pass ''
 # For cast expression: 'cast' <dest> <tmp_to_caste> <type_to_caste_to>
 # for unary expression: 'op' <dest> <tmp1> <none>
 
@@ -30,8 +30,8 @@ class TAC():
     
     def backpatch(self, plist, line_num):
         for elem in plist:
-            if self.final_code[elem][0] == 'goto':
-                self.final_code[elem][1] = line_num
+            if 'goto' in self.final_code[elem][0].split():
+                self.final_code[elem][1] = line_num + 1
 
     def quad(self, oper, dest, op1 = None, op2 = None):
         if (op1 is None) and (op2 is None):

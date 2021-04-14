@@ -21,6 +21,14 @@ def remove_node(graphNode):
 
 ########### Classes Required ###########
 
+# To-DO list
+# Loops       ->  Chinmay
+# Pointers    ->  Srivastava
+# Arrays      ->  Srivastava
+# Switch Case ->  Srivastava
+# Functions(later)
+
+
 # This class denotes the Node of our Functional AST
 class Node:
     def __init__(self,label,children=None,node=None,attributes=None,createAST = True, type=None, isvar = False):
@@ -35,7 +43,11 @@ class Node:
         self.truelist = []
         self.falselist = []
         self.nextlist = []
-        self.beginlist = []
+        self.breaklist = []
+        self.continuelist = []
+
+        # This field is only for Marker nodes used in TAC
+        self.quad = None
 
 
         if children is None:
@@ -55,7 +67,7 @@ class Node:
         if (self.createAST == True) :
             self.makeGraph()
     
-        self.tacListAdd()
+        # self.tacListAdd()
         
         self.variables = dict()
         # The key of the dictionary  will be variable name and the value will be a tuple consisting of type
@@ -104,19 +116,24 @@ class Node:
 
             G.add_subgraph(listNode,rank='same')
     
-    def tacListAdd(self):
-        newchildren = []
-        for child in self.children:
-            if ((child is not None) and (child.node is not None)):
-                newchildren.append(child)
-        self.children = newchildren
-        for child in self.children:
-            self.truelist += child.truelist
-            self.falselist += child.falselist
-            self.nextlist += child.nextlist
-            self.beginlist += child.beginlist
+    # Wrong and Useless function
+    # def tacListAdd(self):
+    #     newchildren = []
+    #     for child in self.children:
+    #         if ((child is not None) and (child.node is not None)):
+    #             newchildren.append(child)
+    #     self.children = newchildren
+    #     for child in self.children:
+    #         self.truelist += child.truelist
+    #         self.falselist += child.falselist
+    #         self.nextlist += child.nextlist
+    #         self.beginlist += child.beginlist
     
     def onlyAddEdge(self,extraChildren):
+        # This function only adds edge from the parent to the given
+        # node and adds the given nodes to the children list
+        # This function is different from makrGraph()
+        # and is not called by constructor of the class
         listNode = []
         for child in extraChildren:
             G.add_edge(self.node,child.node)
@@ -128,8 +145,6 @@ class Node:
 
         self.children += extraChildren
         
-
-
 dit = ['char', 'short', 'int', 'long int']
 dft = ['float', 'double', 'long double']
 iit = ['bool', 'char', 'short', 'int', 'long int']
@@ -163,7 +178,8 @@ class CParser():
         self.isError = 0
 
     def build(self):
-        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp',debug=False)
+        # Debug is kept true only while testing
+        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp',debug=True)
 
     def p_primary_expression_1(self,p):
         '''
@@ -183,9 +199,6 @@ class CParser():
                 return
 
             if entry['check'] == 'FUNC':
-
-
-
                 p[0] = Node(str(p[1]['lexeme']))
                 p[0].type = []
                 p[0].type.append('func')
@@ -200,6 +213,10 @@ class CParser():
                         continue
                     if entry['#scope'][0][var]['check'] == 'PARAM':
                         p[0].params.append(entry['#scope'][0][var])
+
+                # Need to change here
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
 
                 return
 
@@ -312,7 +329,7 @@ class CParser():
                             temp_type.append(p[0].type[i])
                 p[0].type = temp_type
             
-
+            
 
             if 'struct' in p[0].type or 'union' in p[0].type:
                 p[0].vars = entry['vars']
@@ -326,7 +343,10 @@ class CParser():
 
         # Three address code
         p[0].temp = self.TAC.get_sym(self.ST, p[0].label)
-
+        p[0].truelist.append(self.TAC.nextstat)
+        p[0].falselist.append(self.TAC.nextstat+1)
+        self.TAC.emit('ifnz goto','',p[0].temp,'')
+        self.TAC.emit('goto','','','')
 
     def p_primary_expression(self,p):
         '''
@@ -341,6 +361,10 @@ class CParser():
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
         elif (len(p) == 4):
             p[0] = p[2]
 
@@ -467,6 +491,10 @@ class CParser():
                 
                 p[0].temp = self.TAC.newtemp()
                 self.TAC.emit(p[0].label, p[0].temp, p[1].temp)
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
         elif (len(p) == 4):
             if p[2] == '.':
@@ -620,7 +648,11 @@ class CParser():
                 if self.ST.error:
                     return
                 p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('.', p[0].label, p[1].label, p[3].label)
+                self.TAC.emit('.', p[0].temp, p[1].temp, p[3].temp)
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
             elif p[2] == '(':
                 p[0] = Node('FuncCall',[p[1]])
@@ -637,6 +669,11 @@ class CParser():
                     p[0].type = p[1].ret_type
                 
                 ############################## DO TAC HEREE LATER
+
+                # p[0].truelist.append(self.TAC.nextstat)
+                # p[0].falselist.append(self.TAC.nextstat+1)
+                # self.TAC.emit('ifnz goto','',p[0].temp,'')
+                # self.TAC.emit('goto','','','')
 
             elif p[2] == '->':
                 p3val = p[3]['lexeme']
@@ -770,19 +807,9 @@ class CParser():
                         # Uncomment and COMPLETE (there is no 'entry' here) if multi-level struct to be implemented. (nested struct data should be inside symbol table)
                         # p[0].vars = entry['vars']
 
-
-
-
                     elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
                         self.ST.error = 1
                         print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
-
-
-
-
-
-
-
 
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
@@ -791,8 +818,11 @@ class CParser():
                 if self.ST.error:
                     return
                 p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('.', p[0].label, p[1].label, p[3].label)
-
+                self.TAC.emit('.', p[0].temp, p[1].temp, p[3].temp)
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
 
         elif (len(p) == 5):
@@ -856,6 +886,10 @@ class CParser():
                     
                 ############################ DOO TACCC
 
+                # p[0].truelist.append(self.TAC.nextstat)
+                # p[0].falselist.append(self.TAC.nextstat+1)
+                # self.TAC.emit('ifnz goto','',p[0].temp,'')
+                # self.TAC.emit('goto','','','')
             elif p[2] == '[':
                 
                 if p[3] == None:
@@ -887,6 +921,10 @@ class CParser():
                             p[0].isvar = 1
                 ############################ DOO TACCC
 
+                # p[0].truelist.append(self.TAC.nextstat)
+                # p[0].falselist.append(self.TAC.nextstat+1)
+                # self.TAC.emit('ifnz goto','',p[0].temp,'')
+                # self.TAC.emit('goto','','','')
 
     def p_argument_expression_list(self,p):
         '''
@@ -965,6 +1003,10 @@ class CParser():
                     return
                 p[0].temp = self.TAC.newtemp()
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
             elif p[1] == 'sizeof':
                 p[0] = Node('SIZEOF',[p[2]])
@@ -975,10 +1017,15 @@ class CParser():
                 p[0].temp = self.TAC.newtemp()
                 self.TAC.emit('sizeof', p[0].temp, p[2].temp)
 
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
+
             else:
                 p[0] = p[1]
                 if ((p[2] is not None) and (p[2].node is not None)):
-                    p[0].onlyAddEdge(p[2])
+                    p[0].onlyAddEdge([p[2]])
 
                     if p[2].type == None:
                         self.ST.error = 1
@@ -986,7 +1033,7 @@ class CParser():
                         return
 
 
-                    
+
 
                     if p[1].label[-1] in ['+', '-', '!']:
                         if p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
@@ -1051,6 +1098,14 @@ class CParser():
                 p[0].temp = self.TAC.newtemp()
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
+                if(p[1].label[-1] == '!'):
+                    p[0].truelist = p[1].falselist
+                    p[0].falselist = p[1].truelist
+                else:
+                    p[0].truelist.append(self.TAC.nextstat)
+                    p[0].falselist.append(self.TAC.nextstat+1)
+                    self.TAC.emit('ifnz goto','',p[0].temp,'')
+                    self.TAC.emit('goto','','','')
 
         elif (len(p) == 5):
             p[0] = Node('SIZEOF',[p[3]])
@@ -1062,6 +1117,10 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit('sizeof', p[0].temp, p[3].type)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
     def p_unary_operator(self, p):
         '''
@@ -1135,7 +1194,11 @@ class CParser():
             
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit('cast',p[0].temp, p[4].temp, p[4].totype)
-
+ 
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
 
 
@@ -1195,11 +1258,15 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+                
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
+
 
 
             
-
-
     def p_additive_expression(self, p):
         '''
         additive_expression : multiplicative_expression
@@ -1244,10 +1311,7 @@ class CParser():
                     p[0].label = p[0].label + ' ' +  p[0].type[1]
 
                 p[0].node.attr['label'] = p[0].label
-
-
                 
-            
             elif p[1].type[0][-1] == '*' and p[3].type[0] in iit:
                 p[0].label = p[0].label + p[1].type[0]
                 p[0].node.attr['label'] = p[0].label
@@ -1273,8 +1337,12 @@ class CParser():
 
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
-
             
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
+
 
     def p_shift_expression(self, p):
         '''
@@ -1321,6 +1389,10 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
 
 
@@ -1398,6 +1470,11 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            # 
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
     def p_equality_expression(self, p):
         '''
@@ -1469,6 +1546,10 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
     def p_and_expression(self, p):
         '''
@@ -1523,6 +1604,10 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
 
     def p_exclusive_or_expression(self, p):
         '''
@@ -1576,6 +1661,10 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
     
     def p_inclusive_or_expression(self, p):
         '''
@@ -1630,60 +1719,70 @@ class CParser():
                 return
             p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
             
     def p_logical_and_expression(self, p):
         '''
         logical_and_expression : inclusive_or_expression
-                            | logical_and_expression AND_OP inclusive_or_expression
+                            | logical_and_expression AND_OP globalmarker1 inclusive_or_expression
         '''
+        # Grammar changed
         if self.isError :
             return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+        elif (len(p) == 5):
+            if p[1].type == None or p[4].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
             else:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
+                p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
-
+                self.TAC.backpatch(p[1].truelist,p[3].quad)
+                p[0].falselist = p[1].falselist + p[4].falselist
+                p[0].truelist = p[4].truelist
 
     def p_logical_or_expression(self, p):
         '''
         logical_or_expression : logical_and_expression
-                            | logical_or_expression OR_OP logical_and_expression
+                            | logical_or_expression OR_OP globalmarker1 logical_and_expression
         '''
+        # Grammar Changed
         if self.isError :
             return
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+        elif (len(p) == 5):
+            if p[1].type == None or p[4].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
 
             else:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
+                p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
-
+                self.TAC.backpatch(p[1].falselist,p[3].quad)
+                p[0].truelist = p[1].truelist + p[4].truelist
+                p[0].falselist = p[4].falselist
 
     def p_conditional_expression(self, p):
         '''
         conditional_expression : logical_or_expression
-                            | logical_or_expression '?' expression ':' conditional_expression
+                            | logical_or_expression '?' globalmarker1 expression ':' globalmarker1 conditional_expression
         '''
         if self.isError :
             return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 6):
+        elif (len(p) == 8):
             p[0] = Node('TERNARY',[p[1],p[3],p[5]])
-
+            
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
                 print(f'Struct / Union type variable not allowed as first operand of ternary operator')
@@ -1733,32 +1832,39 @@ class CParser():
                 self.ST.error = 1
                 print(f'Incompatible conditional operation between pointer and {p[3].type} at line {p.lineno(2)}')
 
+            isError = True
             if p[3].type == p[5].type:
                 p[0].type = p[3].type
-                return
+                # Look Here
+                isError = False
 
-            if p[3].type[0][-1] == '*' or p[5].type[0][-1] == '*':
+            elif p[3].type[0][-1] == '*' or p[5].type[0][-1] == '*':
                 p[0].type = ['int', 'unsigned']
-                return
-            if 'str' in p[3].type:
+                isError = False
+            elif 'str' in p[3].type:
                 p[0].type = p[5].type
-                return
+                isError = False
 
-            if 'str' in p[5].type:
+            elif 'str' in p[5].type:
                 p[0].type = p[3].type
-                return
+                isError = False
 
-            if p[3].type[0] in aat and p[5].type[0] in aat:
+            elif p[3].type[0] in aat and p[5].type[0] in aat:
                 p[0].type = []
                 p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if 'unsigned' in p[3].type or 'unsigned' in p[5].type and p[0].type[0] in dit:
                     p[0].type.append('unsigned')
+                isError = False
+
+            if (isError == False):
+                self.TAC.backpatch(p[1].truelist,p[3].quad)
+                self.TAC.backpatch(p[1].falselist,p[6].quad)
+                p[0].truelist = p[4].truelist + p[7].truelist
+                p[0].falselist = p[4].falselist + p[7].falselist
                 return
 
             self.ST.error = 1
             print(f'Cannot perform conditional operation at line {p.lineno(2)}')
-
-
 
 
     def p_assignment_expression(self, p):
@@ -1863,7 +1969,11 @@ class CParser():
             if self.ST.error:
                 return
             p[0].temp = self.TAC.newtemp()
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)        
+            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            p[0].truelist.append(self.TAC.nextstat)
+            p[0].falselist.append(self.TAC.nextstat+1)
+            self.TAC.emit('ifnz goto','',p[0].temp,'')
+            self.TAC.emit('goto','','','')
             
     def p_assignment_operator(self, p):
         '''
@@ -1897,9 +2007,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
-
-    # 20 done here
-
+        # Baliga do here
     def p_constant_expression(self, p):
         '''
         constant_expression : conditional_expression
@@ -1907,8 +2015,6 @@ class CParser():
         if self.isError :
             return
         p[0] = p[1]
-
-    ## grammar for all expressions done
 
     def p_declaration(self, p):
         '''
@@ -1953,10 +2059,6 @@ class CParser():
         elif p[0].type and 'union' in p[0].type and len(p[0].type) >2:
             self.ST.error = 1
             print(f'Cannot have type specifiers for union type at line {p[1].line}')
-
-
-
-
 
 
     def p_init_declarator_list(self, p):
@@ -2346,9 +2448,8 @@ class CParser():
     def p_storage_class_specifier(self, p):
         '''
         storage_class_specifier : STATIC
-                                | AUTO
-                                | REGISTER
         '''
+        # Think of Static in TAC
         if self.isError :
             return
         p[0] = Node(str(p[1]))
@@ -2432,8 +2533,8 @@ class CParser():
                 p[0].extraValues.append(p[1].label)
                 
                 p[0].onlyAddEdge([p[2]])
-            
-        
+
+
     def p_markerStructFlag2(self, p):
         '''
         markerStructFlag2 :
@@ -2446,7 +2547,6 @@ class CParser():
         self.ST.flag = 1
         self.ST.InsertSymbol(iden, line_num, type_name)
         self.ST.flag = 2
-
 
 
     def p_markerStructFlag0(self, p):
@@ -2468,7 +2568,6 @@ class CParser():
         p[0].type = [str(p[1]).lower()]
         p[0].line = p.lineno(1)
         
-
     def p_struct_declaration_list(self, p):
         '''
         struct_declaration_list : struct_declaration
@@ -2493,8 +2592,6 @@ class CParser():
             return
         p[0] = Node('StructOrUnionDec',[p[1],p[2]])
         
-
-
         temp_type_list = []
         for single_type in p[1].type:
             if single_type != '*':
@@ -2657,20 +2754,6 @@ class CParser():
         
         # <--------------XXXXXXX---------------->
 
-    # Commenting the rule for const and volatile
-    # def p_type_qualifier(self, p):
-    #     '''
-    #     type_qualifier : CONST
-    #                 | VOLATILE
-    #     '''
-    #     # AST done
-    #     p[0] = Node(str(p[1]))
-    #     p[0].extraValues.append(str(p[1]))
-        # p[0].type = []
-        # p[0].type.append(str(p[1]))
-
-    # To be done from here
-
     def p_declarator(self, p):
         '''
         declarator : direct_declarator
@@ -2714,7 +2797,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST doubt - # to be added or not for rule 3, 4, 5, 6, 7
         if (len(p) == 2):
             # ID
             p[0] = p[1]
@@ -2757,8 +2839,6 @@ class CParser():
                 p[0] = Node('DDFuncCall',[p[1],p[4]])
                 p[0].variables = p[4].variables
                 p[0].variables[p[1].label] = ["Function Name"]
-
-    # correct till here
 
     def p_markerFuncPush(self, p):
         '''
@@ -2967,8 +3047,6 @@ class CParser():
             elif (p[2] == '['):
                 p[0] = Node('DAD[]',[p[1],p[3]])
 
-    #correct till here
-
     def p_initializer(self, p):
         '''
         initializer : assignment_expression
@@ -3020,6 +3098,7 @@ class CParser():
         if self.isError :
             return
         # AST Done
+        # Doubt here
         if (len(p) == 4):
             if (p[1] == 'default'):
                 p[0] = Node('DEFAULT:',[p[3]])
@@ -3041,6 +3120,11 @@ class CParser():
             p[0] = Node('EmptySCOPE',createAST = False)
         elif (len(p) == 6):
             p[0] = Node('SCOPE',[p[3]])
+            p[0].truelist = p[3].truelist
+            p[0].falselist = p[3].falselist
+            p[0].breaklist = p[3].breaklist
+            p[0].continuelist = p[3].continuelist
+            p[0].nextlist = p[3].nextlist
 
     def p_markerCompStatPush(self, p):
         '''
@@ -3061,7 +3145,7 @@ class CParser():
     def p_block_item_list(self, p):
         '''
         block_item_list : block_item
-                        | block_item_list block_item
+                        | block_item_list globalmarker1 block_item
         '''
         if self.isError :
             return
@@ -3069,8 +3153,16 @@ class CParser():
 
         if (len(p) == 2):
             p[0] = Node(';',[p[1]])
-        elif (len(p) == 3):
-            p[0] = Node(';',[p[1],p[2]])
+            p[0].truelist = p[1].truelist
+            p[0].falselist = p[1].falselist
+            p[0].breaklist = p[1].breaklist
+            p[0].continuelist = p[1].continuelist
+            p[0].nextlist = p[1].nextlist
+        elif (len(p) == 4):
+            p[0] = Node(';',[p[1],p[3]])
+            self.TAC.backpatch(p[1].nextlist,p[2].quad)
+            p[0].breaklist = p[1].breaklist + p[3].breaklist
+            p[0].continuelist = p[1].continuelist + p[3].continuelist
 
     def p_block_item(self, p):
         '''
@@ -3098,45 +3190,90 @@ class CParser():
 
     def p_selection_statement(self, p):
         '''
-        selection_statement : IF '(' expression ')' statement
-                            | IF '(' expression ')' statement ELSE statement
+        selection_statement : IF '(' expression ')' globalmarker1 statement
+                            | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
                             | SWITCH '(' expression ')' statement
         '''
+        # Grammar changes for switch remaining
         if self.isError :
             return
         # AST done
         if(len(p) == 6):
             p[0] = Node(str(p[1]).upper(),[p[3],p[5]])
+        elif (len(p) == 7):
+            p[0] = Node('IF-ELSE',[p[3],p[6]])
+            self.TAC.backpatch(p[3].truelist,p[5].quad)
+            p[0].nextlist = p[3].falselist + p[6].nextlist
+            p[0].continuelist = p[6].continuelist
+            p[0].breaklist = p[6].breaklist
         else:
-            p[0] = Node('IF-ELSE',[p[3],p[5],p[7]])
+            p[0] = Node('IF-ELSE',[p[3],p[6],p[10]])
+            self.TAC.backpatch(p[3].truelist,p[5].quad)
+            self.TAC.backpatch(p[3].falselist,p[9].quad)
+            p[0].nextlist = p[6].nextlist + p[7].nextlist + p[10].nextlist
+            p[0].continuelist = p[6].continuelist + p[10].continuelist
+            p[0].breaklist = p[6].breaklist + p[10].breaklist
 
-    # Correct till here
 
-    def p_iteration_statement(self, p):
+    def p_globalN1(self, p):
         '''
-        iteration_statement : WHILE '(' expression ')' statement
-                            | DO statement WHILE '(' expression ')' ';'
-                            | FOR '(' expression_statement expression_statement ')' statement
-                            | FOR '(' expression_statement expression_statement expression ')' statement
-                            | FOR '(' markerForPush declaration expression_statement ')' statement markerForPop
-                            | FOR '(' markerForPush declaration expression_statement expression ')' statement markerForPop
+        globalN1 : 
         '''
+        p[0] = Node('',createAST=False)
+        p[0].nextlist.append(self.TAC.nextstat)
+        self.TAC.emit('goto','','','')
+
+    def p_globalmarker1(self, p):
+        '''
+        globalmarker1 : 
+        '''
+        p[0] = Node('',createAST=False)
+        p[0].quad = self.TAC.nextstat
+
+    def p_iteration_statement_1(self, p):
+        '''
+        iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 statement
+                            | DO globalmarker1 statement WHILE '(' expression ')' ';'
+                            | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 statement
+                            | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement
+        '''
+        # Grammar rules separated to differentiate between length 11 cases
+        # Grammar Changes done for all 3
+        # In for loop we will have markers of the following form:
+        # for ( E1; M1 E2; M2 E3){M3 Statement}
+        # In the above grammar the third rule has only 2 expressions (no update statament)
+        
         if self.isError :
             return
         # AST done
-        if len(p) == 6:
-            p[0] = Node('WHILE',[p[3],p[5]])
-        elif len(p) == 7:
-            p[0] = Node('FOR',[p[3],p[4],p[6]])
-        elif len(p) == 8:
-            if (p[1] == 'do'):
-                p[0] = Node('DO-WHILE',[p[2],p[5]])
-            else:
-                p[0] = Node('FOR',[p[3],p[4],p[5],p[7]])
+        if len(p) == 8:
+            p[0] = Node('WHILE',[p[4],p[6]])
         elif len(p) == 9:
-            p[0] = Node('FOR', [p[4], p[5], p[7]])
+            if ( p[1] == 'do'):
+                p[0] = Node('DO-WHILE',[p[3],p[6]])
+            else:
+                p[0] = Node('FOR',[p[3],p[5],p[8]])
+        elif len(p) == 11:
+                p[0] = Node('FOR',[p[3],p[5],p[7],p[10]])
+
+    def p_iteration_statement_2(self, p):
+        '''
+        iteration_statement : FOR '(' markerForPush declaration globalmarker1 expression_statement ')' globalmarker1 statement markerForPop
+                            | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement markerForPop
+        '''
+        # Grammar rule separated to differentiate between length 11 cases
+        # Grammar Changes done 
+        # In for loop we will have markers of the following form:
+        # for ( E1; M1 E2; M2 E3){M3 Statement}
+        # In the above grammar first rule has only 2 expressions (no update statament)
+        
+        if self.isError :
+            return
+        # AST done
+        if len(p) == 11:
+            p[0] = Node('FOR', [p[4], p[6], p[9]])
         else:
-            p[0] = Node('FOR', [p[4], p[5], p[6], p[8]])
+            p[0] = Node('FOR', [p[4], p[6], p[8], p[11]])
 
     # Markers for FOR loops
     def p_markerForPush(self, p):
@@ -3157,18 +3294,24 @@ class CParser():
 
     def p_jump_statement(self, p):
         '''
-        jump_statement : GOTO ID ';'
-                    | CONTINUE ';'
-                    | BREAK ';'
-                    | RETURN ';'
-                    | RETURN expression ';'
+        jump_statement : CONTINUE ';'
+                       | BREAK ';'
+                       | RETURN ';'
+                       | RETURN expression ';'
         '''
         if self.isError :
             return
         # AST done
         if (len(p) == 3):
             p[0] = Node(str(p[1]).upper())
-            if p[1] == 'return':
+            if(p[1] == 'continue'):
+                p[0].continuelist.append(self.TAC.nextstat)
+                self.TAC.emit('goto','','','')
+            elif(p[1] == 'break'):
+                p[0].breaklist.append(self.TAC.nextstat)
+                self.TAC.emit('goto','','','')
+            elif p[1] == 'return':
+                # TAC remaining for return
                 found = list(self.ST.Table[0])
                 functype = self.ST.Table[0][found[-1]]['type']
 
@@ -3253,7 +3396,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST doubt
         line = 0
         if (len(p) == 7):
             # Add AST Node for EMPTY SCOPE? (check other places too)
@@ -3330,7 +3472,6 @@ class CParser():
                     if temp_type_arr[i] != '' and int(temp_type_arr[i]) <= 0:
                         self.ST.error = 1
                         print('Array bound cannot be non-positive at line ', p.lineno(line))
-
 
 
     def p_markerFunc1(self, p):
@@ -3439,7 +3580,6 @@ class CParser():
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         # Add code before this
         #  <----------------------XXXXXX------------------>
-
 
     def p_markerFunc2(self, p):
         '''
@@ -3577,7 +3717,7 @@ class CParser():
     def printTree(self):
         self.AST_ROOT.print_val()
 
-
+# region Driver Code
 #######################driver code
 if len(sys.argv) == 1:
     print('No file given as input')
@@ -3629,3 +3769,4 @@ else:
     parser.TAC.print_code() # remove later
     # parser.printTree()
 
+# endregion
