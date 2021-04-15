@@ -308,6 +308,9 @@ class CParser():
                         temp_type.append(p[0].type[i])
                 p[0].type = temp_type
                 p[0].type.append('arr')
+                for i in range(len(type_list)):
+                    if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                        p[0].type.append(type_list[len(type_list)-i-1])
 
             if 'struct' in type_list:
                 p[0].type.append('struct')
@@ -604,7 +607,9 @@ class CParser():
                                 temp_type.append(p[0].type[i])
                         p[0].type = temp_type
                         p[0].type.append('arr')
-
+                        for i in range(len(type_list)):
+                            if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                                p[0].type.append(type_list[len(type_list)-i-1])
                     if 'struct' in type_list:
                         p[0].type.append('struct')
                         for single_type in type_list:
@@ -780,6 +785,9 @@ class CParser():
                                 temp_type.append(p[0].type[i])
                         p[0].type = temp_type
                         p[0].type.append('arr')
+                        for i in range(len(type_list)):
+                            if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                                p[0].type.append(type_list[len(type_list)-i-1])
 
                     if 'struct' in type_list:
                         p[0].type.append('struct')
@@ -917,13 +925,16 @@ class CParser():
                     if p[1].type[0][-1] != '*':
                         self.ST.error = 1
                         print(f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
-                    else:
+                    else:                        
                         p[0] = Node('ArrSub',[p[1],p[3]])
                         p[0].type = p[1].type
                         p[0].type[0] = p[0].type[0][0:-1]
                         if p[0].type[0][-1] == ' ':
                             p[0].type[0] = p[0].type[0][0:-1]
                             p[0].isvar = 1
+                        for i in range(len(p[1].type)):
+                            if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
+                                p[0].type.append(p[1].type[i])
                 ############################ DOO TACCC
 
                 # p[0].truelist.append(self.TAC.nextstat)
@@ -2331,6 +2342,9 @@ class CParser():
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
                     p[1].type.append('arr')
+                    for i in range(len(type_list)):
+                        if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                            p[1].type.append(type_list[len(type_list)-i-1])
 
                 if 'struct' in type_list:
                     p[1].type.append('struct')
