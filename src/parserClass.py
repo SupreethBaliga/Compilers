@@ -48,7 +48,7 @@ class Node:
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
-
+        self.dimensionList = None
 
         if children is None:
             self.isTerminal = True
@@ -461,6 +461,19 @@ class CParser():
         # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
         if (len(p) == 2):
             p[0] = p[1]
+
+            for i in range(len(p[1].type) - 1, 0, -1):
+                if p[1].type[i][0] != '[':
+                    break
+                else:
+                    if p[0].dimensionList is None:
+                        p[0].dimensionList = []
+                    p[0].dimensionList.append(int(p[1].type[i][1:-1]))
+
+            if p[0].dimensionList is not None:
+                p[0].dimensionList.reverse()        
+                p[0].dimensionList.append('isFirstAccess')
+
         elif (len(p) == 3):
             if p[1].type == None:
                 self.ST.error = 1
@@ -936,11 +949,37 @@ class CParser():
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
                                 p[0].type.append(p[1].type[i])
                 ############################ DOO TACCC
+                p[0].dimensionList = p[1].dimensionList
+                isFirstAccess = False
 
-                # p[0].truelist.append(self.TAC.nextstat)
-                # p[0].falselist.append(self.TAC.nextstat+1)
-                # self.TAC.emit('ifnz goto','',p[0].temp,'')
-                # self.TAC.emit('goto','','','')
+                if len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
+                    isFirstAccess = True
+                    p[0].dimensionList.pop()
+                
+                p[0].temp = self.TAC.newtemp()
+
+                if isFirstAccess:
+                    self.TAC.emit('=int', p[0].temp, p[3].temp , '') 
+                else:
+                    curDimension = p[0].dimensionList[-1]
+                    self.TAC.emit('*int', p[0].temp, p[1].temp , curDimension)
+                    self.TAC.emit('+int', p[0].temp, p[0].temp, p[3].temp)
+
+                
+                p[0].dimensionList.pop()
+
+                if len(p[0].dimensionList) == 0:
+                    if(p[0].type[0][-1] == '*'):
+                        self.TAC.emit('*int', p[0].temp, p[0].temp, 8)
+                    else:
+                        self.TAC.emit('*int', p[0].temp, p[0].temp, sizes[p[0].type[0]])
+                    
+                    self.TAC.emit('+int', p[0].temp, 'baseAddr', p[0].temp)
+
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
     def p_argument_expression_list(self,p):
         '''
