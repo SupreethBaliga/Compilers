@@ -383,8 +383,6 @@ class CParser():
         self.ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
         self.ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
 
-
-
     def p_IntegerConst(self,p):
         '''
         IntegerConst : INT_CONSTANT
@@ -397,7 +395,6 @@ class CParser():
             return
         p[0].temp = self.TAC.newtemp()
         self.TAC.emit('=int', p[0].temp, p[1])
-
 
     def p_FloatConst(self,p):
         '''
@@ -412,7 +409,6 @@ class CParser():
         p[0].temp = self.TAC.newtemp()
         self.TAC.emit('=float', p[0].temp, p[1])
 
-
     def p_CharConst(self,p):
         '''
         CharConst : CHAR_CONSTANT
@@ -426,7 +422,6 @@ class CParser():
         p[0].temp = self.TAC.newtemp()
         self.TAC.emit('=char', p[0].temp, p[1])
 
-
     def p_StringConst(self,p):
         '''
         StringConst : STRING_LITERAL
@@ -439,7 +434,6 @@ class CParser():
             return
         p[0].temp = self.TAC.newtemp()
         self.TAC.emit('=str', p[0].temp, p[1])
-
 
     def p_postfix_expression(self,p):
         '''
@@ -1203,9 +1197,6 @@ class CParser():
             self.TAC.emit('ifnz goto','',p[0].temp,'')
             self.TAC.emit('goto','','','')
 
-
-
-
     def p_mulitplicative_expression(self,p):
         '''
         multiplicative_expression : cast_expression
@@ -1266,9 +1257,6 @@ class CParser():
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
             self.TAC.emit('goto','','','')
-
-
-
 
     def p_additive_expression(self, p):
         '''
@@ -1346,7 +1334,6 @@ class CParser():
             self.TAC.emit('ifnz goto','',p[0].temp,'')
             self.TAC.emit('goto','','','')
 
-
     def p_shift_expression(self, p):
         '''
         shift_expression : additive_expression
@@ -1396,8 +1383,6 @@ class CParser():
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
             self.TAC.emit('goto','','','')
-
-
 
     def p_relational_expression(self, p):
         '''
@@ -1869,7 +1854,6 @@ class CParser():
             self.ST.error = 1
             print(f'Cannot perform conditional operation at line {p.lineno(2)}')
 
-
     def p_assignment_expression(self, p):
         '''
         assignment_expression : conditional_expression
@@ -2011,6 +1995,7 @@ class CParser():
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
         # Baliga do here
+
     def p_constant_expression(self, p):
         '''
         constant_expression : conditional_expression
@@ -2063,7 +2048,6 @@ class CParser():
             self.ST.error = 1
             print(f'Cannot have type specifiers for union type at line {p[1].line}')
 
-
     def p_init_declarator_list(self, p):
         '''
         init_declarator_list : init_declarator
@@ -2086,7 +2070,6 @@ class CParser():
             return
         p[0] = Node('',createAST=False)
         p[0].extraValues = p[-2].extraValues
-
 
     def p_init_declarator(self, p):
         '''
@@ -2447,7 +2430,6 @@ class CParser():
 
         # <---------------XXXXX------------------>
 
-
     def p_storage_class_specifier(self, p):
         '''
         storage_class_specifier : STATIC
@@ -2458,7 +2440,6 @@ class CParser():
         p[0] = Node(str(p[1]))
         p[0].extraValues.append(str(p[1]))
         p[0].line = p.lineno(1)
-
 
     def p_type_specifier(self, p):
         '''
@@ -2485,7 +2466,6 @@ class CParser():
         else:
             p[0] = p[1]
             p[0].line = p[1].line
-
 
     def p_struct_or_union_specifier(self, p):
         '''
@@ -2537,7 +2517,6 @@ class CParser():
                 
                 p[0].onlyAddEdge([p[2]])
 
-
     def p_markerStructFlag2(self, p):
         '''
         markerStructFlag2 :
@@ -2550,7 +2529,6 @@ class CParser():
         self.ST.flag = 1
         self.ST.InsertSymbol(iden, line_num, type_name)
         self.ST.flag = 2
-
 
     def p_markerStructFlag0(self, p):
         '''
@@ -2885,7 +2863,6 @@ class CParser():
                 for single_type in p[2].type:
                     p[0].type.append(single_type)
 
-
     def p_parameter_type_list(self, p):
         '''
         parameter_type_list : parameter_list
@@ -2989,7 +2966,6 @@ class CParser():
                 for single_type in p[2].type:
                     p[0].type.append(single_type)
 
-
     def p_abstract_declarator(self, p):
         '''
         abstract_declarator : pointer
@@ -3010,7 +2986,6 @@ class CParser():
             if p[2].type:
                 for single_type in p[2].type:
                     p[0].type.append(single_type)
-
 
     def p_direct_abstract_declarator(self, p):
         '''
@@ -3218,7 +3193,6 @@ class CParser():
             p[0].continuelist = p[6].continuelist + p[10].continuelist
             p[0].breaklist = p[6].breaklist + p[10].breaklist
 
-
     def p_globalN1(self, p):
         '''
         globalN1 : 
@@ -3415,7 +3389,6 @@ class CParser():
                 p[2] = Node(str(p2val))
                 p[0] = Node('GOTO',[p[2]])
 
-
     def p_start(self, p):
         '''
         start : translation_unit
@@ -3546,7 +3519,6 @@ class CParser():
                     if temp_type_arr[i] != '' and int(temp_type_arr[i]) <= 0:
                         self.ST.error = 1
                         print('Array bound cannot be non-positive at line ', p.lineno(line))
-
 
     def p_markerFunc1(self, p):
         '''
