@@ -22,10 +22,10 @@ def remove_node(graphNode):
 ########### Classes Required ###########
 
 # To-DO list
-# Loops       ->  Chinmay
 # Pointers    ->  Srivastava
 # Arrays      ->  Srivastava
 # Switch Case ->  Srivastava
+# TypeCasting TAC -> Sanchit
 # Functions(later)
 
 
@@ -171,6 +171,9 @@ class CParser():
     tokens.remove("ERROR")
     tokens.remove("HEXA_CONSTANT")
     tokens.remove("OCTAL_CONSTANT")
+    tokens.remove("AUTO")
+    tokens.remove("REGISTER")
+    tokens.remove("GOTO")
     def __init__(self):
         self.ST = SymbolTable()
         self.TAC = TAC()
@@ -1266,7 +1269,7 @@ class CParser():
 
 
 
-            
+
     def p_additive_expression(self, p):
         '''
         additive_expression : multiplicative_expression
@@ -3163,6 +3166,7 @@ class CParser():
             self.TAC.backpatch(p[1].nextlist,p[2].quad)
             p[0].breaklist = p[1].breaklist + p[3].breaklist
             p[0].continuelist = p[1].continuelist + p[3].continuelist
+            p[0].nextlist = p[3].nextlist
 
     def p_block_item(self, p):
         '''
@@ -3190,7 +3194,7 @@ class CParser():
 
     def p_selection_statement(self, p):
         '''
-        selection_statement : IF '(' expression ')' globalmarker1 statement
+        selection_statement : IF '(' expression ')' globalmarker1 statement globalN1
                             | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
                             | SWITCH '(' expression ')' statement
         '''
@@ -3200,7 +3204,7 @@ class CParser():
         # AST done
         if(len(p) == 6):
             p[0] = Node(str(p[1]).upper(),[p[3],p[5]])
-        elif (len(p) == 7):
+        elif (len(p) == 8):
             p[0] = Node('IF-ELSE',[p[3],p[6]])
             self.TAC.backpatch(p[3].truelist,p[5].quad)
             p[0].nextlist = p[3].falselist + p[6].nextlist
@@ -3233,7 +3237,7 @@ class CParser():
     def p_iteration_statement_1(self, p):
         '''
         iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 statement
-                            | DO globalmarker1 statement WHILE '(' expression ')' ';'
+                            | DO globalmarker1 statement WHILE '(' globalmarker1 expression ')' ';'
                             | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 statement
                             | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement
         '''
@@ -3248,13 +3252,52 @@ class CParser():
         # AST done
         if len(p) == 8:
             p[0] = Node('WHILE',[p[4],p[6]])
+            self.TAC.backpatch(p[7].nextlist, p[2].quad)
+            self.TAC.backpatch(p[7].continuelist, p[2].quad)
+            self.TAC.backpatch(p[4].truelist, p[6].quad)
+            p[0].nextlist= p[4].falselist + p[7].breaklist
+            self.TAC.emit('goto',int(p[2].quad) + 1,'','')
         elif len(p) == 9:
-            if ( p[1] == 'do'):
-                p[0] = Node('DO-WHILE',[p[3],p[6]])
-            else:
                 p[0] = Node('FOR',[p[3],p[5],p[8]])
+                # M1 is p[4]
+                # S1 is p[8]
+                # E1 is p[3]
+                # E2 is p[5]
+                # M2 is p[7]
+                self.TAC.backpatch(p[8].nextlist,p[4].quad)
+                self.TAC.backpatch(p[8].continuelist,p[4].quad)
+                self.TAC.backpatch(p[3].truelist,p[4].quad)
+                self.TAC.backpatch(p[3].falselist,p[4].quad)
+                self.TAC.backpatch(p[5].truelist,p[7].quad)
+                p[0].nextlist = p[8].breaklist + p[5].falselist
+                self.TAC.emit('goto',p[4].quad+1,'','')
+        elif len(p) == 10:
+                p[0] = Node('DO-WHILE',[p[3],p[7]])
+                # Statement has continuelist, nextlist and breaklist
+                # expression has truelist and falselist
+                self.TAC.backpatch(p[7].truelist,p[2].quad)
+                p[0].nextlist = p[7].falselist + p[3].breaklist
+                self.TAC.backpatch(p[3].nextlist,p[6].quad)
+                self.TAC.backpatch(p[3].continuelist,p[6].quad)
+                self.TAC.emit('goto',p[2].quad+1,'','')
         elif len(p) == 11:
                 p[0] = Node('FOR',[p[3],p[5],p[7],p[10]])
+                # M1 is p[4]
+                # M2 is p[6]
+                # M3 is p[9]
+                # E1 is p[3]
+                # E2 is p[5]
+                # E3 is p[7]
+                # S1 is p[10]
+                self.TAC.backpatch(p[3].truelist,p[4].quad)
+                self.TAC.backpatch(p[3].falselist,p[4].quad)
+                self.TAC.backpatch(p[10].nextlist,p[6].quad)
+                self.TAC.backpatch(p[10].continuelist,p[6].quad)
+                self.TAC.backpatch(p[5].truelist,p[9].quad)
+                self.TAC.backpatch(p[7].truelist,p[4].quad)
+                self.TAC.backpatch(p[7].falselist,p[4].quad)
+                p[0].nextlist = p[10].breaklist + p[5].falselist
+                self.TAC.emit('goto',p[6].quad+1,'','')
 
     def p_iteration_statement_2(self, p):
         '''
@@ -3272,8 +3315,30 @@ class CParser():
         # AST done
         if len(p) == 11:
             p[0] = Node('FOR', [p[4], p[6], p[9]])
+            # M1 is p[5]
+            # M2 is p[8]
+            # S1 is p[9]
+            # E1 is p[6]
+            self.TAC.backpatch(p[6].truelist,p[8].quad)
+            self.TAC.backpatch(p[9].continuelist,p[5].quad)
+            self.TAC.backpatch(p[9].nextlist,p[5].quad)
+            p[0].nextlist = p[9].breaklist + p[6].falselist
+            self.TAC.emit('goto',p[5].quad+1,'','')
         else:
             p[0] = Node('FOR', [p[4], p[6], p[8], p[11]])
+            # M1 is p[5]
+            # M2 is p[7]
+            # M3 is p[10]
+            # S1 is p[11]
+            # E1 is p[6]
+            # E2 is p[8]
+            self.TAC.backpatch(p[11].nextlist,p[7].quad)
+            self.TAC.backpatch(p[11].continuelist,p[7].quad)
+            self.TAC.backpatch(p[6].truelist,p[10].quad)
+            self.TAC.backpatch(p[8].truelist,p[5].quad)
+            self.TAC.backpatch(p[8].falselist,p[5].quad)
+            p[0].nextlist = p[11].breaklist + p[6].falselist
+            self.TAC.emit('goto',p[7].quad+1,'','')
 
     # Markers for FOR loops
     def p_markerForPush(self, p):
@@ -3406,12 +3471,21 @@ class CParser():
             if p[3] == '{':
                 p[0] = Node('FUNC',[p[2],Node('SCOPE', [p[5]])])
                 line = 3
+                
+                # Added here to provide goto to the last statement in the function
+                self.TAC.backpatch(p[5].nextlist,p[7].quad)
+                self.TAC.backpatch(p[5].breaklist,p[7].quad)
             else:
                 p[0] = Node('FUNC',[p[2],p[3]])
                 line = 4
         elif len(p) == 9:
             p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
             line = 4
+
+            # Added here to provide goto to the last statement in the function
+            self.TAC.backpatch(p[6].nextlist,p[8].quad)
+            self.TAC.backpatch(p[6].breaklist,p[8].quad)
+
         p[1].removeGraph()
 
         # found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
@@ -3696,6 +3770,8 @@ class CParser():
         if self.isError :
             return
         self.ST.PopScope()
+        p[0] = Node('',createAST = False)
+        p[0].quad = self.TAC.nextstat
 
     def p_declaration_list(self, p):
         '''
