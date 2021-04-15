@@ -382,6 +382,13 @@ class CParser():
         p[0].isvar = 1
         self.ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
         self.ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
+        
+        #tac
+        if self.ST.error:
+            return
+        p[0].temp = self.TAC.newtemp()        
+        self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[0].temp)
+        
 
     def p_IntegerConst(self,p):
         '''
@@ -486,7 +493,8 @@ class CParser():
                 if self.ST.error:
                     return
                 
-                p[0].temp = self.TAC.newtemp()
+                # p[0].temp = self.TAC.newtemp()
+                p[0].temp = p[1].temp
                 self.TAC.emit(p[0].label, p[0].temp, p[1].temp)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
@@ -998,7 +1006,8 @@ class CParser():
                 #tac
                 if self.ST.error:
                     return
-                p[0].temp = self.TAC.newtemp()
+                # p[0].temp = self.TAC.newtemp()
+                p[0].temp = p[2].temp
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
@@ -1093,6 +1102,7 @@ class CParser():
                 if self.ST.error:
                     return
                 p[0].temp = self.TAC.newtemp()
+                # p[0].temp = p[2].temp
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
                 if(p[1].label[-1] == '!'):
@@ -1955,8 +1965,9 @@ class CParser():
 
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            # p[0].temp = self.TAC.newtemp()
+            p[0].temp = p[1].temp
+            self.TAC.emit(p[0].label, p[1].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -3814,6 +3825,7 @@ else:
     sys.stdout = outputFileSymbolTable
     parser.ST.PrintTable()
     sys.stdout = orig_stdout
+    parser.TAC.clean_code()
     parser.TAC.print_code() # remove later
     # parser.printTree()
 

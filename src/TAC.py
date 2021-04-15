@@ -3,6 +3,7 @@
 # For cast expression: 'cast' <dest> <tmp_to_caste> <type_to_caste_to>
 # for unary expression: 'op' <dest> <tmp1> <none>
 
+import copy
 class TAC():
     def __init__(self):
         self.final_code = []
@@ -66,3 +67,24 @@ class TAC():
             for i in range(0, len(code)):
                 print(code[i], end = ' ')
             print('')
+
+    def clean_code(self):
+        temp_code = copy.deepcopy(self.final_code)
+        final_lines = dict()
+        self.final_code = []
+        deleted = 0
+        for idx in range(0,len(temp_code)):
+            code = temp_code[idx]
+            final_lines[idx+1] = idx+1-deleted
+            if 'goto' in code[0].split():
+                if code[1] == '' or code[1] == None:
+                    deleted += 1
+                else:
+                    self.final_code.append(code)
+            else:
+                self.final_code.append(code)
+        
+        for idx in range(0,len(self.final_code)):
+            code = self.final_code[idx]
+            if 'goto' in code[0].split():
+                self.final_code[idx][1] = final_lines[self.final_code[idx][1]]
