@@ -454,8 +454,8 @@ class CParser():
                         | postfix_expression '(' ')'
                         | postfix_expression PTR_OP ID
                         | postfix_expression '[' expression ']'
-                        | postfix_expression '(' argument_expression_list ')'
-        '''
+                        | postfix_expression '(' argument_expression_list ')' 
+        ''' 
         if self.isError :
             return
         # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
@@ -692,11 +692,12 @@ class CParser():
                     p[0].type = p[1].ret_type
                 
                 ############################## DO TAC HEREE LATER
-
-                # p[0].truelist.append(self.TAC.nextstat)
-                # p[0].falselist.append(self.TAC.nextstat+1)
-                # self.TAC.emit('ifnz goto','',p[0].temp,'')
-                # self.TAC.emit('goto','','','')
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('callq', p[0].temp, p[1].label , '0')
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
 
             elif p[2] == '->':
                 p3val = p[3]['lexeme']
@@ -866,7 +867,7 @@ class CParser():
                     ctr = -1
                     for i in p[1].params:
 
-
+                        # call id, len(p[1].params)
                         ctr += 1
 
                         # found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
@@ -911,11 +912,12 @@ class CParser():
                     p[0].type = p[1].ret_type
                     
                 ############################ DOO TACCC
-
-                # p[0].truelist.append(self.TAC.nextstat)
-                # p[0].falselist.append(self.TAC.nextstat+1)
-                # self.TAC.emit('ifnz goto','',p[0].temp,'')
-                # self.TAC.emit('goto','','','')
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('callq', p[0].temp, p[1].label , len(p[1].params))
+                p[0].truelist.append(self.TAC.nextstat)
+                p[0].falselist.append(self.TAC.nextstat+1)
+                self.TAC.emit('ifnz goto','',p[0].temp,'')
+                self.TAC.emit('goto','','','')
             elif p[2] == '[':
                 
                 if p[3] == None:
@@ -997,7 +999,7 @@ class CParser():
             p[0].params = []
             p[0].params.append(p[1].type) 
             p[0].type = ['arg list']
-
+            self.TAC.emit('param', p[1].temp,'','')
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
@@ -1007,7 +1009,7 @@ class CParser():
             p[0].type = ['arg list']
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
-
+            self.TAC.emit('param', p[3].temp,'','')
 
             ######## DOOOO TACCCC (Required?)
 
@@ -2017,7 +2019,7 @@ class CParser():
                 return
             # p[0].temp = self.TAC.newtemp()
             p[0].temp = p[1].temp
-            self.TAC.emit(p[0].label, p[1].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2055,7 +2057,8 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
-        # Baliga do here
+            p[0].truelist = p[3].truelist
+            p[0].falselist = p[3].falselist
 
     def p_constant_expression(self, p):
         '''
@@ -2145,7 +2148,7 @@ class CParser():
         elif (len(p) == 4):
             p[0] = Node('=',[p[1],p[3]])
             p[0].variables = p[1].variables
-        
+            
         # Code to add types to variable
         p[0].extraValues = p[-1].extraValues
         for val in p[0].extraValues:
@@ -2488,7 +2491,12 @@ class CParser():
                         p[0].label += ' unsigned'
 
                 p[0].node.attr['label'] = p[0].label
-
+        if len(p) == 4:
+            #tac
+            if self.ST.error:
+                return
+            p[0].temp = p[1].temp
+            self.TAC.emit(p[0].label, p[0].temp, p[3].temp,'')
 
 
 
@@ -2814,6 +2822,7 @@ class CParser():
             p[0].variables = p[2].variables
             for val in p[1].extraValues:
                 p[0].addTypeInDict(val)
+            p[0].temp = p[2].temp
 
     def p_function_declarator(self, p):
         '''
@@ -3422,6 +3431,9 @@ class CParser():
                     self.ST.error = 1
                     print(f'Need an argument to return of type {functype} at line {p.lineno(1)}')
 
+                if self.ST.error:
+                    return
+                self.TAC.emit('retq','','','')
 
 
         else:
@@ -3446,12 +3458,10 @@ class CParser():
                 elif functype == ['void'] and p[2].type[0] != 'void':
                     self.ST.error = 1
                     print(f'Cannot return non-void type at line {p.lineno(1)}')
-                    
-
-            else:
-                p2val = p[2]['lexeme']
-                p[2] = Node(str(p2val))
-                p[0] = Node('GOTO',[p[2]])
+                
+                if self.ST.error:
+                    return
+                self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
         '''
@@ -3491,11 +3501,12 @@ class CParser():
 
     def p_function_definition(self, p):
         '''
-        function_definition : declaration_specifiers function_declarator declaration_list '{' markerFunc1 '}' markerFuncPop
-                            | declaration_specifiers function_declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
-                            | declaration_specifiers function_declarator '{' markerFunc2 '}' markerFuncPop
+        function_definition : declaration_specifiers function_declarator '{' markerFunc2 '}' markerFuncPop
                             | declaration_specifiers function_declarator '{' markerFunc2 block_item_list '}' markerFuncPop
         '''
+        #not needed
+        # declaration_specifiers function_declarator declaration_list '{' markerFunc1 '}' markerFuncPop
+        # | declaration_specifiers function_declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
         if self.isError :
             return
         line = 0
@@ -3515,13 +3526,13 @@ class CParser():
             else:
                 p[0] = Node('FUNC',[p[2],p[3]])
                 line = 4
-        elif len(p) == 9:
-            p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
-            line = 4
+        # elif len(p) == 9:
+        #     p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
+        #     line = 4
 
-            # Added here to provide goto to the last statement in the function
-            self.TAC.backpatch(p[6].nextlist,p[8].quad)
-            self.TAC.backpatch(p[6].breaklist,p[8].quad)
+        #     # Added here to provide goto to the last statement in the function
+        #     self.TAC.backpatch(p[6].nextlist,p[8].quad)
+        #     self.TAC.backpatch(p[6].breaklist,p[8].quad)
 
         p[1].removeGraph()
 
@@ -3583,113 +3594,116 @@ class CParser():
                     if temp_type_arr[i] != '' and int(temp_type_arr[i]) <= 0:
                         self.ST.error = 1
                         print('Array bound cannot be non-positive at line ', p.lineno(line))
+        
+        self.TAC.emit('','','','')
 
-    def p_markerFunc1(self, p):
-        '''
-        markerFunc1 : 
-        '''
-        if self.isError :
-            return
-        # self.ST.PopScope()
 
-        p[0] = Node('',createAST=False)
-        p[0].variables = p[-3].variables
-        function_name = str()
-        for key in p[0].variables.keys():
-            if(p[0].variables[key][0] == "Function Name"):
-                function_name = key
-                break
-        p[0].variables[key] += p[-4].extraValues + p[-3].extraValues
+    # def p_markerFunc1(self, p):
+    #     '''
+    #     markerFunc1 : 
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # self.ST.PopScope()
 
-        # print("This is start of the function in funcpop1")
-        # for key in p[0].variables.keys():
-        #     print("The key is: " + key)
-        #     print(p[0].variables[key])
-        # print('This is end of the function')
+    #     p[0] = Node('',createAST=False)
+    #     p[0].variables = p[-3].variables
+    #     function_name = str()
+    #     for key in p[0].variables.keys():
+    #         if(p[0].variables[key][0] == "Function Name"):
+    #             function_name = key
+    #             break
+    #     p[0].variables[key] += p[-4].extraValues + p[-3].extraValues
 
-        self.ST.ModifySymbol(function_name, 'check', "FUNC", p.lineno(0)) # says that this entry is a function
-        param_nums = 0 
-        for var_name in p[0].variables.keys():
-            if not var_name == function_name:
-                if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
-                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
-                    if found:
-                        self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
-                        self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
-                        self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
-                else:
-                    self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
-                self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
-                param_nums += 1
+    #     # print("This is start of the function in funcpop1")
+    #     # for key in p[0].variables.keys():
+    #     #     print("The key is: " + key)
+    #     #     print(p[0].variables[key])
+    #     # print('This is end of the function')
 
-                #updating variable class
-                if p[0].variables[var_name]:
-                    isGlobal = self.ST.isGlobal(var_name)
-                    isStatic = False
-                    if 'static' in p[0].variables[var_name]:
-                        isStatic = True
-                    if isGlobal & isStatic:
-                        self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno(0))
-                    elif isGlobal:
-                        self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
-                    elif isStatic:
-                        self.ST.ModifySymbol(var_name, "varclass", "Local Static", p.lineno(0))
-                    else:
-                        self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
+    #     self.ST.ModifySymbol(function_name, 'check', "FUNC", p.lineno(0)) # says that this entry is a function
+    #     param_nums = 0 
+    #     for var_name in p[0].variables.keys():
+    #         if not var_name == function_name:
+    #             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
+    #                 found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
+    #                 if found:
+    #                     self.ST.ModifySymbol(var_name, "vars", found['vars'], p.lineno(0))
+    #                     self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(0))
+    #                     self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+    #             else:
+    #                 self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(0))
+    #             self.ST.ModifySymbol(var_name, "check", "PARAM", p.lineno(0))
+    #             param_nums += 1
 
-                # updating sizes
-                if p[0].variables[var_name]:
-                    #handling arrays
-                    multiplier = 1
-                    for type_name in p[0].variables[var_name]:
-                        if type_name[0]=='[' and type_name[-1]==']':
-                            if type_name[1:-1] != '':
-                                multiplier *= int(type_name[1:-1])
-                        else:
-                            break
+    #             #updating variable class
+    #             if p[0].variables[var_name]:
+    #                 isGlobal = self.ST.isGlobal(var_name)
+    #                 isStatic = False
+    #                 if 'static' in p[0].variables[var_name]:
+    #                     isStatic = True
+    #                 if isGlobal & isStatic:
+    #                     self.ST.ModifySymbol(var_name, "varclass", "Global Static", p.lineno(0))
+    #                 elif isGlobal:
+    #                     self.ST.ModifySymbol(var_name, "varclass", "Global", p.lineno(0))
+    #                 elif isStatic:
+    #                     self.ST.ModifySymbol(var_name, "varclass", "Local Static", p.lineno(0))
+    #                 else:
+    #                     self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
 
-                    if '*' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
-                    elif 'struct' in p[0].variables[var_name] :
-                        struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
-                        if found:
-                            for var in found['vars']:
-                                struct_size += found['vars'][var]['sizeAllocInBytes']
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
-                    elif 'union' in p[0].variables[var_name]:
-                        struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
-                        if found:
-                            for var in found['vars']:
-                                struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
-                    elif 'long' in p[0].variables[var_name]:
-                        if 'int' in p[0].variables[var_name]:
-                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
-                        elif 'double' in p[0].variables[var_name]:
-                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long double"], p.lineno(0))
-                        else:
-                            self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long"], p.lineno(0))
-                    elif 'float' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["float"], p.lineno(0))
-                    elif 'double' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["double"], p.lineno(0))
-                    elif 'short' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["short"], p.lineno(0))
-                    elif 'int' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["int"], p.lineno(0))
-                    elif 'char' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["char"], p.lineno(0))
-                    elif 'bool' in p[0].variables[var_name]:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
-                    else:
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
-            else:
-                self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
-        self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
-        # Add code before this
-        #  <----------------------XXXXXX------------------>
+    #             # updating sizes
+    #             if p[0].variables[var_name]:
+    #                 #handling arrays
+    #                 multiplier = 1
+    #                 for type_name in p[0].variables[var_name]:
+    #                     if type_name[0]=='[' and type_name[-1]==']':
+    #                         if type_name[1:-1] != '':
+    #                             multiplier *= int(type_name[1:-1])
+    #                     else:
+    #                         break
+
+    #                 if '*' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
+    #                 elif 'struct' in p[0].variables[var_name] :
+    #                     struct_size = 0
+    #                     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+    #                     if found:
+    #                         for var in found['vars']:
+    #                             struct_size += found['vars'][var]['sizeAllocInBytes']
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+    #                 elif 'union' in p[0].variables[var_name]:
+    #                     struct_size = 0
+    #                     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+    #                     if found:
+    #                         for var in found['vars']:
+    #                             struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+    #                 elif 'long' in p[0].variables[var_name]:
+    #                     if 'int' in p[0].variables[var_name]:
+    #                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
+    #                     elif 'double' in p[0].variables[var_name]:
+    #                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long double"], p.lineno(0))
+    #                     else:
+    #                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long"], p.lineno(0))
+    #                 elif 'float' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["float"], p.lineno(0))
+    #                 elif 'double' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["double"], p.lineno(0))
+    #                 elif 'short' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["short"], p.lineno(0))
+    #                 elif 'int' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["int"], p.lineno(0))
+    #                 elif 'char' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["char"], p.lineno(0))
+    #                 elif 'bool' in p[0].variables[var_name]:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
+    #                 else:
+    #                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
+    #         else:
+    #             self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
+    #     self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
+    #     # Add code before this
+    #     #  <----------------------XXXXXX------------------>
 
     def p_markerFunc2(self, p):
         '''
@@ -3799,6 +3813,8 @@ class CParser():
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         #  <----------------------XXXX------------------>
 
+        self.TAC.emit(str(function_name) + ":",'','','')
+
     def p_markerFuncPop(self, p):
         '''
         markerFuncPop :
@@ -3809,18 +3825,18 @@ class CParser():
         p[0] = Node('',createAST = False)
         p[0].quad = self.TAC.nextstat
 
-    def p_declaration_list(self, p):
-        '''
-        declaration_list : declaration
-                        | declaration_list declaration
-        '''
-        # AST done
-        if self.isError :
-            return
-        if (len(p) == 2):
-            p[0] = Node(';',[p[1]])
-        elif (len(p) == 3):
-            p[0] = Node(';',[p[1],p[2]])
+    # def p_declaration_list(self, p):
+    #     '''
+    #     declaration_list : declaration
+    #                     | declaration_list declaration
+    #     '''
+    #     # AST done
+    #     if self.isError :
+    #         return
+    #     if (len(p) == 2):
+    #         p[0] = Node(';',[p[1]])
+    #     elif (len(p) == 3):
+    #         p[0] = Node(';',[p[1],p[2]])
 
     def p_error(self, p):
         print(f'Error found while parsing in line {p.lineno}!')
