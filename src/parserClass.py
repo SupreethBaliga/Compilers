@@ -378,7 +378,7 @@ class CParser():
         elif (len(p) == 4):
             p[0] = p[2]
 
-    def p_identifer(self,p):
+    def p_identifier(self,p):
         '''
         identifier : ID
         '''
@@ -395,7 +395,7 @@ class CParser():
             return
         # this is mostly not needed
         # p[0].temp = self.TAC.newtemp()        
-        # self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[0].temp)
+        self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[1]['lexeme'])
         
         
 
@@ -2573,8 +2573,10 @@ class CParser():
                         found['vars'][var]['temp'] = f'-{found["vars"][var]["offset"] + self.ST.offset - found["sizeAllocInBytes"]}(%ebp)'
             found, entry = self.ST.ReturnSymTabEntry(var_name)
             var_size = found['sizeAllocInBytes']
-            self.TAC.emit('sub', 'esp', var_size, '')
-            self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
+            # print(found)
+            if found["varclass"] == "Local":
+                self.TAC.emit('sub', 'esp', var_size, '')
+                self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
             p[0].temp = found['temp']
 
         if len(p) == 4:
@@ -3983,7 +3985,14 @@ class CParser():
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
+
+        for var_name in p[0].variables.keys():
+            if not var_name == function_name:
+                self.ST.ModifySymbol(var_name, "offset", -(self.ST.offset), p.lineno(0))
+                self.ST.offset -= self.ST.TopScope[var_name]["sizeAllocInBytes"]
+
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
+        self.ST.offset = 0
         #  <----------------------XXXX------------------>
 
         self.TAC.emit(str(function_name) + ":",'','','')
