@@ -77,7 +77,7 @@ class SymbolTable() :
     def PushScope(self):
 
         self.offsetList.append(self.offset)
-        self.offset = 0
+        # self.offset = 0
         if len(self.Table) == 0:
             self.Table.append(self.TopScope)
             TopScopeName = list(self.TopScope.items())[-1][0]

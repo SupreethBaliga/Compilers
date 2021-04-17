@@ -46,6 +46,7 @@ class Node:
         self.breaklist = []
         self.continuelist = []
         self.testlist = []
+        self.arglist = []
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
@@ -692,7 +693,6 @@ class CParser():
                 else:
                     p[0].type = p[1].ret_type
                 
-                ############################## DO TAC HEREE LATER
                 p[0].temp = self.TAC.newtemp()
                 self.TAC.emit('callq', p[0].temp, p[1].label , '0')
                 p[0].truelist.append(self.TAC.nextstat)
@@ -914,7 +914,9 @@ class CParser():
                     
                 ############################ DOO TACCC
                 p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('callq', p[0].temp, p[1].label , len(p[1].params))
+                for arg in p[3].arglist:
+                    self.TAC.emit('param', arg,'','')
+                self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1000,7 +1002,8 @@ class CParser():
             p[0].params = []
             p[0].params.append(p[1].type) 
             p[0].type = ['arg list']
-            self.TAC.emit('param', p[1].temp,'','')
+            # self.TAC.emit('param', p[1].temp,'','')
+            p[0].arglist.append(p[1].temp)
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
@@ -1010,9 +1013,10 @@ class CParser():
             p[0].type = ['arg list']
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
-            self.TAC.emit('param', p[3].temp,'','')
+            # self.TAC.emit('param', p[3].temp,'','')
+            p[0].arglist = p[1].arglist
+            p[0].arglist.append(p[3].temp)
 
-            ######## DOOOO TACCCC (Required?)
 
     def p_unary_expression(self,p):
         '''
