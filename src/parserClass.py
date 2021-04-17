@@ -393,8 +393,10 @@ class CParser():
         #tac
         if self.ST.error:
             return
-        p[0].temp = self.TAC.newtemp()        
-        self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[0].temp)
+        # this is mostly not needed
+        # p[0].temp = self.TAC.newtemp()        
+        # self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[0].temp)
+        
         
 
     def p_IntegerConst(self,p):
@@ -407,8 +409,8 @@ class CParser():
         p[0].type = ['int']
         if self.ST.error:
             return
-        p[0].temp = self.TAC.newtemp()
-        self.TAC.emit('=int', p[0].temp, p[1])
+        p[0].temp = f'`{p[1]}'
+        # self.TAC.emit('=int', p[0].temp, p[1])
 
     def p_FloatConst(self,p):
         '''
@@ -420,8 +422,7 @@ class CParser():
         p[0].type = ['float']
         if self.ST.error:
             return
-        p[0].temp = self.TAC.newtemp()
-        self.TAC.emit('=float', p[0].temp, p[1])
+        p[0].temp = f'`{p[1]}'
 
     def p_CharConst(self,p):
         '''
@@ -433,8 +434,7 @@ class CParser():
         p[0].type = ['char']
         if self.ST.error:
             return
-        p[0].temp = self.TAC.newtemp()
-        self.TAC.emit('=char', p[0].temp, p[1])
+        p[0].temp = f'`{p[1]}'
 
     def p_StringConst(self,p):
         '''
@@ -446,8 +446,7 @@ class CParser():
         p[0].type = ['str']
         if self.ST.error:
             return
-        p[0].temp = self.TAC.newtemp()
-        self.TAC.emit('=str', p[0].temp, p[1])
+        p[0].temp = f'`{p[1]}'
 
     def p_postfix_expression(self,p):
         '''
@@ -854,7 +853,6 @@ class CParser():
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
                 self.TAC.emit('goto','','','')
 
-
         elif (len(p) == 5):
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
@@ -1079,9 +1077,12 @@ class CParser():
                 # tac
                 if self.ST.error:
                     return
-                p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('sizeof', p[0].temp, p[2].temp)
+                if p[1].temp[0] == '_':
+                    p[0].temp = p[2].temp
+                else:
+                    p[0].temp = self.TAC.newtemp()
 
+                self.TAC.emit('sizeof', p[0].temp, p[2].temp)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1160,8 +1161,10 @@ class CParser():
                 #tac
                 if self.ST.error:
                     return
-                p[0].temp = self.TAC.newtemp()
-                # p[0].temp = p[2].temp
+                if p[2].temp[0] == '_':
+                    p[0].temp = p[2].temp
+                else:
+                    p[0].temp = self.TAC.newtemp()
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
                 if(p[1].label[-1] == '!'):
@@ -1181,7 +1184,10 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit('sizeof', p[0].temp, p[3].type)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1257,10 +1263,12 @@ class CParser():
             #TAC
             if self.ST.error:
                 return
-            
-            p[0].temp = self.TAC.newtemp()
+            if p[4].temp[0] == '_':
+                p[0].temp = p[4].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
+
             self.TAC.emit('cast',p[0].temp, p[4].temp, p[4].totype)
- 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1319,7 +1327,12 @@ class CParser():
             #TAC
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
                 
             p[0].truelist.append(self.TAC.nextstat)
@@ -1395,7 +1408,12 @@ class CParser():
             if self.ST.error:
                 return
 
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             
             p[0].truelist.append(self.TAC.nextstat)
@@ -1446,7 +1464,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1525,7 +1548,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             # 
             p[0].truelist.append(self.TAC.nextstat)
@@ -1601,7 +1629,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1659,7 +1692,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1716,7 +1754,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1774,7 +1817,12 @@ class CParser():
             #tac
             if self.ST.error:
                 return
-            p[0].temp = self.TAC.newtemp()
+            if p[1].temp[0] == '_':
+                p[0].temp = p[1].temp
+            elif p[3].temp[0] == '_':
+                p[0].temp = p[3].temp
+            else:
+                p[0].temp = self.TAC.newtemp()
             self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1804,7 +1852,12 @@ class CParser():
                 p[0].falselist = p[1].falselist + p[4].falselist
                 p[0].truelist = p[4].truelist
 
-                p[0].temp = self.TAC.newtemp()
+                if p[1].temp[0] == '_':
+                    p[0].temp = p[1].temp
+                elif p[4].temp[0] == '_':
+                    p[0].temp = p[4].temp
+                else:
+                    p[0].temp = self.TAC.newtemp()
                 self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
 
     def p_logical_or_expression(self, p):
@@ -1830,7 +1883,12 @@ class CParser():
                 p[0].truelist = p[1].truelist + p[4].truelist
                 p[0].falselist = p[4].falselist
 
-                p[0].temp = self.TAC.newtemp()
+                if p[1].temp[0] == '_':
+                    p[0].temp = p[1].temp
+                elif p[4].temp[0] == '_':
+                    p[0].temp = p[4].temp
+                else:
+                    p[0].temp = self.TAC.newtemp()
                 self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
 
     def p_conditional_expression(self, p):
@@ -2070,6 +2128,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
+            p[0].temp = p[3].temp
             p[0].truelist = p[3].truelist
             p[0].falselist = p[3].falselist
 
@@ -2169,9 +2228,9 @@ class CParser():
 
         # for key in p[0].variables.keys():
         #     print("The key is: " + key)
-        #     print('  ', p[0].variables[key])
-        
+        #     print('  ', p[0].variables[key])   
         for var_name in p[0].variables:
+    
             #Updating type
             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
                 found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
@@ -2431,11 +2490,8 @@ class CParser():
                     print(f'Cannot perform assignment at line {p.lineno(2)}')
                     return
 
-
-
                 if 'struct' in p[1].type or 'union' in p[1].type:
                     p[1].vars = entry['vars']
-
 
                 # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
                 elif 'struct *' in p[1].type or 'union *' in p[1].type:
@@ -2444,9 +2500,6 @@ class CParser():
                 elif 'struct' in p[1].type[0] or 'union' in p[1].type[0] :
                     self.ST.error = 1
                     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
-
-
-
 
                 if 'struct' in p[1].type and 'struct' not in p[3].type:
                     self.ST.error = 1;
@@ -2504,11 +2557,30 @@ class CParser():
                         p[0].label += ' unsigned'
 
                 p[0].node.attr['label'] = p[0].label
+        
+        if self.ST.error:
+            return
+        for var_name in p[0].variables:
+            if 'struct' in p[0].variables[var_name] :
+                found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                if found:
+                    for var in found['vars']:
+                       found['vars'][var]['temp'] = f'-{found["vars"][var]["offset"] + self.ST.offset - found["sizeAllocInBytes"]}(%ebp)'
+            elif 'union' in p[0].variables[var_name]:
+                found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                if found:
+                    for var in found['vars']:
+                        found['vars'][var]['temp'] = f'-{found["vars"][var]["offset"] + self.ST.offset - found["sizeAllocInBytes"]}(%ebp)'
+            found, entry = self.ST.ReturnSymTabEntry(var_name)
+            var_size = found['sizeAllocInBytes']
+            self.TAC.emit('sub', 'esp', var_size, '')
+            self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
+            p[0].temp = found['temp']
+
         if len(p) == 4:
             #tac
             if self.ST.error:
                 return
-            p[0].temp = p[1].temp
             self.TAC.emit(p[0].label, p[0].temp, p[3].temp,'')
 
 
@@ -2817,7 +2889,15 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
-        
+
+            # if self.ST.error:
+            #     return
+            # found, entry = self.ST.ReturnSymTabEntry(var_name)
+            # print(found)
+            # var_size = found['sizeAllocInBytes']
+            # self.TAC.emit('sub', 'esp', var_size, '')
+            # self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
+            # p[0].temp = found['temp']
         # <--------------XXXXXXX---------------->
 
     def p_declarator(self, p):
@@ -3242,6 +3322,7 @@ class CParser():
         '''
         if self.isError :
             return
+        self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
         self.ST.PopScope()
 
     def p_block_item_list(self, p):
@@ -3494,6 +3575,7 @@ class CParser():
         '''
         if self.isError :
             return
+        self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
@@ -3803,7 +3885,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # self.ST.PopScope()
         p[0] = Node('',createAST=False)
         p[0].variables = p[-2].variables
         function_name = str()
@@ -3915,6 +3996,7 @@ class CParser():
             return
         self.ST.PopScope()
         p[0] = Node('',createAST = False)
+        # self.TAC.emit('mov','esp','ebp','')
         p[0].quad = self.TAC.nextstat
 
     # def p_declaration_list(self, p):
