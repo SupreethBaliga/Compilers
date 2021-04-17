@@ -45,6 +45,7 @@ class Node:
         self.nextlist = []
         self.breaklist = []
         self.continuelist = []
+        self.testlist = []
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
@@ -1797,6 +1798,9 @@ class CParser():
                 p[0].falselist = p[1].falselist + p[4].falselist
                 p[0].truelist = p[4].truelist
 
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
+
     def p_logical_or_expression(self, p):
         '''
         logical_or_expression : logical_and_expression
@@ -1819,6 +1823,9 @@ class CParser():
                 self.TAC.backpatch(p[1].falselist,p[3].quad)
                 p[0].truelist = p[1].truelist + p[4].truelist
                 p[0].falselist = p[4].falselist
+
+                p[0].temp = self.TAC.newtemp()
+                self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
 
     def p_conditional_expression(self, p):
         '''
@@ -3140,25 +3147,62 @@ class CParser():
         # AST Done
         p[0] = p[1]
 
-    def p_labeled_statement(self, p):
+    def p_labeled_statement_1(self, p):
         '''
         labeled_statement : ID ':' statement
-                        | CASE constant_expression ':' statement
-                        | DEFAULT ':' statement
         '''
         if self.isError :
             return
-        # AST Done
-        # Doubt here
-        if (len(p) == 4):
-            if (p[1] == 'default'):
-                p[0] = Node('DEFAULT:',[p[3]])
-            else:
-                p1val = p[1]['lexeme']
-                p[1] = Node(str(p1val))
-                p[0] = Node('ID:',[p[1],p[3]])
-        else:
-            p[0] = Node('CASE:',[p[2],p[4]])
+
+        p1val = p[1]['lexeme']
+        p[1] = Node(str(p1val))
+        p[0] = Node('ID:',[p[1],p[3]])
+
+    def p_labeled_statement_2(self, p):
+        '''
+        labeled_statement : markerCase1 CASE constant_expression markerCase2 ':' statement
+        '''
+        if self.isError :
+            return
+
+        p[0] = Node('CASE:',[p[3],p[6]])
+        p[0].breaklist = p[6].breaklist
+        p[0].nextlist = p[6].nextlist
+        p[0].testlist.append([p[3].temp, p[1].quad, p[4].quad])
+
+    def p_labeled_statement_3(self, p):
+        '''
+        labeled_statement : markerCase1 DEFAULT ':' statement
+        '''
+        if self.isError :
+            return
+
+        p[0] = Node('DEFAULT:',[p[4]])
+        p[0].breaklist = p[4].breaklist
+        p[0].nextlist = p[4].nextlist
+        p[0].testlist.append([None, p[1].quad, None])
+
+    def p_markerCase1(self, p):
+        '''
+        markerCase1 : 
+        '''
+
+        if self.isError :
+            return
+
+        p[0] = Node('',createAST=False)
+        p[0].quad = self.TAC.nextstat
+
+    def p_markerCase2(self, p):
+        '''
+        markerCase2 : 
+        '''
+
+        if self.isError :
+            return
+
+        p[0] = Node('',createAST=False)
+        p[0].quad = self.TAC.nextstat
 
     def p_compound_statement(self, p):
         '''
@@ -3176,6 +3220,7 @@ class CParser():
             p[0].breaklist = p[3].breaklist
             p[0].continuelist = p[3].continuelist
             p[0].nextlist = p[3].nextlist
+            p[0].testlist = p[3].testlist
 
     def p_markerCompStatPush(self, p):
         '''
@@ -3209,12 +3254,14 @@ class CParser():
             p[0].breaklist = p[1].breaklist
             p[0].continuelist = p[1].continuelist
             p[0].nextlist = p[1].nextlist
+            p[0].testlist = p[1].testlist
         elif (len(p) == 4):
             p[0] = Node(';',[p[1],p[3]])
             self.TAC.backpatch(p[1].nextlist,p[2].quad)
             p[0].breaklist = p[1].breaklist + p[3].breaklist
             p[0].continuelist = p[1].continuelist + p[3].continuelist
             p[0].nextlist = p[3].nextlist
+            p[0].testlist = p[1].testlist + p[3].testlist
 
     def p_block_item(self, p):
         '''
@@ -3244,20 +3291,47 @@ class CParser():
         '''
         selection_statement : IF '(' expression ')' globalmarker1 statement globalN1
                             | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
-                            | SWITCH '(' expression ')' statement
+                            | SWITCH '(' expression ')' markerSwitch statement
         '''
         # Grammar changes for switch remaining
         if self.isError :
             return
         # AST done
-        if(len(p) == 6):
-            p[0] = Node(str(p[1]).upper(),[p[3],p[5]])
+        if(len(p) == 7):
+            p[0] = Node(str(p[1]).upper(),[p[3],p[6]])
+            p[0].nextlist = p[6].breaklist + p[6].nextlist
+            
+            p[0].nextlist.append(self.TAC.nextstat)
+            # To properly end switch case
+            self.TAC.emit('goto', '', '', '')
+
+            self.TAC.backpatch(p[5].nextlist, self.TAC.nextstat)
+
+            # Appropriate jump for labels
+            for item in p[6].testlist:
+                if item[0] is not None:
+                    for i in range(item[1], item[2]):
+                        self.TAC.final_code.append(self.TAC.final_code[i])
+                        self.TAC.nextstat += 1
+                    self.TAC.emit('==', item[0], p[3].temp, item[0])
+                    tmplist = [self.TAC.nextstat]
+                    self.TAC.emit('ifnz goto', '', item[0], '')
+                    self.TAC.backpatch(tmplist, item[1])
+            
+            # Appropriate jump for default label
+            for item in p[6].testlist:
+                if item[0] is None:
+                    tmplist = [self.TAC.nextstat]
+                    self.TAC.emit('goto', '', '', '')
+                    self.TAC.backpatch(tmplist, item[1])
+
         elif (len(p) == 8):
             p[0] = Node('IF-ELSE',[p[3],p[6]])
             self.TAC.backpatch(p[3].truelist,p[5].quad)
             p[0].nextlist = p[3].falselist + p[6].nextlist
             p[0].continuelist = p[6].continuelist
             p[0].breaklist = p[6].breaklist
+            p[0].testlist = p[6].testlist
         else:
             p[0] = Node('IF-ELSE',[p[3],p[6],p[10]])
             self.TAC.backpatch(p[3].truelist,p[5].quad)
@@ -3265,6 +3339,18 @@ class CParser():
             p[0].nextlist = p[6].nextlist + p[7].nextlist + p[10].nextlist
             p[0].continuelist = p[6].continuelist + p[10].continuelist
             p[0].breaklist = p[6].breaklist + p[10].breaklist
+            p[0].testlist = p[6].testlist + p[10].testlist
+
+    def p_markerSwitch(self, p):
+        '''
+        markerSwitch : 
+        '''
+        if self.isError :
+            return
+
+        p[0] = Node('',createAST=False)
+        p[0].nextlist.append(self.TAC.nextstat)
+        self.TAC.emit('goto','','','')
 
     def p_globalN1(self, p):
         '''
