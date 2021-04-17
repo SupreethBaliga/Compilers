@@ -7,6 +7,7 @@ import sys
 from lexerClass import CLexer
 from SymbolTable import SymbolTable
 from TAC import TAC
+from codeGen import CG
 
 ############## Helper Functions ###########
 def new_node():
@@ -181,6 +182,7 @@ class CParser():
         self.TAC = TAC()
         self.AST_ROOT = Node("SourceNode")
         self.isError = 0
+        self.CG = CG()
 
     def build(self):
         # Debug is kept true only while testing
@@ -3986,6 +3988,7 @@ else:
     sys.stdout = orig_stdout
     parser.TAC.clean_code()
     parser.TAC.print_code() # remove later
+    parser.CG.build(parser.ST,parser.TAC)
     # parser.printTree()
 
 # endregion
