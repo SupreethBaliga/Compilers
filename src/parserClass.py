@@ -3431,9 +3431,10 @@ class CParser():
                     for i in range(item[1], item[2]):
                         self.TAC.final_code.append(self.TAC.final_code[i])
                         self.TAC.nextstat += 1
-                    self.TAC.emit('==', item[0], p[3].temp, item[0])
+                    temp = self.TAC.newtemp()
+                    self.TAC.emit('==', temp, p[3].temp, item[0])
                     tmplist = [self.TAC.nextstat]
-                    self.TAC.emit('ifnz goto', '', item[0], '')
+                    self.TAC.emit('ifnz goto', '', temp, '')
                     self.TAC.backpatch(tmplist, item[1])
             
             # Appropriate jump for default label
