@@ -675,8 +675,14 @@ class CParser():
                 #tac
                 if self.ST.error:
                     return
-                p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('.', p[0].temp, p[1].temp, p[3].temp)
+                
+                found, entry = self.ST.ReturnSymTabEntry(p[1].label, p.lineno(1))
+                if found != False :
+                    if p3val in found["vars"].keys():
+                        p[0].temp = found["vars"][p3val]["temp"]
+
+                # p[0].temp = self.TAC.newtemp()
+                # self.TAC.emit('.', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -849,7 +855,7 @@ class CParser():
                 if self.ST.error:
                     return
                 p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('->', p[0].temp, p[1].temp, p[3].temp)
+                self.TAC.emit('->', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -941,10 +947,12 @@ class CParser():
                 if flag==0:
                     self.ST.error = 1
                     print(f'Invalid array subscript of type {p[3].type} at line {p.lineno(2)}')
+                    return
                 else:
                     if p[1].type[0][-1] != '*':
                         self.ST.error = 1
                         print(f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
+                        return
                     else:                        
                         p[0] = Node('ArrSub',[p[1],p[3]])
                         p[0].type = p[1].type
@@ -956,6 +964,7 @@ class CParser():
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
                                 p[0].type.append(p[1].type[i])
                 ############################ DOO TACCC
+
                 p[0].dimensionList = p[1].dimensionList
                 isFirstAccess = False
 
@@ -981,12 +990,12 @@ class CParser():
                     else:
                         self.TAC.emit('*int', p[0].temp, p[0].temp, sizes[p[0].type[0]])
                     
-                    self.TAC.emit('+int', p[0].temp, 'baseAddr', p[0].temp)
+                    self.TAC.emit('+int', p[0].temp, p[1].temp, p[0].temp)
 
-                p[0].truelist.append(self.TAC.nextstat)
-                p[0].falselist.append(self.TAC.nextstat+1)
-                self.TAC.emit('ifnz goto','',p[0].temp,'')
-                self.TAC.emit('goto','','','')
+                    p[0].truelist.append(self.TAC.nextstat)
+                    p[0].falselist.append(self.TAC.nextstat+1)
+                    self.TAC.emit('ifnz goto','',p[0].temp,'')
+                    self.TAC.emit('goto','','','')
 
     def p_argument_expression_list(self,p):
         '''
@@ -3982,11 +3991,12 @@ class CParser():
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
 
+        self.ST.offset = 0
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
                 found, entry = self.ST.ReturnSymTabEntry(var_name)
+                self.ST.offset += self.ST.TopScope[var_name]["sizeAllocInBytes"]
                 self.ST.ModifySymbol(var_name, "offset", -(self.ST.offset), p.lineno(0))
-                self.ST.offset -= self.ST.TopScope[var_name]["sizeAllocInBytes"]
                 if found["offset"] >0:
                     self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
                 else:
