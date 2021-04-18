@@ -916,7 +916,7 @@ class CParser():
                     
                 ############################ DOO TACCC
                 p[0].temp = self.TAC.newtemp()
-                for arg in p[3].arglist:
+                for arg in reversed(p[3].arglist):
                     self.TAC.emit('param', arg,'','')
                 self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
                 p[0].truelist.append(self.TAC.nextstat)
