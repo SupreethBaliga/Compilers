@@ -352,6 +352,8 @@ class CParser():
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
 
         # Three address code
+        if self.ST.error:
+            return
         p[0].temp = self.TAC.get_sym(self.ST, p[0].label)
         p[0].truelist.append(self.TAC.nextstat)
         p[0].falselist.append(self.TAC.nextstat+1)
@@ -847,7 +849,7 @@ class CParser():
                 if self.ST.error:
                     return
                 p[0].temp = self.TAC.newtemp()
-                self.TAC.emit('.', p[0].temp, p[1].temp, p[3].temp)
+                self.TAC.emit('->', p[0].temp, p[1].temp, p[3].temp)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2561,22 +2563,25 @@ class CParser():
         if self.ST.error:
             return
         for var_name in p[0].variables:
-            if 'struct' in p[0].variables[var_name] :
+            if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
                 found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
                 if found:
                     for var in found['vars']:
-                       found['vars'][var]['temp'] = f'-{found["vars"][var]["offset"] + self.ST.offset - found["sizeAllocInBytes"]}(%ebp)'
-            elif 'union' in p[0].variables[var_name]:
+                       found['vars'][var]['temp'] = f'-{-found["vars"][var]["offset"] + self.ST.offset}(%ebp)'
+            elif 'union' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
                 found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
                 if found:
                     for var in found['vars']:
-                        found['vars'][var]['temp'] = f'-{found["vars"][var]["offset"] + self.ST.offset - found["sizeAllocInBytes"]}(%ebp)'
+                        found['vars'][var]['temp'] = f'-{self.ST.offset}(%ebp)'
             found, entry = self.ST.ReturnSymTabEntry(var_name)
             var_size = found['sizeAllocInBytes']
             # print(found)
             if found["varclass"] == "Local":
                 self.TAC.emit('sub', 'esp', var_size, '')
-                self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
+                if found["offset"] >0:
+                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                else:
+                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
             p[0].temp = found['temp']
 
         if len(p) == 4:
@@ -2856,7 +2861,7 @@ class CParser():
         
         for var_name in p[0].variables.keys():
             self.ST.ModifySymbol(var_name, 'type', p[0].variables[var_name], p.lineno(0))
-            self.ST.ModifySymbol(var_name, "varclass", "Struct Local", p.lineno(0))
+            self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
 
             # updating sizes
             if p[0].variables[var_name]:
@@ -2892,15 +2897,6 @@ class CParser():
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
 
-            # if self.ST.error:
-            #     return
-            # found, entry = self.ST.ReturnSymTabEntry(var_name)
-            # print(found)
-            # var_size = found['sizeAllocInBytes']
-            # self.TAC.emit('sub', 'esp', var_size, '')
-            # self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"]}(%ebp)')
-            # p[0].temp = found['temp']
-        # <--------------XXXXXXX---------------->
 
     def p_declarator(self, p):
         '''
@@ -3988,8 +3984,13 @@ class CParser():
 
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
+                found, entry = self.ST.ReturnSymTabEntry(var_name)
                 self.ST.ModifySymbol(var_name, "offset", -(self.ST.offset), p.lineno(0))
                 self.ST.offset -= self.ST.TopScope[var_name]["sizeAllocInBytes"]
+                if found["offset"] >0:
+                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                else:
+                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         self.ST.offset = 0
