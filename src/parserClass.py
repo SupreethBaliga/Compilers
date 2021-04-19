@@ -2831,7 +2831,7 @@ class CParser():
 
 
                     else:
-                        p[0].onlyAddEdge([p[1],p[3]])
+                        
                         p[0].type = p[1].type
 
                         isin = True
@@ -2839,7 +2839,18 @@ class CParser():
                             if single_type not in p[3].type:
                                 isin = False
                         if isin == False:
-                            p[3].totype = p[0].type    
+                            p[3].totype = p[0].type
+                            p3str = 'to'
+                            for single_type in p[0].type:
+                                p3str += '_' + single_type
+                            p3str = p3str.replace(' ','_')
+                            if '*' == p[0].type[0][-1]:
+                                p3str = 'to_int_long_unsigned'
+                            p3 = Node(p3str, [p[3]]) 
+                        else:
+                            p3 = p[3]   
+
+                        p[0].onlyAddEdge([p[1],p3]) 
 
                         if 'struct' in p[0].type:
                             p[0].label += '_struct'
@@ -3008,7 +3019,7 @@ class CParser():
             p[1].removeGraph()
             p[0] = p[1]
         elif (len(p) == 4):
-            p[0] = Node('=',[p[1],p[3]])
+            p[0] = Node('=')
             p[0].variables = p[1].variables
             
         # Code to add types to variable
@@ -3343,16 +3354,25 @@ class CParser():
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type    
+                    p[3].totype = p[0].type
+                    p3str = 'to'
+                    for single_type in p[0].type:
+                        p3str += '_' + single_type
+                    p3str = p3str.replace(' ','_')
+                    if '*' == p[0].type[0][-1]:
+                        p3str = 'to_int_long_unsigned'
+                    p3 = Node(p3str, [p[3]]) 
+                else:
+                    p3 = p[3]   
+
+                p[0].onlyAddEdge([p[1],p3]) 
 
                 if 'struct' in p[0].type:
                     p[0].label += '_struct'
                 elif 'union' in p[0].type:
                     p[0].label += '_union'
-                elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
+                elif p[0].type[0][-1] == '*':
                     p[0].label += '_int_long_unsigned'
-                elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
-                    p[0].label += '_' + p[0].type[0] + '_arr'
                 else:
                     p[0].label += '_' + p[0].type[0]
                     if 'unsigned' in p[0].type:
@@ -3360,6 +3380,32 @@ class CParser():
 
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
+
+
+                # p[0].type = p[1].type
+
+                # isin = True
+                # for single_type in p[0].type:
+                #     if single_type not in p[3].type:
+                #         isin = False
+                # if isin == False:
+                #     p[3].totype = p[0].type    
+
+                # if 'struct' in p[0].type:
+                #     p[0].label += '_struct'
+                # elif 'union' in p[0].type:
+                #     p[0].label += '_union'
+                # elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
+                #     p[0].label += '_int_long_unsigned'
+                # elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
+                #     p[0].label += '_' + p[0].type[0] + '_arr'
+                # else:
+                #     p[0].label += '_' + p[0].type[0]
+                #     if 'unsigned' in p[0].type:
+                #         p[0].label += '_unsigned'
+
+                # p[0].label = p[0].label.replace(" ", "_")
+                # p[0].node.attr['label'] = p[0].label
         
         if self.ST.error:
             return
