@@ -1436,10 +1436,181 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 5):
             p[0] = Node('CAST',[p[2],p[4]])
-            p[0].type = p[2].type
+            
+
+            if p[2].type == None:
+                self.ST.error = 1
+                print(f'Cannot perform casting at line {p.lineno(1)}')
+                return
+            temp_type_list = []
+            temp2_type_list = []
+            for single_type in p[2].type:
+                if single_type != '*':
+                    temp_type_list.append(single_type)
+                    if single_type[0] != '[' or single_type[-1] != ']':
+                        temp2_type_list.append(single_type)
+
+                if single_type[0] == '[' and single_type[-1] == ']':
+                    if single_type[1:-1] == '':
+                        self.ST.error = 1
+                        print('Cannot have empty indices for array declarations at line', p.lineno(1))
+                        return
+                    elif int(single_type[1:-1]) <= 0:
+                        self.ST.error = 1
+                        print('Cannot have non-positive integers for array declarations at line', p.lineno(1))
+                        return
+
+            if len(temp2_type_list) != len(set(temp2_type_list)):
+                self.ST.error = 1
+                print('variables cannot have duplicating type of declarations at line', p.lineno(1))
+                return
+
+            if 'long' in p[2].type and 'short' in p[2].type:
+                self.ST.error = 1
+                print('variable cannot be both long and short at line', p.lineno(1))
+                return
+            elif 'unsigned' in p[2].type and 'signed' in p[2].type:
+                self.ST.error = 1
+                print('variable cannot be both signed and unsigned at line', p.lineno(1))
+                return
+            else:
+                data_type_count = 0
+                if 'int' in p[2].type or 'short' in p[2].type  or 'unsigned' in p[2].type or 'signed' in p[2].type or 'char' in p[2].type:
+                    data_type_count += 1
+                if 'bool' in  p[2].type:
+                    data_type_count += 1
+                if 'float' in p[2].type:
+                    data_type_count += 1
+                if 'double' in p[2].type:
+                    data_type_count += 1
+                if 'void' in p[2].type:
+                    data_type_count += 1
+                if 'struct' in p[2].type:
+                    data_type_count += 1
+                if 'union' in p[2].type:
+                    data_type_count += 1
+                if data_type_count > 1:    
+                    self.ST.error = 1
+                    print('Two or more conflicting data types specified for variable at line', p.lineno(1)) 
+                    return
+                if 'long' in p[2].type:
+                    if 'char' in p[2].type or 'bool' in  p[2].type or 'float' in  p[2].type or 'void' in  p[2].type:
+                        self.ST.error = 1
+                        print('Two or more conflicting data types specified for variable at line', p.lineno(1))
+                        return
+            
+
+            isarr = 0
+            for i in range(len(p[2].type)):
+                if p[2].type[i][0]=='[' and p[2].type[i][-1] == ']':
+                    isarr += 1
+            
+            type_list = p[2].type
 
 
-            if p[2].type == None or p[4].type == None:
+            p[0].type = []
+            if 'long' in type_list and 'int' in type_list:
+                p[0].type.append('long int')
+                for single_type in type_list:
+                    if single_type != 'long' and single_type != 'int':
+                        p[0].type.append(single_type)
+            
+            elif 'long' in type_list and 'double' in type_list:
+                p[0].type.append('long double')
+                for single_type in type_list:
+                    if single_type != 'long' and single_type != 'double':
+                        p[0].type.append(single_type)
+            
+            elif 'long' in type_list:
+                p[0].type.append('long int')
+                for single_type in type_list:
+                    if single_type != 'long':
+                        p[0].type.append(single_type)
+
+            elif 'int' in type_list:
+                p[0].type.append('int')
+                for single_type in type_list:
+                    if single_type != 'int':
+                        p[0].type.append(single_type)
+
+            elif 'short' in type_list:
+                p[0].type.append('short')
+                for single_type in type_list:
+                    if single_type != 'short':
+                        p[0].type.append(single_type)
+            
+            elif 'char' in type_list:
+                p[0].type.append('char')
+                for single_type in type_list:
+                    if single_type != 'char':
+                        p[0].type.append(single_type)
+            
+            elif 'bool' in type_list:
+                p[0].type.append('bool')
+                for single_type in type_list:
+                    if single_type != 'bool':
+                        p[0].type.append(single_type)
+            
+            elif 'str' in type_list:
+                p[0].type.append('str')
+                for single_type in type_list:
+                    if single_type != 'str':
+                        p[0].type.append(single_type)
+            
+            elif 'float' in type_list:
+                p[0].type.append('float')
+                for single_type in type_list:
+                    if single_type != 'float':
+                        p[0].type.append(single_type)
+
+            elif 'double' in type_list:
+                p[0].type.append('double')
+                for single_type in type_list:
+                    if single_type != 'double':
+                        p[0].type.append(single_type)
+
+            if isarr > 0:
+                temp_type = []
+                temp_type.append(p[0].type[0]+' ')
+                for i in range(isarr):
+                    temp_type[0] += '*'
+
+                for i in range(len(p[0].type)):
+                    if i>isarr:
+                        temp_type.append(p[0].type[i])
+                p[0].type = temp_type
+                p[0].type.append('arr')
+                for i in range(len(type_list)):
+                    if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                        p[0].type.append(type_list[len(type_list)-i-1])
+
+            if 'struct' in type_list:
+                p[0].type.append('struct')
+                for single_type in type_list:
+                    if single_type != 'struct':
+                            p[0].type.append(single_type)     
+
+            if 'union' in type_list:
+                p[0].type.append('union')
+                for single_type in type_list:
+                    if single_type != 'union':
+                            p[0].type.append(single_type)     
+
+
+
+            if '*' in type_list:
+                temp_type = []
+                temp_type.append(p[0].type[0]+' *')
+                for i in range(len(p[0].type)):
+                    if i>=2:
+                        if p[0].type[i] == '*':
+                            temp_type[0] += '*'
+                        else:
+                            temp_type.append(p[0].type[i])
+                p[0].type = temp_type
+
+
+            if p[2].type == None or p[4].type == None or p[0].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform casting at line {p.lineno(1)}')
 
@@ -1459,20 +1630,15 @@ class CParser():
                 self.ST.error = 1
                 print(f'Incompatible union types to perform casting at line {p.lineno(1)}')
 
-            elif p[2].type[0] in aat and p[4].type[0] not in aat:
+            elif p[0].type[0] in aat and p[4].type[0] not in aat and p[4].type[-1] != '*':
                 self.ST.error = 1
                 print(f'Type mismatch while casting value at line {p.lineno(1)}')
             
-            elif p[2].type[0] not in aat and '*' not in p[2].type and p[3].type[0] in aat:
-                self.ST.error = 1
-                print(f'Type mismatch while casting value at line {p.lineno(1)}')
-            
-            elif '*' in p[2].type and p[4].type[0] not in iit :    
+            elif '*' in p[2].type[0] and p[4].type[0] not in iit :    
                 self.ST.error = 1
                 print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
 
-            p[4].totype = p[2].type
-
+            p[4].totype = p[0].type
             # To do: Uniformity in totype
             
             #TAC
