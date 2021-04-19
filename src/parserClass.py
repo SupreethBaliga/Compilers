@@ -4483,12 +4483,14 @@ class CParser():
 
         else:
             if(p[1] == 'return'):
-                p[0] = Node('RETURN',[p[2]])
+                p[0] = Node('RETURN')
                 found = list(self.ST.Table[0])
                 functype = self.ST.Table[0][found[-1]]['type']
                 # print(found[-1])
                 # print('here', self.ST.Table[0][found[-1]]['type'])
                 # print(functype, p[2].type)
+
+                # print(functype)
                 
 
                 if '*' in functype and '*' not in p[2].type[0] and p[2].type[0] not in iit :
@@ -4506,6 +4508,158 @@ class CParser():
                 
                 if self.ST.error:
                     return
+
+
+
+
+                isarr = 0
+
+                type_list = functype
+
+                for i in range(len(functype)):
+                    if functype[i][0]=='[' and functype[i][-1] == ']':
+                        isarr += 1
+                
+
+                if 'unsigned' in type_list or 'signed' in type_list:
+                    type_list.append('int')
+
+                p[0].type = []
+                if 'long' in type_list and 'int' in type_list:
+                    p[0].type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'int':
+                            p[0].type.append(single_type)
+                
+                elif 'long' in type_list and 'double' in type_list:
+                    p[0].type.append('long double')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'double':
+                            p[0].type.append(single_type)
+                
+                elif 'long' in type_list:
+                    p[0].type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long':
+                            p[0].type.append(single_type)
+
+                elif 'int' in type_list:
+                    p[0].type.append('int')
+                    for single_type in type_list:
+                        if single_type != 'int':
+                            p[0].type.append(single_type)
+
+                elif 'short' in type_list:
+                    p[0].type.append('short')
+                    for single_type in type_list:
+                        if single_type != 'short':
+                            p[0].type.append(single_type)
+                
+                elif 'char' in type_list:
+                    p[0].type.append('char')
+                    for single_type in type_list:
+                        if single_type != 'char':
+                            p[0].type.append(single_type)
+                
+                elif 'bool' in type_list:
+                    p[0].type.append('bool')
+                    for single_type in type_list:
+                        if single_type != 'bool':
+                            p[0].type.append(single_type)
+                
+                elif 'str' in type_list:
+                    p[0].type.append('str')
+                    for single_type in type_list:
+                        if single_type != 'str':
+                            p[0].type.append(single_type)
+                
+                elif 'float' in type_list:
+                    p[0].type.append('float')
+                    for single_type in type_list:
+                        if single_type != 'float':
+                            p[0].type.append(single_type)
+
+                elif 'double' in type_list:
+                    p[0].type.append('double')
+                    for single_type in type_list:
+                        if single_type != 'double':
+                            p[0].type.append(single_type)
+
+                if isarr > 0:
+                    temp_type = []
+                    temp_type.append(p[0].type[0]+' ')
+                    for i in range(isarr):
+                        temp_type[0] += '*'
+
+                    for i in range(len(p[0].type)):
+                        if i>isarr:
+                            temp_type.append(p[0].type[i])
+                    p[0].type = temp_type
+                    p[0].type.append('arr')
+                    for i in range(len(type_list)):
+                        if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                            p[0].type.append(type_list[len(type_list)-i-1])
+
+                if 'struct' in type_list:
+                    p[0].type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[0].type.append(single_type)     
+
+                if 'union' in type_list:
+                    p[0].type.append('union')
+                    for single_type in type_list:
+                        if single_type != 'union':
+                                p[0].type.append(single_type)     
+
+                if 'void' in type_list:
+                    p[0].type.append('void')
+                    for single_type in type_list:
+                        if single_type != 'void':
+                                p[0].type.append(single_type)     
+
+                if '*' in type_list:
+                    temp_type = []
+                    temp_type.append(p[0].type[0])
+                    for i in range(1, len(p[0].type)):
+                            if p[0].type[i] == '*':
+                                temp_type[0] += ' *'
+                            else:
+                                temp_type.append(p[0].type[i])
+                    p[0].type = temp_type
+
+
+
+
+                if ('struct' in p[0].type or 'union' in p[0].type) and p[0].type != p[2].type:
+                    self.ST.error = 1
+                    print(f'Need struct/union of type {p[0].type}, instead got return type {p[2].type} at line {p.lineno(1)}')
+                    return
+
+
+
+                isin = True
+                for single_type in p[0].type:
+                    if single_type not in p[2].type:
+                        isin = False
+                if isin == False:
+                    p[2].totype = p[0].type
+                    p2str = 'to'
+                    for single_type in p[0].type:
+                        p2str += '_' + single_type
+                    p2str = p2str.replace(' ','_')
+                    if '*' == p[0].type[0][-1]:
+                        p2str = 'to_int_long_unsigned'
+                    p2 = Node(p2str, [p[2]]) 
+                else:
+                    p2 = p[2]   
+
+                p[0].onlyAddEdge([p2])       
+
+
+
+
+
                 self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
