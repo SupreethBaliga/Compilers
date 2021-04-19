@@ -242,7 +242,6 @@ class CParser():
         found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
         if found: # Change this accordingly
 
-
             try :
                 entry['type']
             except:
@@ -284,6 +283,9 @@ class CParser():
             type_list = entry['type']
             if entry['check'] == 'VAR' or entry['check'] == 'PARAM':
                 p[0].isvar = 1
+
+            if 'unsigned' in type_list or 'signed' in type_list:
+                type_list.append('int')
 
             p[0].type = []
             if 'long' in type_list and 'int' in type_list:
@@ -1684,32 +1686,51 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            p[0] = Node(str(p[2]),[p[1],p[3]])
+            
             
             if p[1].type == None or p[3].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in aat and p[3].type[0] in aat:
-                p[0].type = []
-                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
+                
+                p0type = []
+                p0type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
-                    p[0].type.append('unsigned')
+                    p0type.append('unsigned')
+
+                p0typestr = "to"
+                for single_type in p0type:
+                    p0typestr += '_' + single_type
+
+                p0typestr = p0typestr.replace(' ','_')
+
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
+                    p[1].totype = p0type
+                    p1 = Node(p0typestr,[p[1]])
+                else:
+                    p1 = p[1]
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type
+                    p[3].totype = p0type
+                    p3 = Node(p0typestr,[p[3]])
+                else:
+                    p3 = p[3]
 
+
+
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type
                 
                 p[0].label = p[0].label + '_' + p[0].type[0]
                 if len(p[0].type)==2:
@@ -1770,31 +1791,49 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            p[0] = Node(str(p[2]),[p[1],p[3]])
             
             if p[1].type == None or p[3].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in aat and p[3].type[0] in aat:
-                p[0].type = []
-                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
+                p0type = []
+                p0type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
-                    p[0].type.append('unsigned')
+                    p0type.append('unsigned')
+
+                p0typestr = "to"
+                for single_type in p0type:
+                    p0typestr += '_' + single_type
+
+                p0typestr = p0typestr.replace(' ','_')
+
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
+                    p[1].totype = p0type
+                    p1 = Node(p0typestr,[p[1]])
+                else:
+                    p1 = p[1]
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type           
+                    p[3].totype = p0type
+                    p3 = Node(p0typestr,[p[3]])
+                else:
+                    p3 = p[3]
+
+
+
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type       
 
                 p[0].label = p[0].label + '_' +  p[0].type[0]
                 if len(p[0].type)==2:
@@ -1805,6 +1844,7 @@ class CParser():
                 p[0].node.attr['label'] = p[0].label
                 
             elif p[1].type[0][-1] == '*' and p[3].type[0] in iit:
+                p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
                 p[0].label = p[0].label.replace(" ", "_")
 
@@ -1812,6 +1852,7 @@ class CParser():
                 p[0].type = p[1].type
             
             elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='+':
+                p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
@@ -1878,23 +1919,40 @@ class CParser():
                 print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in iit and p[3].type[0] in iit:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
+                p0type = []
+                p0label = str(p[2])
+                p0typestr = 'to'
+                
                 if iit.index(p[1].type[0]) <= 3:
-                    p[0].type = ['int']
-                    p[0].label += '_int'
+                    p0type = ['int']
+                    p0label += '_int'
+                    p0typestr += '_int'
                 else:
-                    p[0].type = ['long int']
-                    p[0].label += '_long_int'
+                    p0type = ['long int']
+                    p0label += '_long_int'
+                    p0typestr += '_long_int'
+
                 if 'unsigned' in p[1].type:
-                    p[0].type.append('unsigned')
-                    p[0].label += '_unsigned'
+                    p0type.append('unsigned')
+                    p0label += '_unsigned'
+                    p0typestr += '_unsigned'
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
+                    p[1].totype = p0type
+                    p1 = Node(p0typestr,[p[1]])
+                else:
+                    p1 = p[1]
+
+
+                p[0] = Node(str(p[2]),[p1,p[3]])
+                p[0].type = p0type
+                p[0].label = p0label
+
+
                 p[0].label = p[0].label.replace(" ", "_")
 
                 p[0].node.attr['label'] = p[0].label
@@ -1950,36 +2008,61 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
+            # print(p[1].type, p[3].type)
             if p[1].type == None or p[3].type == None:
                 self.ST.error = 1
                 print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in aat and p[3].type[0] in aat :
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].type = ['int']
+                p0type = ['int']
                 
-                p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                p0label = str(p[2]) + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                
                 flag = 0
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
                     flag = 1
-                    p[0].label = p[0].label + '_' +  'unsigned'
-                    p[0].label = p[0].label.replace(" ", "_")
+                    p0label = p0label + '_' +  'unsigned'
 
-                    p[0].node.attr['label'] = p[0].label
-                else:
-                    p[0].label = p[0].label.replace(" ", "_")
-                    p[0].node.attr['label'] = p[0].label
+                p0label = p0label.replace(" ", "_")
 
+                p[1].totype = None
+                p[3].totype = None
 
-                
                 if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type: 
                     p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
                     if flag:
                         p[1].totype.append('unsigned')
-                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type:
+                elif flag and 'unsigned' not in p[1].type:
+                    p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))], 'unsigned']
+
+                if p[1].totype != None and p[1].totype != p[1].type:
+                    p1str = 'to'
+                    for single_type in p[1].totype:
+                        p1str += '_' + single_type
+                    p1 = Node(p1str, [p[1]])
+                else:
+                    p1 = p[1]
+
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[3].type:
                     p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
                     if flag:
                         p[3].totype.append('unsigned')
+                elif flag and 'unsigned' not in p[3].type:
+                    p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))], 'unsigned']
+                
+                if p[3].totype != None and p[3].totype != p[3].type:
+                    p3str = 'to'
+                    for single_type in p[3].totype:
+                        p3str += '_' + single_type
+                    p3 = Node(p3str, [p[3]])
+                else:
+                    p3 = p[3]
+
+
+                p[0] = Node(str(p[2]), [p1, p3])
+                p[0].type = p0type
+                p[0].label = p0label
+                p[0].node.attr['label'] = p[0].label
 
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
@@ -1997,14 +2080,19 @@ class CParser():
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
+
+
+                p[1].totype = ['int', 'long', 'unsigned']
+                p1 = Node('to_int_long_unsigned',[p[1]] )      
+                p[3].totype = ['int', 'long', 'unsigned'] 
+                p3 = Node('to_int_long_unsigned',[p[3]] )
+                
+                p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = ['int']
                 p[0].label += '_*'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
 
-                p[1].totype = ['int', 'long', 'unsigned']      
-                p[3].totype = ['int', 'long', 'unsigned'] 
 
             else:
                 self.ST.error = 1
@@ -2061,28 +2149,58 @@ class CParser():
                 print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in aat and p[3].type[0] in aat :
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].type = ['int']
                 
-                p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                p0type = ['int']
+
+                p0label = str(p[2]) + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                
                 flag = 0
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
                     flag = 1
-                    p[0].label = p[0].label + '_' +  'unsigned'
-                    p[0].label = p[0].label.replace(" ", "_")
-                    p[0].node.attr['label'] = p[0].label
+                    p0label = p0label + '_' +  'unsigned'
+                
+                p0label = p0label.replace(" ", "_")
+                    # p[0].node.attr['label'] = p[0].label
 
-
+                p[1].totype = None
+                p[3].totype = None
                 
                 if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type: 
                     p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
                     if flag:
                         p[1].totype.append('unsigned')
-                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[1].type:
+                elif flag and 'unsigned' not in p[1].type:
+                    p[1].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))], 'unsigned']
+                
+                if p[1].totype != None and p[1].totype != p[1].type:
+                    p1str = 'to'
+                    for single_type in p[1].totype:
+                        p1str += '_' + single_type
+                    p1 = Node(p1str, [p[1]])
+                else:
+                    p1 = p[1]
+                
+                if aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))] not in p[3].type:
                     p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]]
                     if flag:
                         p[3].totype.append('unsigned')
+                elif flag and 'unsigned' not in p[3].type:
+                    p[3].totype = [aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))], 'unsigned']
+                
+                if p[3].totype != None and p[3].totype != p[3].type:
+                    p3str = 'to'
+                    for single_type in p[3].totype:
+                        p3str += '_' + single_type
+                    p3 = Node(p3str, [p[3]])
+                else:
+                    p3 = p[3]
             
+                p[0] = Node(str(p[2]), [p1, p3])
+                p[0].type = p0type
+                p[0].label = p0label
+                p[0].node.attr['label'] = p[0].label
+
+
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
@@ -2099,14 +2217,18 @@ class CParser():
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
+
+                p[1].totype = ['int', 'long', 'unsigned']
+                p1 = Node('to_int_long_unsigned',[p[1]] )      
+                p[3].totype = ['int', 'long', 'unsigned'] 
+                p3 = Node('to_int_long_unsigned',[p[3]] )
+                
+                p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = ['int']
                 p[0].label += '_*'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
 
-                p[1].totype = ['int', 'long', 'unsigned']      
-                p[3].totype = ['int', 'long', 'unsigned']     
 
             else:
                 self.ST.error = 1
@@ -2161,35 +2283,52 @@ class CParser():
                 print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in iit and p[3].type[0] in iit:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].type = ['int']
+                p0type = ['int']
+                p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
-                    p[0].type = ['long int']
-                    p[0].label += '_long_int'
+                    p0type = ['long int']
+                    p0label += '_long_int'
                 else:
-                    p[0].label += '_int'
+                    p0label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
-                    p[0].type.append('unsigned')
-                    p[0].label += '_unsigned'
+                    p0type.append('unsigned')
+                    p0label += '_unsigned'
 
-                p[0].label = p[0].label.replace(" ", "_")
-                p[0].node.attr['label'] = p[0].label
+                p0label = p0label.replace(" ", "_")
+                
 
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
-
+                    p[1].totype = p0type
+                    strp1 = 'to_'
+                    for single_type in p[1].totype:
+                        strp1 += single_type
+                    p1 = Node(strp1 , [p[1]])
+                else:
+                    p1 = p[1]
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type    
+                    p[3].totype = p0type   
+                    strp3 = 'to_'
+                    for single_type in p[3].totype:
+                        strp3 += single_type
+                    p3 = Node(strp3 , [p[3]])
+
+                else:
+                    p3 = p[3]
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type
+                p[0].label = p0label
+                p[0].node.attr['label'] = p[0].label 
 
             else:
                 self.ST.error = 1
@@ -2244,33 +2383,52 @@ class CParser():
                 print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in iit and p[3].type[0] in iit:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].type = ['int']
+                p0type = ['int']
+                p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
-                    p[0].type = ['long int']
-                    p[0].label += '_long_int'
+                    p0type = ['long int']
+                    p0label += '_long_int'
                 else:
-                    p[0].label += '_int'
+                    p0label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
-                    p[0].type.append('unsigned')
-                    p[0].label += '_unsigned'
-                p[0].label = p[0].label.replace(" ", "_")
-                p[0].node.attr['label'] = p[0].label
+                    p0type.append('unsigned')
+                    p0label += '_unsigned'
+
+                p0label = p0label.replace(" ", "_")
+                
+
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
-
+                    p[1].totype = p0type
+                    strp1 = 'to_'
+                    for single_type in p[1].totype:
+                        strp1 += single_type
+                    p1 = Node(strp1 , [p[1]])
+                else:
+                    p1 = p[1]
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type    
+                    p[3].totype = p0type   
+                    strp3 = 'to_'
+                    for single_type in p[3].totype:
+                        strp3 += single_type
+                    p3 = Node(strp3 , [p[3]])
+
+                else:
+                    p3 = p[3]
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type
+                p[0].label = p0label
+                p[0].node.attr['label'] = p[0].label  
 
             else:
                 self.ST.error = 1
@@ -2325,34 +2483,52 @@ class CParser():
                 print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
             elif p[1].type[0] in iit and p[3].type[0] in iit:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].type = ['int']
+                p0type = ['int']
+                p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
-                    p[0].type = ['long int']
-                    p[0].label += '_long_int'
+                    p0type = ['long int']
+                    p0label += '_long_int'
                 else:
-                    p[0].label += '_int'
+                    p0label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
-                    p[0].type.append('unsigned')
-                    p[0].label += '_unsigned'
-                p[0].label = p[0].label.replace(" ", "_")
-                p[0].node.attr['label'] = p[0].label
+                    p0type.append('unsigned')
+                    p0label += '_unsigned'
+
+                p0label = p0label.replace(" ", "_")
+                
 
 
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[1].type:
                         isin = False
                 if isin == False:
-                    p[1].totype = p[0].type
-
+                    p[1].totype = p0type
+                    strp1 = 'to_'
+                    for single_type in p[1].totype:
+                        strp1 += single_type
+                    p1 = Node(strp1 , [p[1]])
+                else:
+                    p1 = p[1]
                 isin = True
-                for single_type in p[0].type:
+                for single_type in p0type:
                     if single_type not in p[3].type:
                         isin = False
                 if isin == False:
-                    p[3].totype = p[0].type    
+                    p[3].totype = p0type   
+                    strp3 = 'to_'
+                    for single_type in p[3].totype:
+                        strp3 += single_type
+                    p3 = Node(strp3 , [p[3]])
+
+                else:
+                    p3 = p[3]
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type
+                p[0].label = p0label
+                p[0].node.attr['label'] = p[0].label 
 
             else:
                 self.ST.error = 1
@@ -3004,6 +3180,8 @@ class CParser():
                 if entry['check'] == 'VAR':
                     p[1].isvar = 1
 
+                if 'unsigned' in type_list or 'signed' in type_list:
+                    type_list.append('int')
                 p[1].type = []
                 if 'long' in type_list and 'int' in type_list:
                     p[1].type.append('long int')
