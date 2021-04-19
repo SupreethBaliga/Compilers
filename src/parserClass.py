@@ -1639,7 +1639,6 @@ class CParser():
                 print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
 
             p[4].totype = p[0].type
-            # To do: Uniformity in totype
             
             #TAC
             if self.ST.error:
@@ -1712,9 +1711,11 @@ class CParser():
                     p[3].totype = p[0].type
 
                 
-                p[0].label = p[0].label +  p[0].type[0]
+                p[0].label = p[0].label + '_' + p[0].type[0]
                 if len(p[0].type)==2:
-                    p[0].label = p[0].label + ' ' +  p[0].type[1]
+                    p[0].label = p[0].label + '_' +  p[0].type[1]
+
+                p[0].label = p[0].label.replace(" ", "_")
 
                 p[0].node.attr['label'] = p[0].label
 
@@ -1795,19 +1796,24 @@ class CParser():
                 if isin == False:
                     p[3].totype = p[0].type           
 
-                p[0].label = p[0].label +  p[0].type[0]
+                p[0].label = p[0].label + '_' +  p[0].type[0]
                 if len(p[0].type)==2:
-                    p[0].label = p[0].label + ' ' +  p[0].type[1]
+                    p[0].label = p[0].label + '_' +  p[0].type[1]
+
+                p[0].label = p[0].label.replace(" ", "_")
 
                 p[0].node.attr['label'] = p[0].label
                 
             elif p[1].type[0][-1] == '*' and p[3].type[0] in iit:
-                p[0].label = p[0].label + p[1].type[0]
+                p[0].label = p[0].label + '_' + p[1].type[0]
+                p[0].label = p[0].label.replace(" ", "_")
+
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[1].type
             
             elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='+':
-                p[0].label = p[0].label + p[1].type[0]
+                p[0].label = p[0].label + '_' + p[1].type[0]
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[3].type
             
@@ -1875,13 +1881,13 @@ class CParser():
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 if iit.index(p[1].type[0]) <= 3:
                     p[0].type = ['int']
-                    p[0].label += 'int'
+                    p[0].label += '_int'
                 else:
                     p[0].type = ['long int']
-                    p[0].label += 'long int'
+                    p[0].label += '_long_int'
                 if 'unsigned' in p[1].type:
                     p[0].type.append('unsigned')
-                    p[0].label += ' unsigned'
+                    p[0].label += '_unsigned'
 
                 isin = True
                 for single_type in p[0].type:
@@ -1889,6 +1895,8 @@ class CParser():
                         isin = False
                 if isin == False:
                     p[1].totype = p[0].type
+                p[0].label = p[0].label.replace(" ", "_")
+
                 p[0].node.attr['label'] = p[0].label
 
             else:
@@ -1950,13 +1958,16 @@ class CParser():
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 
-                p[0].label = p[0].label + ' ' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
                 flag = 0
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
                     flag = 1
                     p[0].label = p[0].label + '_' +  'unsigned'
+                    p[0].label = p[0].label.replace(" ", "_")
+
                     p[0].node.attr['label'] = p[0].label
                 else:
+                    p[0].label = p[0].label.replace(" ", "_")
                     p[0].node.attr['label'] = p[0].label
 
 
@@ -1973,7 +1984,8 @@ class CParser():
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
-                p[0].label += 'str'
+                p[0].label += '_str'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
             elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
@@ -1987,7 +1999,8 @@ class CParser():
             elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
-                p[0].label += ' *'
+                p[0].label += '_*'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
 
                 p[1].totype = ['int', 'long', 'unsigned']      
@@ -2051,11 +2064,12 @@ class CParser():
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 
-                p[0].label = p[0].label + ' ' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
+                p[0].label = p[0].label + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
                 flag = 0
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
                     flag = 1
                     p[0].label = p[0].label + '_' +  'unsigned'
+                    p[0].label = p[0].label.replace(" ", "_")
                     p[0].node.attr['label'] = p[0].label
 
 
@@ -2072,7 +2086,8 @@ class CParser():
             elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
-                p[0].label += 'str'
+                p[0].label += '_str'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
             elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
@@ -2086,7 +2101,8 @@ class CParser():
             elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
-                p[0].label += ' *'
+                p[0].label += '_*'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
 
                 p[1].totype = ['int', 'long', 'unsigned']      
@@ -2149,13 +2165,15 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
-                    p[0].label += ' long int'
+                    p[0].label += '_long_int'
                 else:
-                    p[0].label += ' int'
+                    p[0].label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
-                    p[0].label += ' unsigned'
+                    p[0].label += '_unsigned'
+
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
 
@@ -2230,13 +2248,14 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
-                    p[0].label += 'long int'
+                    p[0].label += '_long_int'
                 else:
-                    p[0].label += 'int'
+                    p[0].label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
-                    p[0].label += ' unsigned'
+                    p[0].label += '_unsigned'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
                 isin = True
@@ -2310,13 +2329,14 @@ class CParser():
                 p[0].type = ['int']
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
                     p[0].type = ['long int']
-                    p[0].label += 'long int'
+                    p[0].label += '_long_int'
                 else:
-                    p[0].label += 'int'
+                    p[0].label += '_int'
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p[0].type.append('unsigned')
-                    p[0].label += ' unsigned'
+                    p[0].label += '_unsigned'
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
 
@@ -2652,16 +2672,17 @@ class CParser():
                             p[3].totype = p[0].type    
 
                         if 'struct' in p[0].type:
-                            p[0].label += 'struct'
+                            p[0].label += '_struct'
                         elif 'union' in p[0].type:
-                            p[0].label += 'union'
+                            p[0].label += '_union'
                         elif p[0].type[0][-1] == '*':
-                            p[0].label += 'int unsigned'
+                            p[0].label += '_int_long_unsigned'
                         else:
-                            p[0].label += p[0].type[0]
+                            p[0].label += '_' + p[0].type[0]
                             if 'unsigned' in p[0].type:
-                                p[0].label += ' unsigned'
+                                p[0].label += '_unsigned'
 
+                        p[0].label = p[0].label.replace(" ", "_")
                         p[0].node.attr['label'] = p[0].label
 
 
@@ -3145,18 +3166,19 @@ class CParser():
                     p[3].totype = p[0].type    
 
                 if 'struct' in p[0].type:
-                    p[0].label += 'struct'
+                    p[0].label += '_struct'
                 elif 'union' in p[0].type:
-                    p[0].label += 'union'
+                    p[0].label += '_union'
                 elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
-                    p[0].label += 'int unsigned'
+                    p[0].label += '_int_long_unsigned'
                 elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
-                    p[0].label += p[0].type[0] + ' arr'
+                    p[0].label += '_' + p[0].type[0] + '_arr'
                 else:
-                    p[0].label += p[0].type[0]
+                    p[0].label += '_' + p[0].type[0]
                     if 'unsigned' in p[0].type:
-                        p[0].label += ' unsigned'
+                        p[0].label += '_unsigned'
 
+                p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
         
         if self.ST.error:
