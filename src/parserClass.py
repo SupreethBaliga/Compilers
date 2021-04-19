@@ -375,6 +375,12 @@ class CParser():
                     if single_type != 'union':
                             p[0].type.append(single_type)     
 
+            if 'void' in type_list:
+                p[0].type.append('void')
+                for single_type in type_list:
+                    if single_type != 'void':
+                            p[0].type.append(single_type)     
+
             if '*' in type_list:
                 temp_type = []
                 temp_type.append(p[0].type[0])
@@ -693,6 +699,13 @@ class CParser():
                             if single_type != 'union':
                                     p[0].type.append(single_type)    
 
+                    if 'void' in type_list:
+                        p[0].type.append('void')
+                        for single_type in type_list:
+                            if single_type != 'void':
+                                    p[0].type.append(single_type)     
+
+
                     if '*' in type_list:
                         temp_type = []
                         temp_type.append(p[0].type[0])
@@ -901,6 +914,13 @@ class CParser():
                         for single_type in type_list:
                             if single_type != 'union':
                                     p[0].type.append(single_type)  
+
+                    if 'void' in type_list:
+                        p[0].type.append('void')
+                        for single_type in type_list:
+                            if single_type != 'void':
+                                    p[0].type.append(single_type)     
+
 
                     if '*' in type_list:
                         temp_type = []
@@ -1591,7 +1611,11 @@ class CParser():
                     if single_type != 'union':
                             p[0].type.append(single_type)     
 
-
+            if 'void' in type_list:
+                p[0].type.append('void')
+                for single_type in type_list:
+                    if single_type != 'void':
+                            p[0].type.append(single_type)     
 
             if '*' in type_list:
                 temp_type = []
@@ -3110,6 +3134,10 @@ class CParser():
                 self.ST.error = 1
                 print('variable cannot be both signed and unsigned at line', entry['line'])
                 return
+            elif 'void' in entry['type'] and '*' not in entry['type']:
+                self.ST.error = 1
+                print('Cannot have a void type variable at line ', entry['line'])
+                return
             else:
                 data_type_count = 0
                 if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type'] or 'char' in entry['type']:
@@ -3240,6 +3268,11 @@ class CParser():
                         if single_type != 'union':
                                 p[1].type.append(single_type)     
 
+                if 'void' in type_list:
+                    p[1].type.append('void')
+                    for single_type in type_list:
+                        if single_type != 'void':
+                                p[1].type.append(single_type)     
 
 
                 if '*' in type_list:
