@@ -748,9 +748,9 @@ class CParser():
                         p[0].temp = found["vars"][p3val]["temp"]
                 
                 if p[1].label == 'UNARY*':
-                    p[0].temp = p[1].temp
+                    p[0].temp = p[1].temp[1:-1]
                     found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
-                    self.TAC.emit('+long', p[1].temp, p[1].temp, found['vars'][p[3].label]['offset'])
+                    self.TAC.emit('+long', p[0].temp, p[0].temp, found['vars'][p[3].label]['offset'])
                 
                 # self.TAC.emit('.', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
@@ -794,11 +794,15 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
-                self.TAC.emit('callq', p[0].temp, p[1].label , '0')
-                p[0].truelist.append(self.TAC.nextstat)
-                p[0].falselist.append(self.TAC.nextstat+1)
-                self.TAC.emit('ifnz goto','',p[0].temp,'')
-                self.TAC.emit('goto','','','')
+                found, entry = self.ST.ReturnSymTabEntry(p[1].label)
+                if found["type"] == ['void']:
+                    self.TAC.emit('callq', '', p[1].label, '0')
+                else:
+                    self.TAC.emit('callq', p[0].temp, p[1].label , '0')
+                    p[0].truelist.append(self.TAC.nextstat)
+                    p[0].falselist.append(self.TAC.nextstat+1)
+                    self.TAC.emit('ifnz goto','',p[0].temp,'')
+                    self.TAC.emit('goto','','','')
 
             elif p[2] == '->':
                 p3val = p[3]['lexeme']
@@ -1064,11 +1068,16 @@ class CParser():
 
                 for arg in reversed(p[3].arglist):
                     self.TAC.emit('param', arg,'','')
-                self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
-                p[0].truelist.append(self.TAC.nextstat)
-                p[0].falselist.append(self.TAC.nextstat+1)
-                self.TAC.emit('ifnz goto','',p[0].temp,'')
-                self.TAC.emit('goto','','','')
+
+                found, entry = self.ST.ReturnSymTabEntry(p[1].label)
+                if found["type"] == ['void']:
+                    self.TAC.emit('callq', '', p[1].label, len(p[3].arglist))
+                else:
+                    self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
+                    p[0].truelist.append(self.TAC.nextstat)
+                    p[0].falselist.append(self.TAC.nextstat+1)
+                    self.TAC.emit('ifnz goto','',p[0].temp,'')
+                    self.TAC.emit('goto','','','')
             elif p[2] == '[':
                 
                 if p[3] == None:
@@ -1148,7 +1157,11 @@ class CParser():
                     else:
                         self.TAC.emit('*int', p[0].temp, p[0].temp, f'`{sizes[p[0].type[0]]}')
                     
-                    self.TAC.emit('+int', p[0].temp, p[1].temp, p[0].temp)
+                    var = p[1].temp.split('(')[0]
+                    if var[0] != '-':
+                        var = '+' + var
+                    self.TAC.emit('+int', p[0].temp, f'%ebp{var}', p[0].temp)
+                    p[0].temp = f'({p[0].temp})'
 
                     p[0].truelist.append(self.TAC.nextstat)
                     p[0].falselist.append(self.TAC.nextstat+1)
@@ -1379,6 +1392,9 @@ class CParser():
                     p[0].temp = found['temp']
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
+                if p[1].label == 'UNARY*':
+                    p[0].temp = f'({p[0].temp})'
+                    
                 if(p[1].label[-1] == '!'):
                     p[0].truelist = p[1].falselist
                     p[0].falselist = p[1].truelist
