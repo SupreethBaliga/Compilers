@@ -384,10 +384,6 @@ class CParser():
                         else:
                             temp_type.append(p[0].type[i])
                 p[0].type = temp_type
-                
-                print(p[0].type)
-
-            
 
             if 'struct' in p[0].type or 'union' in p[0].type:
                 p[0].vars = entry['vars']
