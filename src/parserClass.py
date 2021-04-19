@@ -1630,7 +1630,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Incompatible union types to perform casting at line {p.lineno(1)}')
 
-            elif p[0].type[0] in aat and p[4].type[0] not in aat and p[4].type[-1] != '*':
+            elif p[0].type[0] in aat and p[4].type[0] not in aat and p[4].type[0][-1] != '*':
                 self.ST.error = 1
                 print(f'Type mismatch while casting value at line {p.lineno(1)}')
             
