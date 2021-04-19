@@ -4441,7 +4441,7 @@ class CParser():
                     print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
 
 
-                elif functype[0] in aat and p[2].type[0] not in aat:
+                elif functype[0] in aat and p[2].type[0] not in aat and p[2].type[0][-1] != '*':
                     self.ST.error = 1
                     print(f'Type mismatch while returning value at line {p.lineno(1)}')
                     
