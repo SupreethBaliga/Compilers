@@ -2676,7 +2676,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 8):
-            p[0] = Node('TERNARY',[p[1],p[3],p[5]])
+            p[0] = Node('TERNARY',[p[1],p[4],p[7]])
             
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
@@ -4133,19 +4133,25 @@ class CParser():
 
         if (len(p) == 2):
             p[0] = Node(';',[p[1]])
-            p[0].truelist = p[1].truelist
-            p[0].falselist = p[1].falselist
-            p[0].breaklist = p[1].breaklist
-            p[0].continuelist = p[1].continuelist
-            p[0].nextlist = p[1].nextlist
-            p[0].testlist = p[1].testlist
+            if(p[1] != None):
+                p[0].truelist = p[1].truelist
+                p[0].falselist = p[1].falselist
+                p[0].breaklist = p[1].breaklist
+                p[0].continuelist = p[1].continuelist
+                p[0].nextlist = p[1].nextlist
+                p[0].testlist = p[1].testlist
         elif (len(p) == 4):
             p[0] = Node(';',[p[1],p[3]])
             self.TAC.backpatch(p[1].nextlist,p[2].quad)
-            p[0].breaklist = p[1].breaklist + p[3].breaklist
-            p[0].continuelist = p[1].continuelist + p[3].continuelist
-            p[0].nextlist = p[3].nextlist
-            p[0].testlist = p[1].testlist + p[3].testlist
+            if(p[3] != None):
+                p[0].breaklist = p[1].breaklist + p[3].breaklist
+                p[0].continuelist = p[1].continuelist + p[3].continuelist
+                p[0].nextlist = p[3].nextlist
+                p[0].testlist = p[1].testlist + p[3].testlist
+            else:
+                p[0].breaklist = p[1].breaklist
+                p[0].continuelist = p[1].continuelist
+                p[0].testlist = p[1].testlist
 
     def p_block_item(self, p):
         '''
