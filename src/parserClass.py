@@ -187,6 +187,10 @@ class CParser():
 
     def updateSizeInSymTab(self, variables, var_name):
         multiplier = 1
+        new_list = []
+        for var in variables:
+            new_list = new_list + var.split(' ')
+        variables = new_list
         if '*' in variables:
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", sizes["PTR"])
         elif 'struct' in variables :
@@ -727,7 +731,11 @@ class CParser():
                 if found != False :
                     if p3val in found["vars"].keys():
                         p[0].temp = found["vars"][p3val]["temp"]
-
+                
+                if p[1].label == 'UNARY*':
+                    p[0].temp = p[1].temp
+                    found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+                    self.TAC.emit('+long', p[1].temp, p[1].temp, found['vars'][p[3].label]['offset'])
                 
                 # self.TAC.emit('.', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
@@ -946,7 +954,7 @@ class CParser():
                 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 self.TAC.emit('+long', p[0].temp, p[1].temp, found['vars'][p[3].label]['offset'])
-                self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
+                # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1334,7 +1342,13 @@ class CParser():
                     self.ST.InsertSymbol(p[0].temp, 0)
                     self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
                     self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
-                    self.updateSizeInSymTab(p[0].type, p[0].temp)
+
+                    if p[1].label == 'UNARY*':
+                        found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
+                        var_size = found['sizeAllocInBytes']
+                        self.ST.ModifySymbol(p[0].temp, "sizeAllocInBytes", var_size)
+                    else:
+                        self.updateSizeInSymTab(p[0].type, p[0].temp)
                     if self.ST.isGlobal(p[0].temp):
                         self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
                     else :
@@ -2499,7 +2513,17 @@ class CParser():
             
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
-            self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+            if p[1].label == '->':
+                self.TAC.emit(p[0].label, f'({p[1].temp})', p[3].temp, '')
+            elif p[1].label == '.':
+                found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+                if "*" in found["type"]:
+                    self.TAC.emit(p[0].label, f'({p[1].temp})', p[3].temp, '')
+                else:
+                    self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+            else:
+                self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
