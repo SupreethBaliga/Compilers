@@ -513,6 +513,10 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
 
+            if p[1] == None:
+                self.ST.error = 1
+                return
+
             for i in range(len(p[1].type) - 1, 0, -1):
                 if p[1].type[i][0] != '[':
                     break
@@ -2670,7 +2674,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 8):
-            p[0] = Node('TERNARY',[p[1],p[4],p[7]])
+            
             
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
@@ -2731,31 +2735,62 @@ class CParser():
                 print(f'Incompatible conditional operation between pointer and {p[4].type} at line {p.lineno(2)}')
                 return
 
-            isError = True
+            
+            isError = False
             if p[4].type == p[7].type:
-                p[0].type = p[4].type
+                p0type = p[4].type
                 # Look Here
-                isError = False
+            
+            elif p[4].type[0][-1] == '*' and p[7].type[0][-1] == '*':
+                p0type = ['void *']
 
             elif p[4].type[0][-1] == '*' or p[7].type[0][-1] == '*':
-                p[0].type = ['int', 'long', 'unsigned']
-                isError = False
+                if p[4].type[0][-1] == '*':
+                    p0type = p[4].type
+                elif p[7].type[0][-1] == '*':
+                    p0type = p[7].type   
+                     
             elif 'str' in p[4].type:
-                p[0].type = p[7].type
-                isError = False
+                p0type = p[7].type
 
             elif 'str' in p[7].type:
-                p[0].type = p[4].type
-                isError = False
+                p0type = p[4].type
+            
 
             elif p[4].type[0] in aat and p[7].type[0] in aat:
-                p[0].type = []
-                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[4].type[0]))])
+                p0type = []
+                p0type.append(aat[max(aat.index(p[4].type[0]), aat.index(p[7].type[0]))])
                 if 'unsigned' in p[4].type or 'unsigned' in p[7].type and p[0].type[0] in dit:
-                    p[0].type.append('unsigned')
-                isError = False
+                    p0type.append('unsigned')
+            else:
+                isError = True
+
 
             if (isError == False):
+                if p0type != p[4].type:
+                    p4str = 'to'
+                    for single_type in p0type:
+                        p4str += '_' + single_type
+                    p4str = p4str.replace(' ','_')
+                    p4 = Node(p4str ,[p[4]])
+                else:
+                    p4 = p[4]
+
+                if p0type != p[7].type:
+                    p7str = 'to'
+                    for single_type in p0type:
+                        p7str += '_' + single_type
+                    p7str = p7str.replace(' ','_')
+                    p7 = Node(p7str,[p[7]])
+                else:
+                    p7 = p[7]
+
+
+
+                p[0] = Node('TERNARY',[p[1],p4,p7])
+                p[0].type = p0type
+
+
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
                 self.TAC.backpatch(p[1].falselist,p[6].quad)
                 p[0].truelist = p[4].truelist + p[7].truelist
