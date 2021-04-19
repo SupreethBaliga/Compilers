@@ -2677,81 +2677,81 @@ class CParser():
                 print(f'Struct / Union type variable not allowed as first operand of ternary operator')
                 return
 
-            elif p[3] == None or p[5]==None:
+            elif p[4] == None or p[7]==None:
                 self.ST.error = 1
                 print(f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
-            elif p[3].type in [None, []] or p[5].type in [None, []] :
+            elif p[4].type in [None, []] or p[7].type in [None, []] :
                 self.ST.error = 1
                 print(f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'struct' in p[3].type and 'struct' not in p[5].type:
+            elif 'struct' in p[4].type and 'struct' not in p[5].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'struct' in p[5].type and 'struct' not in p[3].type:
+            elif 'struct' in p[7].type and 'struct' not in p[4].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'struct' in p[3].type and 'struct' in p[5].type and p[3].type[1] != p[5].type[1]:
+            elif 'struct' in p[4].type and 'struct' in p[7].type and p[4].type[1] != p[7].type[1]:
                 self.ST.error = 1
                 print(f'Incompatible struct types to perform conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'union' in p[3].type and 'union' not in p[5].type:
+            elif 'union' in p[4].type and 'union' not in p[7].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'union' in p[5].type and 'union' not in p[3].type:
+            elif 'union' in p[7].type and 'union' not in p[4].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[3].type} and {p[5].type} for conditional operation at line {p.lineno(2)}')
+                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'union' in p[3].type and 'union' in p[5].type and p[3].type[1] != p[5].type[1]:
+            elif 'union' in p[4].type and 'union' in p[7].type and p[4].type[1] != p[7].type[1]:
                 self.ST.error = 1
                 print(f'Incompatible union types to perform conditional operation at line {p.lineno(2)}')  
                 return 
-            elif p[3].type[0] not in aat and p[3].type[0][-1] != '*' and p[5].type[0] in aat:
+            elif p[4].type[0] not in aat and p[4].type[0][-1] != '*' and p[7].type[0] in aat:
                 self.ST.error = 1
                 print(f'Type mismatch while performing conditional operation at line {p.lineno(2)}')
                 return
             
-            elif p[3].type[0][-1] == '*' and p[5].type[0][-1] != '*' and p[5].type[0]  not in iit :    
+            elif p[4].type[0][-1] == '*' and p[7].type[0][-1] != '*' and p[7].type[0]  not in iit :    
                 self.ST.error = 1
-                print(f'Incompatible conditional operation between pointer and {p[5].type} at line {p.lineno(2)}')
+                print(f'Incompatible conditional operation between pointer and {p[7].type} at line {p.lineno(2)}')
                 return
 
-            elif p[5].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit :    
+            elif p[7].type[0][-1] == '*' and p[4].type[0][-1] != '*' and p[4].type[0]  not in iit :    
                 self.ST.error = 1
-                print(f'Incompatible conditional operation between pointer and {p[3].type} at line {p.lineno(2)}')
+                print(f'Incompatible conditional operation between pointer and {p[4].type} at line {p.lineno(2)}')
                 return
 
             isError = True
-            if p[3].type == p[5].type:
-                p[0].type = p[3].type
+            if p[4].type == p[7].type:
+                p[0].type = p[4].type
                 # Look Here
                 isError = False
 
-            elif p[3].type[0][-1] == '*' or p[5].type[0][-1] == '*':
+            elif p[4].type[0][-1] == '*' or p[7].type[0][-1] == '*':
                 p[0].type = ['int', 'long', 'unsigned']
                 isError = False
-            elif 'str' in p[3].type:
-                p[0].type = p[5].type
+            elif 'str' in p[4].type:
+                p[0].type = p[7].type
                 isError = False
 
-            elif 'str' in p[5].type:
-                p[0].type = p[3].type
+            elif 'str' in p[7].type:
+                p[0].type = p[4].type
                 isError = False
 
-            elif p[3].type[0] in aat and p[5].type[0] in aat:
+            elif p[4].type[0] in aat and p[7].type[0] in aat:
                 p[0].type = []
-                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
-                if 'unsigned' in p[3].type or 'unsigned' in p[5].type and p[0].type[0] in dit:
+                p[0].type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[4].type[0]))])
+                if 'unsigned' in p[4].type or 'unsigned' in p[7].type and p[0].type[0] in dit:
                     p[0].type.append('unsigned')
                 isError = False
 
