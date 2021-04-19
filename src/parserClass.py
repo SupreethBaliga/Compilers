@@ -377,15 +377,16 @@ class CParser():
 
             if '*' in type_list:
                 temp_type = []
-                temp_type.append(p[0].type[0]+' *')
-                for i in range(len(p[0].type)):
-                    if i>=2:
+                temp_type.append(p[0].type[0])
+                for i in range(1, len(p[0].type)):
                         if p[0].type[i] == '*':
-                            temp_type[0] += '*'
+                            temp_type[0] += ' *'
                         else:
                             temp_type.append(p[0].type[i])
                 p[0].type = temp_type
-            
+                
+                print(p[0].type)
+
             
 
             if 'struct' in p[0].type or 'union' in p[0].type:
@@ -668,9 +669,9 @@ class CParser():
 
                     if isarr > 0:
                         temp_type = []
-                        temp_type.append(p[0].type[0]+' ')
+                        temp_type.append(p[0].type[0])
                         for i in range(isarr):
-                            temp_type[0] += '*'
+                            temp_type[0] += ' *'
 
                         for i in range(len(p[0].type)):
                             if i>isarr:
@@ -694,13 +695,12 @@ class CParser():
 
                     if '*' in type_list:
                         temp_type = []
-                        temp_type.append(p[0].type[0]+' *')
-                        for i in range(len(p[0].type)):
-                            if i>=2:
-                                if p[0].type[i] == '*':
-                                    temp_type[0] += '*'
-                                else:
-                                    temp_type.append(p[0].type[i])
+                        temp_type.append(p[0].type[0])
+                        for i in range(1, len(p[0].type)):
+                            if p[0].type[i] == '*':
+                                temp_type[0] += ' *'
+                            else:
+                                temp_type.append(p[0].type[i])
                         p[0].type = temp_type
                     
 
@@ -904,13 +904,12 @@ class CParser():
 
                     if '*' in type_list:
                         temp_type = []
-                        temp_type.append(p[0].type[0]+' *')
-                        for i in range(len(p[0].type)):
-                            if i>=2:
-                                if p[0].type[i] == '*':
-                                    temp_type[0] += '*'
-                                else:
-                                    temp_type.append(p[0].type[i])
+                        temp_type.append(p[0].type[0])
+                        for i in range(1, len(p[0].type)):
+                            if p[0].type[i] == '*':
+                                temp_type[0] += ' *'
+                            else:
+                                temp_type.append(p[0].type[i])
                         p[0].type = temp_type
                     
 
@@ -1602,13 +1601,12 @@ class CParser():
 
             if '*' in type_list:
                 temp_type = []
-                temp_type.append(p[0].type[0]+' *')
-                for i in range(len(p[0].type)):
-                    if i>=2:
-                        if p[0].type[i] == '*':
-                            temp_type[0] += '*'
-                        else:
-                            temp_type.append(p[0].type[i])
+                temp_type.append(p[0].type[0])
+                for i in range(1,len(p[0].type)):
+                    if p[0].type[i] == '*':
+                        temp_type[0] += ' *'
+                    else:
+                        temp_type.append(p[0].type[i])
                 p[0].type = temp_type
 
 
@@ -1636,7 +1634,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Type mismatch while casting value at line {p.lineno(1)}')
             
-            elif '*' in p[2].type and p[4].type[0] not in iit :    
+            elif '*' in p[2].type and p[4].type[0] not in iit and p[4].type[0][-1] != '*':    
                 self.ST.error = 1
                 print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
 
@@ -3274,13 +3272,12 @@ class CParser():
 
                 if '*' in type_list:
                     temp_type = []
-                    temp_type.append(p[1].type[0]+' *')
+                    temp_type.append(p[1].type[0])
                     for i in range(len(p[1].type)):
-                        if i>=2:
-                            if p[1].type[i] == '*':
-                                temp_type[0] += '*'
-                            else:
-                                temp_type.append(p[1].type[i])
+                        if p[1].type[i] == '*':
+                            temp_type[0] += '*'
+                        else:
+                            temp_type.append(p[1].type[i])
                     p[1].type = temp_type
                 
                 if p[1] == None or p[3] == None or p[1].type == None or p[3].type == None:
