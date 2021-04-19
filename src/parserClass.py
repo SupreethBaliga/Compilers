@@ -1634,7 +1634,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Type mismatch while casting value at line {p.lineno(1)}')
             
-            elif '*' in p[2].type[0] and p[4].type[0] not in iit :    
+            elif '*' in p[2].type and p[4].type[0] not in iit :    
                 self.ST.error = 1
                 print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
 
