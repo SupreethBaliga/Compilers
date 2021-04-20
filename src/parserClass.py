@@ -403,7 +403,8 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
                 return
-
+        else:
+            p[0] = Node('error')
         # Three address code
         if self.ST.error:
             return
@@ -523,7 +524,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
 
-            if p[1] == None:
+            if p[1] == None or p[1].type == None:
                 self.ST.error = 1
                 return
 
