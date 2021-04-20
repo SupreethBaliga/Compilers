@@ -63,7 +63,7 @@ class TAC():
 
 
     def print_code(self):
-        outputFileTAC = open("test1.txt","w")
+        outputFileTAC = open("TAC/test1.txt","w")
         orig_stdout = sys.stdout
         sys.stdout = outputFileTAC
         for j in range(0, len(self.final_code)):

@@ -1,0 +1,25 @@
+1 f:    
+2 retq    
+3     
+4 main:    
+5 -_int %esp %esp 4 
+6 =_int_long_unsigned -4(%ebp) $.LC0  
+7 -_int %esp %esp 1 
+8 =_char -5(%ebp) $'f'  
+9 -_int %esp %esp 4 
+10 =_int -9(%ebp) $7  
+11 -_int %esp %esp 4 
+12 =_float -13(%ebp) $1.8  
+13 -_int %esp %esp 4 
+14 -_int %esp %esp 8 
+15 +_int %esp %esp 12 
+16 -_int %esp %esp 0 
+17 param -13(%ebp)   
+18 param -9(%ebp)   
+19 param -5(%ebp)   
+20 param -4(%ebp)   
+21 callq  f 4 
+22 retq `0   
+23     
+24 .LC0:    
+25 .string "hello there" 
