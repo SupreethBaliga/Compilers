@@ -10,6 +10,7 @@ class TAC():
         self.temp_count = 0
         self.label_count = 0
         self.nextstat = 0
+        self.strList = []
 
     def newtemp(self):
         self.temp_count += 1
@@ -90,3 +91,14 @@ class TAC():
             code = self.final_code[idx]
             if 'goto' in code[0].split():
                 self.final_code[idx][1] = final_lines[self.final_code[idx][1]]
+        
+    def findStringIdx(self, target_str):
+        for i in range(0, len(self.strList)):
+            if self.strList[i] == target_str:
+                return i
+        
+    def add_strings(self):
+        for i in range(0,len(self.strList)):
+            self.emit(f'.LC{i}:','','','')
+            self.emit('.string', self.strList[i])
+        return

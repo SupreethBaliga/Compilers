@@ -166,7 +166,7 @@ sizes = {
     'float': 4,
     'double': 8,
     'long double':10,
-    'PTR': 8,
+    'PTR': 4,
     'bool': 1,
     'void': 0
 }
@@ -184,6 +184,7 @@ class CParser():
         self.AST_ROOT = Node("SourceNode")
         self.isError = 0
         self.CG = CG()
+        self.strList = []
 
     def updateSizeInSymTab(self, variables, var_name):
         multiplier = 1
@@ -256,14 +257,15 @@ class CParser():
                 p[0].ret_type = entry['type']
                 p[0].param_nums = entry['PARAM_NUMS']
                 p[0].params = []
-                for var in entry['#scope'][0]:
-                    if var == '#StructOrUnion':
-                        p[0].structorunion = entry['#scope'][0][var]
-                        continue
-                    if var == '#scope':
-                        continue
-                    if entry['#scope'][0][var]['check'] == 'PARAM':
-                        p[0].params.append(entry['#scope'][0][var])
+                if '#scope' in entry.keys():
+                    for var in entry['#scope'][0]:
+                        if var == '#StructOrUnion':
+                            p[0].structorunion = entry['#scope'][0][var]
+                            continue
+                        if var == '#scope':
+                            continue
+                        if entry['#scope'][0][var]['check'] == 'PARAM':
+                            p[0].params.append(entry['#scope'][0][var])
 
                 # Need to change here
                 p[0].truelist.append(self.TAC.nextstat)
@@ -497,6 +499,7 @@ class CParser():
         if self.isError :
             return
         p[0] = Node(str(p[1]))
+        self.TAC.strList.append(str(p[1]))
         p[0].type = ['str']
         if self.ST.error:
             return
@@ -1067,7 +1070,11 @@ class CParser():
                     p[0].temp = found['temp']
 
                 for arg in reversed(p[3].arglist):
-                    self.TAC.emit('param', arg,'','')
+                    if arg[0]=='`' and arg[1] =='"' and arg[-1]=='"':
+                        idx = self.TAC.findStringIdx(arg[1:])
+                        self.TAC.emit('param', f'$.LC{idx}','','')
+                    else: 
+                        self.TAC.emit('param', arg,'','')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 if found["type"] == ['void']:
@@ -4681,12 +4688,28 @@ class CParser():
 
     def p_start(self, p):
         '''
-        start : translation_unit
+        start : pushObjectFuncs translation_unit
         '''
         if self.isError :
             return
         p[0] = self.AST_ROOT
         self.ST.StoreResults()
+    
+    def p_pushObjectFuncs(self, p):
+        '''
+        pushObjectFuncs :
+        '''
+        # printf with 2 arguments (string, placeholder value)
+        self.ST.InsertSymbol("printf", -1)
+        self.ST.ModifySymbol("printf", "check", "FUNC")
+        self.ST.ModifySymbol("printf", "type", ['int'])
+        self.ST.ModifySymbol("printf", "PARAM_NUMS", 2)
+
+        # scanf with 2 arguments (string, placeholder value)
+        self.ST.InsertSymbol("scanf", -1)
+        self.ST.ModifySymbol("scanf", "check", "FUNC")
+        self.ST.ModifySymbol("scanf", "type", ['int'])
+        self.ST.ModifySymbol("scanf", "PARAM_NUMS", 2)
 
     def p_translation_unit(self, p):
         '''
@@ -5031,9 +5054,9 @@ else:
     sys.stdout = outputFileSymbolTable
     parser.ST.PrintTable()
     sys.stdout = orig_stdout
+    parser.TAC.add_strings()
     parser.TAC.clean_code()
     parser.TAC.print_code() # remove later
-    parser.CG.build(parser.ST,parser.TAC)
     # parser.printTree()
 
 # endregion
