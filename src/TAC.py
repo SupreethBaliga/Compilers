@@ -4,6 +4,7 @@
 # for unary expression: 'op' <dest> <tmp1> <none>
 
 import copy
+import sys
 class TAC():
     def __init__(self):
         self.final_code = []
@@ -62,12 +63,16 @@ class TAC():
 
 
     def print_code(self):
+        outputFileTAC = open("test1.txt","w")
+        orig_stdout = sys.stdout
+        sys.stdout = outputFileTAC
         for j in range(0, len(self.final_code)):
             print(j+1, end=' ')
             code = self.final_code[j]
             for i in range(0, len(code)):
                 print(code[i], end = ' ')
             print('')
+        sys.stdout = orig_stdout
 
     def clean_code(self):
         temp_code = copy.deepcopy(self.final_code)

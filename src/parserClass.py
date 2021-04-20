@@ -7,7 +7,7 @@ import sys
 from lexerClass import CLexer
 from SymbolTable import SymbolTable
 from TAC import TAC
-from codeGen import CG
+# from codeGen import CG
 
 ############## Helper Functions ###########
 def new_node():
@@ -183,7 +183,7 @@ class CParser():
         self.TAC = TAC()
         self.AST_ROOT = Node("SourceNode")
         self.isError = 0
-        self.CG = CG()
+        # self.CG = CG()
         self.strList = []
 
     def updateSizeInSymTab(self, variables, var_name):
