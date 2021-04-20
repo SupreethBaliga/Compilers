@@ -2837,7 +2837,7 @@ class CParser():
                         print(f'Type mismatch while assigning value at line {p[2].lineno}')
                         # print(p[1].type, p[3].type)
 
-                    elif p[1].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit :    
+                    elif p[1].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit and 'str' not in p[3].type:    
                         self.ST.error = 1
                         print(f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
                     
@@ -3357,7 +3357,7 @@ class CParser():
                     self.ST.error = 1
                     print(f'Invalid array initialization at line {p.lineno(2)}')
                 
-                elif 'arr' not in p[1].type and p[1].type[0][-1] == '*' and p[3].type[0] not in iit and p[3].type[0][-1] != '*' :    
+                elif 'arr' not in p[1].type and p[1].type[0][-1] == '*' and p[3].type[0] not in iit and p[3].type[0][-1] != '*' and 'str' not in p[3].type:    
                     self.ST.error = 1
                     print(f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
 
