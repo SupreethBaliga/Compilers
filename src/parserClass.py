@@ -3099,6 +3099,7 @@ class CParser():
                     if found:
                         for var in found['vars']:
                             struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
+                            found['vars'][var]['offset'] = 0
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                 elif 'long' in p[0].variables[var_name]:
                     if 'int' in p[0].variables[var_name]:
