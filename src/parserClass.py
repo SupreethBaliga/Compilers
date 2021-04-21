@@ -2914,6 +2914,9 @@ class CParser():
                     self.TAC.emit(p[0].label, f'({p[1].temp})', p[3].temp, '')
                 else:
                     self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+            elif p[0].label == '=_struct':
+                found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+                self.TAC.emit(p[0].label, p[1].temp, p[3].temp, f"${sizes[' '.join(p[3].type)]}")    
             else:
                 self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
 
@@ -3132,6 +3135,16 @@ class CParser():
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(1))
 
+                if 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                    found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                    struct_size = 0
+                    for var in found['vars']:
+                        if 'struct' in p[0].variables[var_name]:
+                            struct_size += found['vars'][var]['sizeAllocInBytes']
+                        else:
+                            struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
+                    sizes[' '.join(reversed(found['type'][-2:]))] = struct_size
+                    
             # updating sizes to be allocated based on the type
 
             # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
@@ -4193,9 +4206,9 @@ class CParser():
         '''
         if self.isError :
             return
-        #dracula
         # self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
-        self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
+        if self.ST.offset - self.ST.offsetList[-1] != 0:
+            self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
         self.ST.PopScope()
 
     def p_block_item_list(self, p):
@@ -4475,7 +4488,8 @@ class CParser():
         if self.isError :
             return
         # self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
-        self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
+        if self.ST.offset - self.ST.offsetList[-1] != 0:
+            self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
