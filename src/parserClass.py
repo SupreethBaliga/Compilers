@@ -49,6 +49,7 @@ class Node:
         self.continuelist = []
         self.testlist = []
         self.arglist = []
+        self.type = []
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
@@ -267,10 +268,11 @@ class CParser():
                         if entry['#scope'][0][var]['check'] == 'PARAM':
                             p[0].params.append(entry['#scope'][0][var])
 
+                if self.ST.error:
+                    return
                 # Need to change here
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
-
                 return
 
 
@@ -283,13 +285,14 @@ class CParser():
             
             p[0] = Node(str(p[1]['lexeme']))
             type_list = entry['type']
+            if type_list is None:
+                type_list = []
             if entry['check'] == 'VAR' or entry['check'] == 'PARAM':
                 p[0].isvar = 1
 
             if 'unsigned' in type_list or 'signed' in type_list:
                 type_list.append('int')
 
-            p[0].type = []
             if 'long' in type_list and 'int' in type_list:
                 p[0].type.append('long int')
                 for single_type in type_list:
@@ -428,6 +431,8 @@ class CParser():
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
+            if self.ST.error:
+                return
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -454,8 +459,6 @@ class CParser():
                 
         self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[1]['lexeme'])
         
-        
-
     def p_IntegerConst(self,p):
         '''
         IntegerConst : INT_CONSTANT
@@ -541,7 +544,7 @@ class CParser():
                 p[0].dimensionList.append('isFirstAccess')
 
         elif (len(p) == 3):
-            if p[1].type == None:
+            if p[1].type == None or p[1].type == []:
                 self.ST.error = 1
                 print(f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
 
@@ -607,21 +610,15 @@ class CParser():
                     self.ST.error = 1
                     print(f'Invalid request for member of object that does not belong to the structure/union at {p.lineno(2)}')
                 else:
-
-
                     old_type_list = p[1].vars[p3val]['type']
-
-
-
                     isarr = 0
-
                     for i in range(len(old_type_list)):
                         if old_type_list[i][0]=='[' and old_type_list[i][-1] == ']':
                             isarr += 1
                     
                     type_list = old_type_list
-
-
+                    if type_list is None:
+                        type_list = []
                     p[0].type = []
                     if 'long' in type_list and 'int' in type_list:
                         p[0].type.append('long int')
@@ -770,6 +767,9 @@ class CParser():
 
             elif p[2] == '(':
                 p[0] = Node('FuncCall',[p[1]])
+                if p[1].type is None:
+                    p[1].type = []
+                
                 if 'func' not in p[1].type:
                     self.ST.error = 1
                     print(f'Cannot call non-function at line {p.lineno(2)}')
@@ -780,11 +780,13 @@ class CParser():
                     print(f'{p[1].param_nums} Parameters required to call function at line {p.lineno(2)} ')
                     return
 
-
                 else:
                     p[0].type = p[1].ret_type
                 
                 p[0].varname = p[1].varname
+                if self.ST.error:
+                    return
+
                 p[0].temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p[0].temp, 0)
                 self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -825,6 +827,9 @@ class CParser():
                     print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
                 
+                if p[1].tyep is None:
+                    p[1].type = []
+
                 if 'struct *' not in p[1].type and 'union *' not in p[1].type:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a pointer to a structure or union at line {p.lineno(2)}')
@@ -832,12 +837,7 @@ class CParser():
                     self.ST.error = 1
                     print(f'Invalid request for member of object that does not belong to the structure or union at {p.lineno(2)}')
                 else:
-
-
                     old_type_list = p[1].vars[p3val]['type']
-
-
-
                     isarr = 0
 
                     for i in range(len(old_type_list)):
@@ -846,6 +846,8 @@ class CParser():
                     
                     type_list = old_type_list
 
+                    if type_list is None:
+                        type_list = []
 
                     p[0].type = []
                     if 'long' in type_list and 'int' in type_list:
@@ -1003,8 +1005,10 @@ class CParser():
         elif (len(p) == 5):
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
+                if p[1] is not None and p[1].type is None:
+                    p[1].type = []
                 
-                if p[1] == None or 'func' not in p[1].type:
+                if p[1] is None or 'func' not in p[1].type:
                     self.ST.error = 1
                     print(f'Cannot call non-function at line {p.lineno(2)}')
                     return
@@ -1015,13 +1019,10 @@ class CParser():
                 else:
                     ctr = -1
                     for i in p[1].params:
-
                         # call id, len(p[1].params)
                         ctr += 1
-
                         # found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
-
-                        if p[3].params == None or p[3].params[0]==None:
+                        if p[3].params is None or p[3].params[0] is None:
                             self.ST.error = 1
                             print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
                             return
@@ -1055,13 +1056,12 @@ class CParser():
                             print(f'Cannot assign union value between incompatible objects at line {p.lineno(2)}')
                             return
 
-
-
-
                     p[0].type = p[1].ret_type
                 
                 p[0].varname = p[1].varname
-                ############################ DOO TACCC
+                if self.ST.error:
+                    return
+
                 p[0].temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p[0].temp, 0)
                 self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -1082,10 +1082,6 @@ class CParser():
                     p[0].temp = found['temp']
 
                 for arg in reversed(p[3].arglist):
-                    # if arg[0]=='`' and arg[1] =='"' and arg[-1]=='"':
-                    #     idx = self.TAC.findStringIdx(arg[1:])
-                    #     self.TAC.emit('param', f'$.LC{idx}','','')
-                    # else: 
                     self.TAC.emit('param', arg,'','')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
@@ -1203,7 +1199,6 @@ class CParser():
             p[0].params = []
             p[0].params.append(p[1].type) 
             p[0].type = ['arg list']
-            # self.TAC.emit('param', p[1].temp,'','')
             p[0].arglist.append(p[1].temp)
 
         elif (len(p) == 4):
@@ -1214,10 +1209,8 @@ class CParser():
             p[0].type = ['arg list']
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
-            # self.TAC.emit('param', p[3].temp,'','')
             p[0].arglist = p[1].arglist
             p[0].arglist.append(p[3].temp)
-
 
     def p_unary_expression(self,p):
         '''
@@ -1230,18 +1223,16 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST DONE - check sheet for rule 2- preinc,3- predec,5
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
             if p[1] == '++' or p[1] == '--':
-                if p[2].type == None:
+                if p[2].type is None:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
                 elif 'const' in p[2].type:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
-
                 elif p[2].type[0]!= 'int' and p[2].type[0]!= 'long int' and p[2].type[0]!= 'char':
                     self.ST.error = 1
                     print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
@@ -1253,15 +1244,16 @@ class CParser():
                     print(f'Cannot use increment/decrement operator on constant at line {p.lineno(1)}')
                 else:
                     p[0] = Node('PRE' + str(p[1]),[p[2]])
+                    if p[2].type is None:
+                        p[2].type = []
 
-                    if iit.index(p[2].type[0]) < 3:
+                    if len(p[2].type) > 0 and iit.index(p[2].type[0]) < 3:
                         p[0].type = ['int']
                         p[0].type += p[2].type[1:]
                         p[2].totype = p[0].type
                     else:
                         p[0].type = p[2].type
 
-                #tac
                 if self.ST.error:
                     return
                 
@@ -1310,16 +1302,13 @@ class CParser():
                 if ((p[2] is not None) and (p[2].node is not None)):
                     p[0].onlyAddEdge([p[2]])
 
-                    if p[2].type == None:
+                    if p[2].type is None:
                         self.ST.error = 1
                         print(f'Cannot perform unary operation at line {p[1].lineno}')
                         return
 
-
-
-
                     if p[1].label[-1] in ['+', '-', '!']:
-                        if p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
+                        if len(p[2].type)>0 and p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
                             p[0].type = [p[2].type[0]]
                             if p[2].type[0] == 'char' or p[1].label[-1] == '!':
                                 p[0].type = ['int']
@@ -1332,7 +1321,7 @@ class CParser():
 
 
                     elif p[1].label[-1] == '~':
-                        if p[2].type[0] in ['int', 'long int', 'char']:
+                        if len(p[2].type)>0 and p[2].type[0] in ['int', 'long int', 'char']:
                             p[0].type = [p[2].type[0]]
                             if p[2].type[0] == 'char':
                                 p[0].type = ['int']
@@ -1344,7 +1333,7 @@ class CParser():
                             return
 
                     elif p[1].label[-1] == '*':
-                        if p[2].type[0][-1] != '*':
+                        if len(p[2].type)>0 and p[2].type[0][-1] != '*':
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
@@ -1352,7 +1341,7 @@ class CParser():
                             p[0].isvar = 1
                             p[0].type = p[2].type
                             p[0].type[0] = p[0].type[0][:-1]
-                            if p[0].type[0][-1] == ' ':
+                            if len(p[0].type)>0 and p[0].type[0][-1] == ' ':
                                 p[0].type[0] = p[0].type[0][:-1]
                             try:
                                 p[0].vars = p[2].vars
@@ -1365,16 +1354,14 @@ class CParser():
                         # if 'struct *' in p[2].type:
 
 
-                        if 'struct' != p[2].type[0] and 'union' != p[2].type[0] and p[2].isvar==0:
+                        if len(p[2].type)>0 and 'struct' != p[2].type[0] and 'union' != p[2].type[0] and p[2].isvar==0:
                             self.ST.error = 1
                             print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
                             return
-                        elif 'struct' == p[2].type[0] or 'union' == p[2].type[0]:
+                        elif len(p[2].type)>0 and 'struct' == p[2].type[0] or 'union' == p[2].type[0]:
                             p[0].type = p[2].type
                             p[0].type[0] += ' *'
                             p[0].vars = p[2].vars
-
-
                         else:
                             p[0].type = ['int', 'long', 'unsigned']
                             # How to check if this is pointer
@@ -1481,26 +1468,23 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST DONE - rule for 2 in sheet
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
             p[0] = Node('CAST',[p[2],p[4]])
-            
-
-            if p[2].type == None:
+            if p[2].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform casting at line {p.lineno(1)}')
                 return
             temp_type_list = []
             temp2_type_list = []
             for single_type in p[2].type:
-                if single_type != '*':
+                if len(single_type)>0 and single_type != '*':
                     temp_type_list.append(single_type)
                     if single_type[0] != '[' or single_type[-1] != ']':
                         temp2_type_list.append(single_type)
 
-                if single_type[0] == '[' and single_type[-1] == ']':
+                if len(single_type)>0 and single_type[0] == '[' and single_type[-1] == ']':
                     if single_type[1:-1] == '':
                         self.ST.error = 1
                         print('Cannot have empty indices for array declarations at line', p.lineno(1))
@@ -1525,6 +1509,9 @@ class CParser():
                 return
             else:
                 data_type_count = 0
+                if p[2].type is None:
+                    p[2].type = []
+
                 if 'int' in p[2].type or 'short' in p[2].type  or 'unsigned' in p[2].type or 'signed' in p[2].type or 'char' in p[2].type:
                     data_type_count += 1
                 if 'bool' in  p[2].type:
@@ -1552,11 +1539,12 @@ class CParser():
 
             isarr = 0
             for i in range(len(p[2].type)):
-                if p[2].type[i][0]=='[' and p[2].type[i][-1] == ']':
+                if len(p[2].type[i])>0 and p[2].type[i][0]=='[' and p[2].type[i][-1] == ']':
                     isarr += 1
             
             type_list = p[2].type
-
+            if type_list is None:
+                type_list=[]
 
             p[0].type = []
             if 'long' in type_list and 'int' in type_list:
@@ -1663,7 +1651,7 @@ class CParser():
                 p[0].type = temp_type
 
 
-            if p[2].type == None or p[4].type == None or p[0].type == None:
+            if p[2].type is None or p[4].type is None or p[0].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform casting at line {p.lineno(1)}')
 
@@ -1734,14 +1722,11 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            
-            
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in aat and p[3].type[0] in aat:
-                
+            elif len(p[1].type)>0  and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
@@ -1752,8 +1737,6 @@ class CParser():
                     p0typestr += '_' + single_type
 
                 p0typestr = p0typestr.replace(' ','_')
-
-
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[1].type:
@@ -1774,9 +1757,6 @@ class CParser():
                 else:
                     p3 = p[3]
 
-
-
-
                 p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = p0type
                 
@@ -1785,9 +1765,7 @@ class CParser():
                     p[0].label = p[0].label + '_' +  p[0].type[1]
 
                 p[0].label = p[0].label.replace(" ", "_")
-
                 p[0].node.attr['label'] = p[0].label
-
             else :
                 self.ST.error = 1
                 print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
@@ -1835,11 +1813,11 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in aat and p[3].type[0] in aat:
+            elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
                 if ('unsigned' in p[1].type or 'unsigned' in p[3].type) and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) <= 4 :
@@ -1872,9 +1850,6 @@ class CParser():
                 else:
                     p3 = p[3]
 
-
-
-
                 p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = p0type       
 
@@ -1886,25 +1861,23 @@ class CParser():
 
                 p[0].node.attr['label'] = p[0].label
                 
-            elif p[1].type[0][-1] == '*' and p[3].type[0] in iit:
+            elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0  and p[3].type[0] in iit:
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
                 p[0].label = p[0].label.replace(" ", "_")
-
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[1].type
             
-            elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='+':
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and p[0].label=='+':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[3].type
             
-            elif p[3].type[0][-1] == '*' and p[1].type[0] in iit and p[0].label=='-':
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and p[0].label=='-':
                 self.ST.error = 1
                 print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
-
 
             else :
                 self.ST.error = 1
@@ -1913,7 +1886,6 @@ class CParser():
             #Three address code
             if self.ST.error:
                 return
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -1952,11 +1924,11 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in iit and p[3].type[0] in iit:
+            elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = []
                 p0label = str(p[2])
                 p0typestr = 'to'
@@ -2042,11 +2014,11 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             # print(p[1].type, p[3].type)
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in aat and p[3].type[0] in aat :
+            elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat :
                 p0type = ['int']
                 
                 p0label = str(p[2]) + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
@@ -2097,35 +2069,31 @@ class CParser():
                 p[0].label = p0label
                 p[0].node.attr['label'] = p[0].label
 
-            elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
+            elif len(p[1].type)>0 and p[1].type[0] == 'str' and len(p[3].type)>0 and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 p[0].label += '_str'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
-            elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
+            elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0 and p[3].type[0] in dft:
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            elif p[3].type[0][-1] == '*' and p[1].type[0] in dft:
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in dft:
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
-
-
+            elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*') or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
                 p[1].totype = ['int', 'long', 'unsigned']
                 p1 = Node('to_int_long_unsigned',[p[1]] )      
                 p[3].totype = ['int', 'long', 'unsigned'] 
                 p3 = Node('to_int_long_unsigned',[p[3]] )
-                
                 p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = ['int']
                 p[0].label += '_*'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
-
 
             else:
                 self.ST.error = 1
@@ -2172,14 +2140,12 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in aat and p[3].type[0] in aat :
-                
+            elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat :
                 p0type = ['int']
-
                 p0label = str(p[2]) + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
                 
                 flag = 0
@@ -2228,23 +2194,22 @@ class CParser():
                 p[0].label = p0label
                 p[0].node.attr['label'] = p[0].label
 
-
-            elif p[1].type[0] == 'str' and p[3].type[0] == 'str':
+            elif len(p[1].type)>0 and p[1].type[0] == 'str' and len(p[3].type)>0 and p[3].type[0] == 'str':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].type = ['int']
                 p[0].label += '_str'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
-            elif p[1].type[0][-1] == '*' and p[3].type[0] in dft:
+            elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0 and p[3].type[0] in dft:
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            elif p[3].type[0][-1] == '*' and p[1].type[0] in dft:
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in dft:
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            elif (p[1].type[0][-1] == '*' or p[3].type[0][-1] == '*') and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
+            elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*' )or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
 
                 p[1].totype = ['int', 'long', 'unsigned']
                 p1 = Node('to_int_long_unsigned',[p[1]] )      
@@ -2256,7 +2221,6 @@ class CParser():
                 p[0].label += '_*'
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label      
-
 
             else:
                 self.ST.error = 1
