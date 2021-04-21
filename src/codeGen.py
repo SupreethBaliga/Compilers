@@ -106,7 +106,6 @@ class CodeGenerator:
         for integer addition
         '''
         self.check_type(instruction)
-        # self.final_code.append("addl" + " " + instruction[2] + ", " + instruction[3])
         self.emit_code("addl",instruction[2],instruction[3])
         self.emit_code("movl",instruction[3],instruction[1])
         self.free_register(instruction[2])
@@ -142,7 +141,7 @@ class CodeGenerator:
             return
         self.check_type(instruction)
         self.emit_code("movl", instruction[2], "%eax")
-        self.emit_code("movl", "$0", "%edx")
+        self.emit_code("cltd")
         self.emit_code("idivl", instruction[3])
         self.emit_code("movl", "%eax", instruction[1])
         self.free_register(instruction[2])
@@ -160,7 +159,7 @@ class CodeGenerator:
             return
         self.check_type(instruction)
         self.emit_code("movl", instruction[2], "%eax")
-        self.emit_code("movl", "$0", "%edx")
+        self.emit_code("cltd")
         self.emit_code("idivl", instruction[3])
         self.emit_code("movl", "%edx", instruction[1])
         self.free_register('%edx')
@@ -392,14 +391,10 @@ class CodeGenerator:
             self.op_div(instruction)
         elif(instruction[0][0] == "%"):
             self.op_mod(instruction)
-        # elif((len(instruction)  == 1) and instruction[0][-1] == ':'):
-            # This is for function call
         elif instruction[0][0:6] == "UNARY-":
             self.op_neg(instruction)
         elif instruction[0][0:6] == "UNARY~":
             self.op_not(instruction)
-        # elif instruction[0][0:6] == "POST++":
-        #     self.op_post_inc(instruction)
         elif instruction[0][0:5] == "PRE++":
             self.op_pre_inc(instruction)
         elif instruction[0][0:5] == "PRE--":
@@ -410,7 +405,6 @@ class CodeGenerator:
             self.op_goto(instruction)
         else:
             self.final_code.append(' '.join(instruction))
-        # self.final_code.append('')
 
 def main(file,code):
     codegen = CodeGenerator()
@@ -418,7 +412,7 @@ def main(file,code):
         codegen.final_code.append(f'label {instr.split()[0]}:')
         instr = instr.split()[1:]
         codegen.gen_code(instr)
-        codegen.final_code.append('')
+        # codegen.final_code.append('')
             
     to_print = []
     for line in codegen.final_code:
