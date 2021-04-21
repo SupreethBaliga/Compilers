@@ -591,6 +591,11 @@ class CParser():
                 p[0] = Node('.',[p[1],p[3]])
                 # ----------------------------------------------------------
 
+                if p[1] == None or p[1].type == None:
+                    self.ST.error = 1
+                    print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
+                    return
+
                 if 'struct' not in p[1].type and 'union' not in p[1].type:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
@@ -814,6 +819,11 @@ class CParser():
                 p[3] = Node(str(p3val))
 
                 p[0] = Node('->',[p[1],p[3]])
+
+                if p[1] == None or p[1].type == None:
+                    self.ST.error = 1
+                    print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
+                    return
                 
                 if 'struct *' not in p[1].type and 'union *' not in p[1].type:
                     self.ST.error = 1
