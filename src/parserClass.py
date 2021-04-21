@@ -4462,8 +4462,8 @@ class CParser():
         if self.isError :
             return
         # self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
-        if self.ST.offset - self.ST.offsetList[-1] != 0:
-            self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
+        # if self.ST.offset - self.ST.offsetList[-1] != 0:
+            # self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
@@ -4842,7 +4842,7 @@ class CParser():
         if 'void' in function and len(function) == 1:
             self.TAC.emit('retq','','','')
         else:
-            self.TAC.emit('retq','`0','','')
+            self.TAC.emit('retq','$0','','')
         self.TAC.emit('','','','')
 
     def p_markerFunc2(self, p):
@@ -4950,7 +4950,7 @@ class CParser():
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
 
-        self.ST.offset = 0
+        self.ST.offset = 8
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
                 found, entry = self.ST.ReturnSymTabEntry(var_name)
@@ -4962,7 +4962,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
-        self.ST.offset = 0
+        self.ST.offset = 20
         #  <----------------------XXXX------------------>
 
         self.TAC.emit(str(function_name) + ":",'','','')

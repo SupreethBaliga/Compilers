@@ -1,34 +1,5 @@
 import copy
 
-# def __init__(self):
-#     self.final_code = []
-#     self.ST = None
-#     self.final_instr_list = dict()
-#     self.register_stack = ["ebx","ecx","esi","edi","edx","eax"]
-#     self.register_list = self.register_stack
-
-    
-# def build(self,ST,TAC):
-#     i = 0
-#     for line in TAC.final_code:
-#         if line[0] != None and len(str(line[0])) > 4:
-#             if(str(line[0])[0] == '_' and str(line[0])[-1] == '_'):
-#                 self.final_instr_list[line[0]] = i
-#         if line[1] != None and len(str(line[1])) > 4:
-#             if(str(line[1])[0] == '_' and str(line[1])[-1] == '_'):
-#                 self.final_instr_list[line[1]] = i
-#         if line[2] != None and len(str(line[2])) > 4:
-#             if(str(line[2])[0] == '_' and str(line[2])[-1] == '_'):
-#                 self.final_instr_list[line[2]] = i
-#         if len(line) > 3 and line[3] != None and len(str(line[3])) > 4:
-#             if(str(line[3])[0] == '_' and str(line[3])[-1] == '_'):
-#                 self.final_instr_list[line[3]] = i
-#         i += 1
-    # for key in self.final_instr_list.keys():
-        # print(str(key) + " " + str(self.final_instr_list[key]))
-
-
-
 fileName = "TAC/test1.txt"
 file = open(fileName,"r")
 code = file.readlines()
@@ -40,15 +11,15 @@ class CodeGenerator:
         self.all_registers = ["%ebx","%ecx","%esi","%edi","%edx","%eax","%ebp","%esp"]
         
         # general purpose registers -> register_stack contains all the free registers
-        self.register_stack = ["%ebx","%ecx","%esi","%edi","%edx","%eax"]
+        self.register_stack = ["%ebx","%eax","%ecx","%esi","%edi","%edx"]
         
         #  register_list contains all the registers that can be used(not necessarily free)
         self.register_list = copy.deepcopy(self.register_stack)
         self.final_code = []
         self.final_code.append(".data")
         self.final_code.append(".text")
-        self.final_code.append(".global main|")
-        self.final_code.append(".type main|, @function") 
+        self.final_code.append(".globl main")
+        self.final_code.append(".type main, @function") 
         self.final_code.append("\n")
 
     def emit_code(self, s1 = '', s2 = '', s3 = ''):
@@ -85,11 +56,11 @@ class CodeGenerator:
         else:
             self.register_stack.append(register)
     
-    def move_var(self,src,register):
+    def move_var(self,src,dst):
         # Move in case more than one pair of ()
-        if src == register:
+        if src == dst:
             return
-        self.emit_code("movl",src,register)
+        self.emit_code("movl",src,dst)
     
     def check_type(self,instruction, req_reg1=None, req_reg2=None):
         '''
@@ -221,6 +192,57 @@ class CodeGenerator:
         self.free_register(instruction[2])
         self.free_register(instruction[3], True)
 
+    def op_function_start(self,instruction):
+        self.final_code.append(instruction[0])
+        self.final_code.append("push %ebp")
+        self.final_code.append("mov %esp, %ebp")
+        self.final_code.append("push %ebx")
+        self.final_code.append("push %ecx")
+        self.final_code.append("push %edx")
+        self.final_code.append("push %esi")
+        self.final_code.append("push %edi")
+    
+    def op_return(self,instruction):
+        # Return can have atmost 2 arguments
+        # first is retq and the second is return value that needs to go to 
+        # %eax
+        if(len(instruction) == 2):
+            register = self.request_register("%eax")
+            self.emit_code("movl",instruction[1],register)
+            self.free_register(register,True)
+        self.op_sub(["-_int","%esp","%ebp","$20"])
+        
+        self.final_code.append("pop %edi")
+        self.final_code.append("pop %esi")
+        self.final_code.append("pop %edx")
+        self.final_code.append("pop %ecx")
+        self.final_code.append("pop %ebx")
+        self.final_code.append("mov %ebp, %esp")
+        self.final_code.append("pop %ebp")
+        self.final_code.append("ret ")
+
+    def op_param(self,instruction):
+        self.final_code.append("push " + instruction[1])
+    
+    def op_function_call(self,instruction):
+        # Function call valid right now only for 4 bytes argument
+        # Function calls can have 4 arguments
+        if(len(instruction) == 4):
+        # Function calls can have 3 arguments
+            # isntruction[0] = call
+            # instruction[1] = variable where return value is stored
+            # instruction[2] = function name
+            # instruction[3] = number of arguments
+            self.final_code.append("call " + instruction[2])
+            self.move_var("%eax",instruction[1])
+            self.op_add(["+_int","%esp","%esp","$" + str(instruction[3]*4)])
+        else:
+            self.final_code.append("call " + instruction[1])
+            self.op_add(["+_int","%esp","%esp","$" + str(instruction[2]*4)])
+            # isntruction[0] = call
+            # instruction[1] = function name
+            # instruction[2] = number of arguments
+
 
     def gen_code(self, instruction):
         if not instruction:
@@ -244,9 +266,18 @@ class CodeGenerator:
             self.op_shl(instruction)
         elif(instruction[0][0:2] == ">>"):
             self.op_shr(instruction)
+        elif((len(instruction)  == 1) and (instruction[0][-1] == ':') and (instruction[0][0] != '.')):
+            self.op_function_start(instruction)
+        elif(instruction[0] == "param"):
+            self.op_param(instruction)
+        elif(instruction[0] == "callq"):
+            self.op_function_call(instruction)
+        elif(instruction[0] == "retq"):
+            self.op_return(instruction)
+            self.final_code.append('')
         else:
-            print('bad instr: ', instruction)
-        self.final_code.append('')
+            self.final_code.append(' '.join(instruction))
+        # self.final_code.append('')
 
 def main(file,code):
     codegen = CodeGenerator()
