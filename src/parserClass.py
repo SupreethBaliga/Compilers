@@ -575,8 +575,29 @@ class CParser():
                     return
                 
                 p[0].varname = p[1].varname
-                p[0].temp = p[1].temp
-                self.TAC.emit(p[0].label, p[0].temp, p[1].temp)
+                p[0].temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p[0].temp, 0)
+                self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+                self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[0].type, p[0].temp)
+                if self.ST.isGlobal(p[0].temp):
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p[0].temp = found['temp']
+                self.TAC.emit('=_int', p[0].temp, p[1].temp, '')
+                if str(p[2]) == '++':
+                    self.TAC.emit('+_int', p[1].temp, p[1].temp, f'$1')
+                else:
+                    self.TAC.emit('-_int', p[1].temp, p[1].temp, f'$1')
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1091,7 +1112,7 @@ class CParser():
                     self.TAC.emit('goto','','','')
             elif p[2] == '[':
                 
-                if p[3] == None:
+                if p[3] is None:
                     self.ST.error = 1
                     print(f'Invalid array subscript at line {p.lineno(2)}')
                     return
@@ -1156,7 +1177,7 @@ class CParser():
                     self.TAC.emit('=int', p[0].temp, p[3].temp , '') 
                 else:
                     curDimension = p[0].dimensionList[-1]
-                    self.TAC.emit('*int', p[0].temp, p[1].temp , f'`{curDimension}')
+                    self.TAC.emit('*int', p[0].temp, p[1].temp , f'${curDimension}')
                     self.TAC.emit('+int', p[0].temp, p[0].temp, p[3].temp)
 
                 
@@ -1164,9 +1185,9 @@ class CParser():
 
                 if len(p[0].dimensionList) == 0:
                     if(p[0].type[0][-1] == '*'):
-                        self.TAC.emit('*int', p[0].temp, p[0].temp, '`8')
+                        self.TAC.emit('*int', p[0].temp, p[0].temp, '$8')
                     else:
-                        self.TAC.emit('*int', p[0].temp, p[0].temp, f'`{sizes[p[0].type[0]]}')
+                        self.TAC.emit('*int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
                     
                     var = p[1].temp.split('(')[0]
                     if var[0] != '-':
@@ -1223,7 +1244,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 3):
             if p[1] == '++' or p[1] == '--':
-                if p[2].type is None:
+                if p[2] is None or p[2].type is None:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
                 elif 'const' in p[2].type:
@@ -1514,7 +1535,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 5):
             p[0] = Node('CAST',[p[2],p[4]])
-            if p[2].type is None:
+            if p[2] is None or p[2].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform casting at line {p.lineno(1)}')
                 return
@@ -1764,7 +1785,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
@@ -1909,7 +1930,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
@@ -2073,7 +2094,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
@@ -2226,7 +2247,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             # print(p[1].type, p[3].type)
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
@@ -2405,7 +2426,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
@@ -2583,7 +2604,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
@@ -2728,7 +2749,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
@@ -2876,7 +2897,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
@@ -3024,7 +3045,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1].type is None or p[4].type is None:
+            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
@@ -3070,7 +3091,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1].type is None or p[4].type is None:
+            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
             else:
@@ -3114,7 +3135,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 8):
-            if p[1].type is None:
+            if p[1] is None or p[1].type is None:
                 p[1].type = []
 
             if 'struct' in p[1].type or 'union' in p[1].type:
@@ -3751,9 +3772,6 @@ class CParser():
                 
 
             if (len(p) == 4):
-
-                
-
                 isarr = 0
                 for i in range(len(entry['type'])):
                     if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
@@ -3870,7 +3888,7 @@ class CParser():
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
                 
-                if p[1] == None or p[3] == None or p[1].type == None or p[3].type == None:
+                if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
                     self.ST.error = 1
                     print(f'Cannot perform assignment at line {p.lineno(2)}')
                     return
@@ -4418,7 +4436,7 @@ class CParser():
 
         elif (len(p) == 5):
             if (p[2] == '('):
-                if(p[3] == None):
+                if(p[3] is None):
                     # direct_declarator '(' M1 ')'
                     # this is a function, I have to pass the name of the function,
                     # that is create an entry in global symbol table to 
@@ -5134,6 +5152,9 @@ class CParser():
             if(p[1] == 'return'):
                 p[0] = Node('RETURN')
                 found = list(self.ST.Table[0])
+                if not 'type' in self.ST.Table[0][found[-1]].keys():
+                    self.ST.error = 1
+                    return
                 functype = self.ST.Table[0][found[-1]]['type']
                 if functype is None:
                     functype = []
@@ -5654,7 +5675,7 @@ class CParser():
         self.AST_ROOT.print_val()
 
 # region Driver Code
-#######################driver code
+####################### DRIVER CODE #############################################
 if len(sys.argv) == 1:
     print('No file given as input')
     sys.exit(1)
