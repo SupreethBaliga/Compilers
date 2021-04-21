@@ -3237,7 +3237,7 @@ class CParser():
                 p[4].totype = p0type
 
                 if p[4].totype is not None and p[4].totype != p[4].type:
-                    p1.temp = self.TAC.newtemp()
+                    p4.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p4.temp, 0)
                     self.ST.ModifySymbol(p4.temp, "type", p[4].totype)
                     self.ST.ModifySymbol(p4.temp, "check", "TEMP")
