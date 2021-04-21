@@ -92,7 +92,7 @@ class CLexer(object):
         'ERROR',         #to denote any kind of scanning error
         
         # Operators
-        'ELLIPSIS',      # "..."
+        # 'ELLIPSIS',      # "..."
         'RIGHT_ASSIGN',  # ">>="
         'LEFT_ASSIGN',   # "<<="
         'ADD_ASSIGN',    # "+="

@@ -3895,23 +3895,23 @@ class CParser():
     def p_parameter_type_list(self, p):
         '''
         parameter_type_list : parameter_list
-                            | parameter_list ',' ELLIPSIS
         '''
+        # | parameter_list ',' ELLIPSIS -- dont need ellipsis
         if self.isError :
             return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-        else:
-            # Current design choice: parent operator : ',...'
-                # Single child : parameter list
+        # else:
+        #     # Current design choice: parent operator : ',...'
+        #         # Single child : parameter list
 
-            # Alternative design choice: parent operator ','
-                # Left child : parameter_list
-                # Right child : ELLIPSIS 
-            p[0] = Node('ELLIPSIS',[p[1]])
-            p[0].variables = p[1].variables
-            p[0].variables["Ellipses"] = []
+        #     # Alternative design choice: parent operator ','
+        #         # Left child : parameter_list
+        #         # Right child : ELLIPSIS 
+        #     p[0] = Node('ELLIPSIS',[p[1]])
+        #     p[0].variables = p[1].variables
+        #     p[0].variables["Ellipses"] = []
 
     def p_parameter_list(self, p):
         '''
@@ -3927,21 +3927,21 @@ class CParser():
             p[0] = Node(',',[p[1],p[3]])
             p[0].variables = {**p[1].variables, **p[3].variables}
 
-    def p_parameter_declaration_1(self, p):
-        '''
-        parameter_declaration : declaration_specifiers abstract_declarator
-                            | declaration_specifiers
-        '''
-        if self.isError :
-            return
-        # AST done
-        if len(p) == 2:
-            # Doubt here
-            p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
-        elif len(p) == 3:
-            p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
-            p[1].removeGraph()
-            p[2].removeGraph()
+    # def p_parameter_declaration_1(self, p):
+    #     '''
+    #     parameter_declaration : declaration_specifiers abstract_declarator
+    #                         | declaration_specifiers
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # AST done
+    #     if len(p) == 2:
+    #         # Doubt here
+    #         p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
+    #     elif len(p) == 3:
+    #         p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
+    #         p[1].removeGraph()
+    #         p[2].removeGraph()
 
     def p_parameter_declaration_2(self, p):
         '''
@@ -4349,6 +4349,8 @@ class CParser():
         '''
         globalN1 : 
         '''
+        if self.isError:
+            return
         p[0] = Node('',createAST=False)
         if self.ST.error:
             return
@@ -4359,6 +4361,8 @@ class CParser():
         '''
         globalmarker1 : 
         '''
+        if self.isError:
+            return
         p[0] = Node('',createAST=False)
         if self.ST.error:
             return
@@ -4717,6 +4721,8 @@ class CParser():
         '''
         pushObjectFuncs :
         '''
+        if self.isError:
+            return
         # printf with 2 arguments (string, placeholder value)
         self.ST.InsertSymbol("printf", -1)
         self.ST.ModifySymbol("printf", "check", "FUNC")
@@ -5083,7 +5089,7 @@ else:
     sys.stdout = orig_stdout
     parser.TAC.add_strings()
     parser.TAC.clean_code()
-    parser.TAC.print_code() # remove later
+    parser.TAC.print_code(fileNameCore) # remove later
     # parser.printTree()
 
 # endregion
