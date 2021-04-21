@@ -50,6 +50,7 @@ class Node:
         self.testlist = []
         self.arglist = []
         self.type = []
+        self.totype = None
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
@@ -556,7 +557,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
 
-            elif p[1].isTerminal == False:
+            elif p[1].isTerminal == False and p[1].isvar == False:
                 self.ST.error = 1
                 print(f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
 
@@ -567,12 +568,7 @@ class CParser():
             else:
                 p[0] = Node('POST' + str(p[2]),[p[1]])
 
-                if iit.index(p[1].type[0]) < 3:
-                    p[0].type = ['int']
-                    p[0].type += p[1].type[1:]
-                    p[1].totype = p[0].type
-                else:
-                    p[0].type = p[1].type
+                p[0].type = p[1].type
 
                 #tac
                 if self.ST.error:
@@ -827,7 +823,7 @@ class CParser():
                     print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
                 
-                if p[1].tyep is None:
+                if p[1].type is None:
                     p[1].type = []
 
                 if 'struct *' not in p[1].type and 'union *' not in p[1].type:
@@ -1233,10 +1229,10 @@ class CParser():
                 elif 'const' in p[2].type:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
-                elif p[2].type[0]!= 'int' and p[2].type[0]!= 'long int' and p[2].type[0]!= 'char':
+                elif p[2].type[0] not in iit:
                     self.ST.error = 1
                     print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
-                elif p[2].isTerminal == False:
+                elif p[2].isTerminal == False and p[2].isvar==False:
                     self.ST.error = 1
                     print(f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
                 elif p[2].isvar == 0:
@@ -1246,13 +1242,8 @@ class CParser():
                     p[0] = Node('PRE' + str(p[1]),[p[2]])
                     if p[2].type is None:
                         p[2].type = []
-
-                    if len(p[2].type) > 0 and iit.index(p[2].type[0]) < 3:
-                        p[0].type = ['int']
-                        p[0].type += p[2].type[1:]
-                        p[2].totype = p[0].type
-                    else:
-                        p[0].type = p[2].type
+                    
+                    p[0].type = p[2].type
 
                 if self.ST.error:
                     return
@@ -1300,7 +1291,6 @@ class CParser():
             else:
                 p[0] = p[1]
                 if ((p[2] is not None) and (p[2].node is not None)):
-                    p[0].onlyAddEdge([p[2]])
 
                     if p[2].type is None:
                         self.ST.error = 1
@@ -1308,12 +1298,21 @@ class CParser():
                         return
 
                     if p[1].label[-1] in ['+', '-', '!']:
-                        if len(p[2].type)>0 and p[2].type[0] in ['int', 'long int', 'char', 'float', 'double']:
+                        if len(p[2].type)>0 and p[2].type[0] in aat:
                             p[0].type = [p[2].type[0]]
-                            if p[2].type[0] == 'char' or p[1].label[-1] == '!':
+                            if (p[2].type[0] in iit and p[2].type[0] not in dft and p[2].type[0] != 'long int' )  or p[1].label[-1] == '!':
                                 p[0].type = ['int']
                             else:
                                 pass
+                            if p[0].type != p[2].type:
+                                p[2].totype = p[0].type
+                                p2str = 'to'
+                                for single_type in p[0].type:
+                                    p2str += '_' + single_type
+                                p2 = Node(p2str, [p[2]])
+                            else:
+                                p[2].totype = None
+                                p2 = p[2]
                         else:
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
@@ -1321,12 +1320,22 @@ class CParser():
 
 
                     elif p[1].label[-1] == '~':
-                        if len(p[2].type)>0 and p[2].type[0] in ['int', 'long int', 'char']:
-                            p[0].type = [p[2].type[0]]
-                            if p[2].type[0] == 'char':
-                                p[0].type = ['int']
+                        if len(p[2].type)>0 and p[2].type[0] in iit:
+                            p[0].type = ['int']
+                            if p[2].type[0] == 'long int':
+                                p[0].type = ['long int']
                             else:
                                 pass
+                            if p[0].type != p[2].type:
+                                p[2].totype = p[0].type
+                                p2str = 'to'
+                                for single_type in p[0].type:
+                                    p2str += '_' + single_type
+                                p2 = Node(p2str, [p[2]])
+                            else:
+                                p[2].totype = None
+                                p2 = p[2]
+
                         else:
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
@@ -1366,9 +1375,42 @@ class CParser():
                             p[0].type = ['int', 'long', 'unsigned']
                             # How to check if this is pointer
 
+                    try:
+                        p[0].onlyAddEdge([p2])
+                    except:
+                        p[0].onlyAddEdge([p[2]])
+                    
                 #tac
                 if self.ST.error:
                     return
+
+
+
+                if p[2].totype is not None and p[2].totype != p[2].type:
+                    p2.temp = self.TAC.newtemp()
+                    self.ST.InsertSymbol(p2.temp, 0)
+                    self.ST.ModifySymbol(p2.temp, "type", p[2].totype)
+                    self.ST.ModifySymbol(p2.temp, "check", "TEMP")
+                    self.updateSizeInSymTab(p[2].totype, p2.temp)
+                    if self.ST.isGlobal(p2.temp):
+                        self.ST.ModifySymbol(p2.temp, "varclass", "Global")
+                    else :
+                        self.ST.ModifySymbol(p2.temp, "varclass", "Local")
+                        found, entry = self.ST.ReturnSymTabEntry(p2.temp)
+                        var_size = found['sizeAllocInBytes']
+                        if found["varclass"] == "Local":
+                            self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                            if found["offset"] >0:
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            else:
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        p2.temp = found['temp']  
+                    self.TAC.emit('cast',p2.temp,p[2].temp,p[2].totype) 
+
+                else:
+                    p2.temp = p[2].temp
+
+
                 p[0].varname = p[2].varname
                 p[0].temp = self.TAC.newtemp()
                 # if p[1].label == 'UNARY*':
@@ -1773,6 +1815,59 @@ class CParser():
             #TAC
             if self.ST.error:
                 return
+
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -1792,7 +1887,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
                 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1886,6 +1982,59 @@ class CParser():
             #Three address code
             if self.ST.error:
                 return
+
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -1905,7 +2054,7 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
             
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -1958,6 +2107,16 @@ class CParser():
                     p1 = p[1]
 
 
+                isin = True
+                for single_type in p0type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p0type
+                    p3 = Node(p0typestr,[p[3]])
+                else:
+                    p3 = p[3]
+
                 p[0] = Node(str(p[2]),[p1,p[3]])
                 p[0].type = p0type
                 p[0].label = p0label
@@ -1974,6 +2133,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -1993,7 +2204,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2102,6 +2314,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2121,7 +2385,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             # 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -2209,7 +2474,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*' )or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
+            elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*' ) or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
 
                 p[1].totype = ['int', 'long', 'unsigned']
                 p1 = Node('to_int_long_unsigned',[p[1]] )      
@@ -2229,6 +2494,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2248,7 +2565,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2321,6 +2639,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2340,7 +2710,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2416,6 +2787,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2435,7 +2858,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2511,6 +2935,58 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+            if p[1].totype is not None and p[1].totype != p[1].type:
+                p1.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p1.temp, 0)
+                self.ST.ModifySymbol(p1.temp, "type", p[1].totype)
+                self.ST.ModifySymbol(p1.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[1].totype, p1.temp)
+                if self.ST.isGlobal(p1.temp):
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p1.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p1.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p1.temp = found['temp']  
+                self.TAC.emit('cast',p1.temp,p[1].temp,p[1].totype) 
+
+            else:
+                p1.temp = p[1].temp
+
+
+            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+                
+
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2530,7 +3006,8 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit(p[0].label, p[0].temp, p[1].temp, p[3].temp)
+            self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
+
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2756,6 +3233,62 @@ class CParser():
 
                 if self.ST.error:
                     return
+
+                p[4].totype = p0type
+
+                if p[4].totype is not None and p[4].totype != p[4].type:
+                    p1.temp = self.TAC.newtemp()
+                    self.ST.InsertSymbol(p4.temp, 0)
+                    self.ST.ModifySymbol(p4.temp, "type", p[4].totype)
+                    self.ST.ModifySymbol(p4.temp, "check", "TEMP")
+                    self.updateSizeInSymTab(p[4].totype, p4.temp)
+                    if self.ST.isGlobal(p4.temp):
+                        self.ST.ModifySymbol(p4.temp, "varclass", "Global")
+                    else :
+                        self.ST.ModifySymbol(p4.temp, "varclass", "Local")
+                        found, entry = self.ST.ReturnSymTabEntry(p4.temp)
+                        var_size = found['sizeAllocInBytes']
+                        if found["varclass"] == "Local":
+                            self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                            if found["offset"] >0:
+                                self.ST.ModifySymbol(p4.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            else:
+                                self.ST.ModifySymbol(p4.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        p4.temp = found['temp']  
+                    self.TAC.emit('cast',p4.temp,p[4].temp,p[4].totype) 
+
+                else:
+                    p4.temp = p[4].temp
+
+
+                p[7].totype = p0type
+
+                if p[7].totype is not None and p[7].totype != p[7].type:
+                    p7.temp = self.TAC.newtemp()
+                    self.ST.InsertSymbol(p7.temp, 0)
+                    self.ST.ModifySymbol(p7.temp, "type", p[7].totype)
+                    self.ST.ModifySymbol(p7.temp, "check", "TEMP")
+                    self.updateSizeInSymTab(p[7].totype, p7.temp)
+                    if self.ST.isGlobal(p7.temp):
+                        self.ST.ModifySymbol(p7.temp, "varclass", "Global")
+                    else :
+                        self.ST.ModifySymbol(p7.temp, "varclass", "Local")
+                        found, entry = self.ST.ReturnSymTabEntry(p7.temp)
+                        var_size = found['sizeAllocInBytes']
+                        if found["varclass"] == "Local":
+                            self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                            if found["offset"] >0:
+                                self.ST.ModifySymbol(p7.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            else:
+                                self.ST.ModifySymbol(p7.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        p7.temp = found['temp']  
+                    self.TAC.emit('cast',p7.temp,p[7].temp,p[7].totype) 
+
+                else:
+                    p7.temp = p[7].temp
+                
+
+
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
                 self.TAC.backpatch(p[1].falselist,p[6].quad)
                 p[0].truelist = p[4].truelist + p[7].truelist
@@ -2878,7 +3411,32 @@ class CParser():
 
             if self.ST.error:
                 return
-            
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+
+        
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
             if p[1].label == '->':
@@ -3428,6 +3986,10 @@ class CParser():
         
         if self.ST.error:
             return
+
+
+
+
         for var_name in p[0].variables:
             if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
                 found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
@@ -3454,6 +4016,34 @@ class CParser():
             #tac
             if self.ST.error:
                 return
+
+            if p[3].totype is not None and p[3].totype != p[3].type:
+                p3.temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p3.temp, 0)
+                self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
+                self.ST.ModifySymbol(p3.temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[3].totype, p3.temp)
+                if self.ST.isGlobal(p3.temp):
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p3.temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p3.temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p3.temp = found['temp']  
+                self.TAC.emit('cast',p3.temp,p[3].temp,p[3].totype) 
+
+            else:
+                p3.temp = p[3].temp
+
+
+
+
             self.TAC.emit(p[0].label, p[0].temp, p[3].temp,'')
 
 
@@ -4504,8 +5094,8 @@ class CParser():
         # self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
         if self.ST.error:
             return
-        # if self.ST.offset - self.ST.offsetList[-1] != 0:
-        #     self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
+        if self.ST.offset - self.ST.offsetList[-1] != 0:
+            self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
@@ -4706,6 +5296,32 @@ class CParser():
                 p[0].onlyAddEdge([p2])       
                 if self.ST.error:
                     return
+
+                if p[2].totype is not None and p[2].totype != p[2].type:
+                    p2.temp = self.TAC.newtemp()
+                    self.ST.InsertSymbol(p2.temp, 0)
+                    self.ST.ModifySymbol(p2.temp, "type", p[2].totype)
+                    self.ST.ModifySymbol(p2.temp, "check", "TEMP")
+                    self.updateSizeInSymTab(p[2].totype, p2.temp)
+                    if self.ST.isGlobal(p2.temp):
+                        self.ST.ModifySymbol(p2.temp, "varclass", "Global")
+                    else :
+                        self.ST.ModifySymbol(p2.temp, "varclass", "Local")
+                        found, entry = self.ST.ReturnSymTabEntry(p2.temp)
+                        var_size = found['sizeAllocInBytes']
+                        if found["varclass"] == "Local":
+                            self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                            if found["offset"] >0:
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            else:
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        p2.temp = found['temp']  
+                    self.TAC.emit('cast',p2.temp,p[2].temp,p[2].totype) 
+
+                else:
+                    p2.temp = p[2].temp
+                
+
                 self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
@@ -4878,7 +5494,7 @@ class CParser():
         if 'void' in function and len(function) == 1:
             self.TAC.emit('retq','','','')
         else:
-            self.TAC.emit('retq','$0','','')
+            self.TAC.emit('retq','`0','','')
         self.TAC.emit('','','','')
 
     def p_markerFunc2(self, p):
@@ -4986,7 +5602,7 @@ class CParser():
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
 
-        self.ST.offset = 8
+        self.ST.offset = 0
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
                 found, entry = self.ST.ReturnSymTabEntry(var_name)
@@ -4998,7 +5614,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
-        self.ST.offset = 20
+        self.ST.offset = 0
         #  <----------------------XXXX------------------>
         if self.ST.error:
             return
