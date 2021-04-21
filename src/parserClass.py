@@ -2265,11 +2265,11 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in iit and p[3].type[0] in iit:
+            elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
                 p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
@@ -2283,9 +2283,6 @@ class CParser():
                     p0label += '_unsigned'
 
                 p0label = p0label.replace(" ", "_")
-                
-
-
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[1].type:
@@ -2360,11 +2357,11 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in iit and p[3].type[0] in iit:
+            elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
                 p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
@@ -2455,11 +2452,11 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1].type == None or p[3].type == None:
+            if p[1].type is None or p[3].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
-            elif p[1].type[0] in iit and p[3].type[0] in iit:
+            elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
                 p0label = str(p[2])
                 if max(iit.index(p[1].type[0]), iit.index(p[3].type[0])) == 4:
@@ -2547,17 +2544,18 @@ class CParser():
         # Grammar changed
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1].type == None or p[4].type == None:
+            if p[1].type is None or p[4].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
+                if self.ST.error:
+                    return
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
                 p[0].falselist = p[1].falselist + p[4].falselist
                 p[0].truelist = p[4].truelist
@@ -2595,13 +2593,14 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1].type == None or p[4].type == None:
+            if p[1].type is None or p[4].type is None:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
-
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
+                if self.ST.error:
+                    return
                 self.TAC.backpatch(p[1].falselist,p[3].quad)
                 p[0].truelist = p[1].truelist + p[4].truelist
                 p[0].falselist = p[4].falselist
@@ -2638,14 +2637,15 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 8):
-            
-            
+            if p[1].type is None:
+                p[1].type = []
+
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
                 print(f'Struct / Union type variable not allowed as first operand of ternary operator')
                 return
 
-            elif p[4] == None or p[7]==None:
+            elif p[4] is None or p[7] is None:
                 self.ST.error = 1
                 print(f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
@@ -2705,10 +2705,10 @@ class CParser():
                 p0type = p[4].type
                 # Look Here
             
-            elif p[4].type[0][-1] == '*' and p[7].type[0][-1] == '*':
+            elif len(p[4].type)>0 and p[4].type[0][-1] == '*' and len(p[7].type)>0 and p[7].type[0][-1] == '*':
                 p0type = ['void *']
 
-            elif p[4].type[0][-1] == '*' or p[7].type[0][-1] == '*':
+            elif len(p[4].type)>0 and p[4].type[0][-1] == '*' or len(p[7].type)>0 and p[7].type[0][-1] == '*':
                 if p[4].type[0][-1] == '*':
                     p0type = p[4].type
                 elif p[7].type[0][-1] == '*':
@@ -2721,7 +2721,7 @@ class CParser():
                 p0type = p[4].type
             
 
-            elif p[4].type[0] in aat and p[7].type[0] in aat:
+            elif len(p[4].type)>0 and p[4].type[0] in aat and len(p[7].type)>0 and p[7].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[4].type[0]), aat.index(p[7].type[0]))])
                 if 'unsigned' in p[4].type or 'unsigned' in p[7].type and p[0].type[0] in dit:
@@ -2754,7 +2754,8 @@ class CParser():
                 p[0] = Node('TERNARY',[p[1],p4,p7])
                 p[0].type = p0type
 
-
+                if self.ST.error:
+                    return
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
                 self.TAC.backpatch(p[1].falselist,p[6].quad)
                 p[0].truelist = p[4].truelist + p[7].truelist
@@ -2931,6 +2932,8 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
+            if self.ST.error:
+                return
             p[0].temp = p[3].temp
             p[0].truelist = p[3].truelist
             p[0].falselist = p[3].falselist
@@ -2980,10 +2983,10 @@ class CParser():
 
             p[0].extraValues = p[2].extraValues + p[0].extraValues
 
-        if p[0].type and 'struct' in p[0].type and len(p[0].type) >2:
+        if len(p[0].type)>0 and 'struct' in p[0].type and len(p[0].type) >2:
             self.ST.error = 1
             print(f'Cannot have type specifiers for struct type at line {p[1].line}')
-        elif p[0].type and 'union' in p[0].type and len(p[0].type) >2:
+        elif len(p[0].type)>0 and 'union' in p[0].type and len(p[0].type) >2:
             self.ST.error = 1
             print(f'Cannot have type specifiers for union type at line {p[1].line}')
 
@@ -3361,7 +3364,9 @@ class CParser():
                     return
 
                 p[0].type = p[1].type
-
+                if p[0].type is None:
+                    p[0].type = []
+                
                 isin = True
                 for single_type in p[0].type:
                     if single_type not in p[3].type:
@@ -3380,11 +3385,12 @@ class CParser():
 
                 p[0].onlyAddEdge([p[1],p3]) 
 
+
                 if 'struct' in p[0].type:
                     p[0].label += '_struct'
                 elif 'union' in p[0].type:
                     p[0].label += '_union'
-                elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
+                elif len(p[0].type)>0 and p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
                     p[0].label += '_int_long_unsigned'
                 else:
                     p[0].label += '_' + p[0].type[0]
@@ -3585,7 +3591,6 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 3):
             p[0] = p[2]
-
             if ((p[1] is not None) and (p[1].node is not None)):
                 p[0].onlyAddEdge([p[1]])
 
@@ -3596,7 +3601,9 @@ class CParser():
         if self.isError :
             return
         p[0] = Node('StructOrUnionDec',[p[1],p[2]])
-        
+        if p[1].type is None:
+            p[1].type = []
+
         temp_type_list = []
         for single_type in p[1].type:
             if single_type != '*':
@@ -3639,7 +3646,7 @@ class CParser():
                     print('Two or more conflicting data types specified for function at line', p.lineno(3))
 
         # Remove if support added for nested structures
-        if 'struct' in p[1].type[0] or 'union' in p[1].type[0]:
+        if len(p[1].type)>0 and ('struct' in p[1].type[0] or 'union' in p[1].type[0]):
             self.ST.error = 1
             print(f'Cannot have nested structures/unions at line', p.lineno(3))
 
@@ -3757,7 +3764,6 @@ class CParser():
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
 
-
     def p_declarator(self, p):
         '''
         declarator : direct_declarator
@@ -3820,7 +3826,6 @@ class CParser():
                 
                 p[0].arrs.append('empty')
 
-                # print('Hi')
         elif (len(p) == 5):
             if (p[2] == '('):
                 if(p[3] == None):
@@ -3890,23 +3895,23 @@ class CParser():
     def p_parameter_type_list(self, p):
         '''
         parameter_type_list : parameter_list
-                            | parameter_list ',' ELLIPSIS
         '''
+        # | parameter_list ',' ELLIPSIS -- dont need ellipsis
         if self.isError :
             return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-        else:
-            # Current design choice: parent operator : ',...'
-                # Single child : parameter list
+        # else:
+        #     # Current design choice: parent operator : ',...'
+        #         # Single child : parameter list
 
-            # Alternative design choice: parent operator ','
-                # Left child : parameter_list
-                # Right child : ELLIPSIS 
-            p[0] = Node('ELLIPSIS',[p[1]])
-            p[0].variables = p[1].variables
-            p[0].variables["Ellipses"] = []
+        #     # Alternative design choice: parent operator ','
+        #         # Left child : parameter_list
+        #         # Right child : ELLIPSIS 
+        #     p[0] = Node('ELLIPSIS',[p[1]])
+        #     p[0].variables = p[1].variables
+        #     p[0].variables["Ellipses"] = []
 
     def p_parameter_list(self, p):
         '''
@@ -3922,21 +3927,21 @@ class CParser():
             p[0] = Node(',',[p[1],p[3]])
             p[0].variables = {**p[1].variables, **p[3].variables}
 
-    def p_parameter_declaration_1(self, p):
-        '''
-        parameter_declaration : declaration_specifiers abstract_declarator
-                            | declaration_specifiers
-        '''
-        if self.isError :
-            return
-        # AST done
-        if len(p) == 2:
-            # Doubt here
-            p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
-        elif len(p) == 3:
-            p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
-            p[1].removeGraph()
-            p[2].removeGraph()
+    # def p_parameter_declaration_1(self, p):
+    #     '''
+    #     parameter_declaration : declaration_specifiers abstract_declarator
+    #                         | declaration_specifiers
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # AST done
+    #     if len(p) == 2:
+    #         # Doubt here
+    #         p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
+    #     elif len(p) == 3:
+    #         p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
+    #         p[1].removeGraph()
+    #         p[2].removeGraph()
 
     def p_parameter_declaration_2(self, p):
         '''
@@ -4110,6 +4115,8 @@ class CParser():
             return
 
         p[0] = Node('CASE:',[p[3],p[6]])
+        if self.ST.error:
+            return
         p[0].breaklist = p[6].breaklist
         p[0].nextlist = p[6].nextlist
         p[0].testlist.append([p[3].temp, p[1].quad, p[4].quad])
@@ -4122,6 +4129,8 @@ class CParser():
             return
 
         p[0] = Node('DEFAULT:',[p[4]])
+        if self.ST.error:
+            return
         p[0].breaklist = p[4].breaklist
         p[0].nextlist = p[4].nextlist
         p[0].testlist.append([None, p[1].quad, None])
@@ -4135,6 +4144,8 @@ class CParser():
             return
 
         p[0] = Node('',createAST=False)
+        if self.ST.error:
+            return
         p[0].quad = self.TAC.nextstat
 
     def p_markerCase2(self, p):
@@ -4146,6 +4157,8 @@ class CParser():
             return
 
         p[0] = Node('',createAST=False)
+        if self.ST.error:
+            return
         p[0].quad = self.TAC.nextstat
 
     def p_compound_statement(self, p):
@@ -4159,6 +4172,8 @@ class CParser():
             p[0] = Node('EmptySCOPE',createAST = False)
         elif (len(p) == 6):
             p[0] = Node('SCOPE',[p[3]])
+            if self.ST.error:
+                return
             p[0].truelist = p[3].truelist
             p[0].falselist = p[3].falselist
             p[0].breaklist = p[3].breaklist
@@ -4192,11 +4207,9 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
-
         if (len(p) == 2):
             p[0] = Node(';',[p[1]])
-            if(p[1] != None):
+            if p[1] != None and not self.ST.error:
                 p[0].truelist = p[1].truelist
                 p[0].falselist = p[1].falselist
                 p[0].breaklist = p[1].breaklist
@@ -4205,6 +4218,8 @@ class CParser():
                 p[0].testlist = p[1].testlist
         elif (len(p) == 4):
             p[0] = Node(';',[p[1],p[3]])
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[1].nextlist,p[2].quad)
             if(p[3] != None):
                 p[0].breaklist = p[1].breaklist + p[3].breaklist
@@ -4246,14 +4261,13 @@ class CParser():
                             | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
                             | SWITCH '(' expression ')' markerSwitch statement
         '''
-        # Grammar changes for switch remaining
         if self.isError :
             return
-        # AST done
         if(len(p) == 7):
             p[0] = Node(str(p[1]).upper(),[p[3],p[6]])
+            if self.ST.error:
+                return
             p[0].nextlist = p[6].breaklist + p[6].nextlist
-            
             p[0].nextlist.append(self.TAC.nextstat)
             # To properly end switch case
             self.TAC.emit('goto', '', '', '')
@@ -4300,6 +4314,8 @@ class CParser():
 
         elif (len(p) == 8):
             p[0] = Node('IF-ELSE',[p[3],p[6]])
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[3].truelist,p[5].quad)
             p[0].nextlist = p[3].falselist + p[6].nextlist
             p[0].continuelist = p[6].continuelist
@@ -4307,6 +4323,8 @@ class CParser():
             p[0].testlist = p[6].testlist
         else:
             p[0] = Node('IF-ELSE',[p[3],p[6],p[10]])
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[3].truelist,p[5].quad)
             self.TAC.backpatch(p[3].falselist,p[9].quad)
             p[0].nextlist = p[6].nextlist + p[7].nextlist + p[10].nextlist
@@ -4322,6 +4340,8 @@ class CParser():
             return
 
         p[0] = Node('',createAST=False)
+        if self.ST.error:
+            return
         p[0].nextlist.append(self.TAC.nextstat)
         self.TAC.emit('goto','','','')
 
@@ -4329,7 +4349,11 @@ class CParser():
         '''
         globalN1 : 
         '''
+        if self.isError:
+            return
         p[0] = Node('',createAST=False)
+        if self.ST.error:
+            return
         p[0].nextlist.append(self.TAC.nextstat)
         self.TAC.emit('goto','','','')
 
@@ -4337,7 +4361,11 @@ class CParser():
         '''
         globalmarker1 : 
         '''
+        if self.isError:
+            return
         p[0] = Node('',createAST=False)
+        if self.ST.error:
+            return
         p[0].quad = self.TAC.nextstat
 
     def p_iteration_statement_1(self, p):
@@ -4358,52 +4386,60 @@ class CParser():
         # AST done
         if len(p) == 8:
             p[0] = Node('WHILE',[p[4],p[6]])
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[7].nextlist, p[2].quad)
             self.TAC.backpatch(p[7].continuelist, p[2].quad)
             self.TAC.backpatch(p[4].truelist, p[6].quad)
             p[0].nextlist= p[4].falselist + p[7].breaklist
             self.TAC.emit('goto',int(p[2].quad) + 1,'','')
         elif len(p) == 9:
-                p[0] = Node('FOR',[p[3],p[5],p[8]])
-                # M1 is p[4]
-                # S1 is p[8]
-                # E1 is p[3]
-                # E2 is p[5]
-                # M2 is p[7]
-                self.TAC.backpatch(p[8].nextlist,p[4].quad)
-                self.TAC.backpatch(p[8].continuelist,p[4].quad)
-                self.TAC.backpatch(p[3].truelist,p[4].quad)
-                self.TAC.backpatch(p[3].falselist,p[4].quad)
-                self.TAC.backpatch(p[5].truelist,p[7].quad)
-                p[0].nextlist = p[8].breaklist + p[5].falselist
-                self.TAC.emit('goto',p[4].quad+1,'','')
+            p[0] = Node('FOR',[p[3],p[5],p[8]])
+            # M1 is p[4]
+            # S1 is p[8]
+            # E1 is p[3]
+            # E2 is p[5]
+            # M2 is p[7]
+            if self.ST.error:
+                return
+            self.TAC.backpatch(p[8].nextlist,p[4].quad)
+            self.TAC.backpatch(p[8].continuelist,p[4].quad)
+            self.TAC.backpatch(p[3].truelist,p[4].quad)
+            self.TAC.backpatch(p[3].falselist,p[4].quad)
+            self.TAC.backpatch(p[5].truelist,p[7].quad)
+            p[0].nextlist = p[8].breaklist + p[5].falselist
+            self.TAC.emit('goto',p[4].quad+1,'','')
         elif len(p) == 10:
-                p[0] = Node('DO-WHILE',[p[3],p[7]])
-                # Statement has continuelist, nextlist and breaklist
-                # expression has truelist and falselist
-                self.TAC.backpatch(p[7].truelist,p[2].quad)
-                p[0].nextlist = p[7].falselist + p[3].breaklist
-                self.TAC.backpatch(p[3].nextlist,p[6].quad)
-                self.TAC.backpatch(p[3].continuelist,p[6].quad)
-                self.TAC.emit('goto',p[2].quad+1,'','')
+            p[0] = Node('DO-WHILE',[p[3],p[7]])
+            # Statement has continuelist, nextlist and breaklist
+            # expression has truelist and falselist
+            if self.ST.error:
+                return
+            self.TAC.backpatch(p[7].truelist,p[2].quad)
+            p[0].nextlist = p[7].falselist + p[3].breaklist
+            self.TAC.backpatch(p[3].nextlist,p[6].quad)
+            self.TAC.backpatch(p[3].continuelist,p[6].quad)
+            self.TAC.emit('goto',p[2].quad+1,'','')
         elif len(p) == 11:
-                p[0] = Node('FOR',[p[3],p[5],p[7],p[10]])
-                # M1 is p[4]
-                # M2 is p[6]
-                # M3 is p[9]
-                # E1 is p[3]
-                # E2 is p[5]
-                # E3 is p[7]
-                # S1 is p[10]
-                self.TAC.backpatch(p[3].truelist,p[4].quad)
-                self.TAC.backpatch(p[3].falselist,p[4].quad)
-                self.TAC.backpatch(p[10].nextlist,p[6].quad)
-                self.TAC.backpatch(p[10].continuelist,p[6].quad)
-                self.TAC.backpatch(p[5].truelist,p[9].quad)
-                self.TAC.backpatch(p[7].truelist,p[4].quad)
-                self.TAC.backpatch(p[7].falselist,p[4].quad)
-                p[0].nextlist = p[10].breaklist + p[5].falselist
-                self.TAC.emit('goto',p[6].quad+1,'','')
+            p[0] = Node('FOR',[p[3],p[5],p[7],p[10]])
+            # M1 is p[4]
+            # M2 is p[6]
+            # M3 is p[9]
+            # E1 is p[3]
+            # E2 is p[5]
+            # E3 is p[7]
+            # S1 is p[10]
+            if self.ST.error:
+                return
+            self.TAC.backpatch(p[3].truelist,p[4].quad)
+            self.TAC.backpatch(p[3].falselist,p[4].quad)
+            self.TAC.backpatch(p[10].nextlist,p[6].quad)
+            self.TAC.backpatch(p[10].continuelist,p[6].quad)
+            self.TAC.backpatch(p[5].truelist,p[9].quad)
+            self.TAC.backpatch(p[7].truelist,p[4].quad)
+            self.TAC.backpatch(p[7].falselist,p[4].quad)
+            p[0].nextlist = p[10].breaklist + p[5].falselist
+            self.TAC.emit('goto',p[6].quad+1,'','')
 
     def p_iteration_statement_2(self, p):
         '''
@@ -4425,6 +4461,8 @@ class CParser():
             # M2 is p[8]
             # S1 is p[9]
             # E1 is p[6]
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[6].truelist,p[8].quad)
             self.TAC.backpatch(p[9].continuelist,p[5].quad)
             self.TAC.backpatch(p[9].nextlist,p[5].quad)
@@ -4438,6 +4476,8 @@ class CParser():
             # S1 is p[11]
             # E1 is p[6]
             # E2 is p[8]
+            if self.ST.error:
+                return
             self.TAC.backpatch(p[11].nextlist,p[7].quad)
             self.TAC.backpatch(p[11].continuelist,p[7].quad)
             self.TAC.backpatch(p[6].truelist,p[10].quad)
@@ -4462,8 +4502,10 @@ class CParser():
         if self.isError :
             return
         # self.TAC.emit('add','esp', self.ST.offset - self.ST.offsetList[-1], '')
+        if self.ST.error:
+            return
         # if self.ST.offset - self.ST.offsetList[-1] != 0:
-            # self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
+        #     self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
         self.ST.PopScope()
 
     def p_jump_statement(self, p):
@@ -4478,6 +4520,8 @@ class CParser():
         # AST done
         if (len(p) == 3):
             p[0] = Node(str(p[1]).upper())
+            if self.ST.error:
+                return
             if(p[1] == 'continue'):
                 p[0].continuelist.append(self.TAC.nextstat)
                 self.TAC.emit('goto','','','')
@@ -4496,43 +4540,33 @@ class CParser():
                 if self.ST.error:
                     return
                 self.TAC.emit('retq','','','')
-
-
         else:
             if(p[1] == 'return'):
                 p[0] = Node('RETURN')
                 found = list(self.ST.Table[0])
                 functype = self.ST.Table[0][found[-1]]['type']
-                # print(found[-1])
-                # print('here', self.ST.Table[0][found[-1]]['type'])
-                # print(functype, p[2].type)
+                if functype is None:
+                    functype = []
 
-                # print(functype)
-                
-
-                if '*' in functype and '*' not in p[2].type[0] and p[2].type[0] not in iit :
+                if '*' in functype and len(p[2].type)>0 and '*' not in p[2].type[0] and p[2].type[0] not in iit :
                     self.ST.error = 1
                     print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
 
 
-                elif functype[0] in aat and p[2].type[0] not in aat and p[2].type[0][-1] != '*':
+                elif len(p[2].type)>0 and len(functype)>0 and functype[0] in aat and p[2].type[0] not in aat and p[2].type[0][-1] != '*':
                     self.ST.error = 1
                     print(f'Type mismatch while returning value at line {p.lineno(1)}')
                     
-                elif functype == ['void'] and p[2].type[0] != 'void':
+                elif functype == ['void'] and len(p[2].type)>0 and p[2].type[0] != 'void':
                     self.ST.error = 1
                     print(f'Cannot return non-void type at line {p.lineno(1)}')
                 
                 if self.ST.error:
                     return
-
-
-
-
                 isarr = 0
-
                 type_list = functype
-
+                if type_list is None:
+                    type_list = []
                 for i in range(len(functype)):
                     if functype[i][0]=='[' and functype[i][-1] == ']':
                         isarr += 1
@@ -4653,8 +4687,6 @@ class CParser():
                     print(f'Need struct/union of type {p[0].type}, instead got return type {p[2].type} at line {p.lineno(1)}')
                     return
 
-
-
                 isin = True
                 for single_type in p[0].type:
                     if single_type not in p[2].type:
@@ -4672,11 +4704,8 @@ class CParser():
                     p2 = p[2]   
 
                 p[0].onlyAddEdge([p2])       
-
-
-
-
-
+                if self.ST.error:
+                    return
                 self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
@@ -4692,6 +4721,8 @@ class CParser():
         '''
         pushObjectFuncs :
         '''
+        if self.isError:
+            return
         # printf with 2 arguments (string, placeholder value)
         self.ST.InsertSymbol("printf", -1)
         self.ST.ModifySymbol("printf", "check", "FUNC")
@@ -4751,10 +4782,10 @@ class CParser():
             if p[3] == '{':
                 p[0] = Node('FUNC',[p[2],Node('SCOPE', [p[5]])])
                 line = 3
-                
                 # Added here to provide goto to the last statement in the function
-                self.TAC.backpatch(p[5].nextlist,p[7].quad)
-                self.TAC.backpatch(p[5].breaklist,p[7].quad)
+                if not self.ST.error:
+                    self.TAC.backpatch(p[5].nextlist,p[7].quad)
+                    self.TAC.backpatch(p[5].breaklist,p[7].quad)
             else:
                 p[0] = Node('FUNC',[p[2],p[3]])
                 line = 4
@@ -4770,6 +4801,9 @@ class CParser():
 
         # found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
         temp_type_list = []
+        if p[1].type is None:
+            p[1].type = []
+        
         for single_type in p[1].type:
             if single_type != '*':
                 temp_type_list.append(single_type)
@@ -4837,6 +4871,8 @@ class CParser():
             if(p[2].variables[key][0] == "Function Name"):
                 function_name = key
                 break
+        if self.ST.error:
+            return
         function, entry = self.ST.ReturnSymTabEntry(function_name)
         function = function['type']
         if 'void' in function and len(function) == 1:
@@ -4964,6 +5000,8 @@ class CParser():
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         self.ST.offset = 20
         #  <----------------------XXXX------------------>
+        if self.ST.error:
+            return
 
         self.TAC.emit(str(function_name) + ":",'','','')
 
@@ -4975,7 +5013,8 @@ class CParser():
             return
         self.ST.PopScope()
         p[0] = Node('',createAST = False)
-        # self.TAC.emit('mov','esp','ebp','')
+        if self.ST.error:
+            return
         p[0].quad = self.TAC.nextstat
 
     # def p_declaration_list(self, p):
@@ -5050,7 +5089,7 @@ else:
     sys.stdout = orig_stdout
     parser.TAC.add_strings()
     parser.TAC.clean_code()
-    parser.TAC.print_code() # remove later
+    parser.TAC.print_code(fileNameCore) # remove later
     # parser.printTree()
 
 # endregion

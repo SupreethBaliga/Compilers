@@ -62,8 +62,9 @@ class TAC():
                 return new_temp 
 
 
-    def print_code(self):
-        outputFileTAC = open("TAC/test1.txt","w")
+    def print_code(self, filename):
+        file = f"TAC/{filename}.txt"
+        outputFileTAC = open(file,"w")
         orig_stdout = sys.stdout
         sys.stdout = outputFileTAC
         for j in range(0, len(self.final_code)):
