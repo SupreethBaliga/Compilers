@@ -3888,7 +3888,7 @@ class CParser():
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
                 
-                if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+                if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                     self.ST.error = 1
                     print(f'Cannot perform assignment at line {p.lineno(2)}')
                     return
