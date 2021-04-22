@@ -11,10 +11,16 @@ class CodeGenerator:
         self.all_registers = ["%ebx","%ecx","%esi","%edi","%edx","%eax","%ebp","%esp"]
         
         # general purpose registers -> register_stack contains all the free registers
-        self.register_stack = ["%ebx","%eax","%ecx","%esi","%edi","%edx"]
+        self.register_list = ["%ebx","%eax","%ecx","%esi","%edi","%edx"]
+
+        self.register_stack = [i for i in range(len(self.register_list))]
+        self.register_mapping = dict([(i, self.register_list[i]) for i in self.register_stack])
+        self.reverse_mapping = dict([(self.register_list[i], i) for i in self.register_stack])
+
+        self.eight_bit_register = {"%eax":"%al", "%ebx":"%bl", "%ecx":"%cl", "%edx":"%dl"}
         
         #  register_list contains all the registers that can be used(not necessarily free)
-        self.register_list = copy.deepcopy(self.register_stack)
+        # self.register_list = copy.deepcopy(self.register_stack)
         self.final_code = []
         self.final_code.append(".data")
         self.final_code.append(".text")
@@ -26,50 +32,66 @@ class CodeGenerator:
 
     def emit_code(self, s1 = '', s2 = '', s3 = ''):
         codeStr = s1
+        if s2 != '' and isinstance(s2, int):
+            s2 = self.register_mapping[s2]
+        if s3 != '' and isinstance(s3, int):
+            s3 = self.register_mapping[s3]
         if len(s2) > 0:
             codeStr += ' ' + s2
             if len(s3) > 0 :
                 codeStr += ', ' + s3
         self.final_code.append(codeStr)
 
-    def request_register(self, reg=None):
+    def request_register(self, reg=None, instr=None):
         if not self.register_stack:
             print("ERROR! No register available")
-            return
+            return None
 
         if reg is not None:
-            if reg not in self.register_stack:
-                swapreg = self.request_register()
-                if swapreg:
-                    self.final_code.append("movl " + reg + " " + swapreg)
-                    return reg
+            reg_idx = self.reverse_mapping[reg]
+            if reg_idx not in self.register_stack:
+                swapreg_idx = self.request_register()
+                if swapreg_idx is not None:
+                    swapreg = self.register_mapping[swapreg_idx]
+                    self.register_mapping[reg_idx], self.register_mapping[swapreg_idx] = self.register_mapping[swapreg_idx], self.register_mapping[reg_idx]
+                    self.reverse_mapping[reg], self.reverse_mapping[swapreg] = self.reverse_mapping[swapreg], self.reverse_mapping[reg]
+                    self.emit_code("movl", reg, swapreg)
+                    return self.reverse_mapping[reg]
             else:
-                self.register_stack.remove(reg)
-                return reg
-            return 
+                self.register_stack.remove(reg_idx)
+                return reg_idx
+            return None
 
         register = self.register_stack.pop()
+        # print(register)
         return register
 
-    def free_register(self, register, start=None):
-        if(register == None):
+    def free_register(self, reg_idx, start=None):
+        if(reg_idx == None):
             return
+        if isinstance(reg_idx, int):
+            register = self.register_mapping[reg_idx]
+        else:
+            register = reg_idx
         if (register not in self.register_list):
             # Do not free register if it is %ebp and %esp
             return
-        
+
+        if not isinstance(reg_idx, int):
+            reg_idx = self.reverse_mapping[reg_idx]
         if start is not None:
-            self.register_stack.insert(0, register)
+            self.register_stack.insert(0, reg_idx)
         else:
-            self.register_stack.append(register)
+            self.register_stack.append(reg_idx)
     
     def move_var(self,src,dst):
         # Move in case more than one pair of ()
         if src == dst:
             return
+        # dst = self.register_mapping[dst]
         self.emit_code("movl",src,dst)
     
-    def check_type(self,instruction, req_reg1=None, req_reg2=None):
+    def check_type(self,instruction, req_reg1=None, req_reg2=None, eight_bit1=False, eight_bit2=False):
         '''
         This function moves all the values into appropriate registers
         '''
@@ -77,28 +99,37 @@ class CodeGenerator:
         dest = instruction[1]
         src1 = instruction[2]
         src2 = ''
-        reg1 = self.request_register(req_reg1)
-        if not reg1:
+        
+        if eight_bit1 == True:
+            reg1_idx = self.request_register("%edx")
+        else:
+            reg1_idx = self.request_register(req_reg1)
+        if not reg1_idx:
             return False
 
-        reg2 = None
-        self.move_var(src1,reg1)
-        instruction[2] = reg1
+        reg2_idx = None
+        self.move_var(src1,reg1_idx)
+        instruction[2] = reg1_idx
         if(len(instruction) > 3):
             src2 = instruction[3]
-            reg2 = self.request_register(req_reg2)
-            if not reg2:
+            if eight_bit2 is True:
+                reg2_idx = self.request_register("%edx")
+            else:
+                reg2_idx = self.request_register(req_reg2)
+            if not reg2_idx:
                 return False
-            self.move_var(src2,reg2)
-            instruction[3] = reg2
+            self.move_var(src2,reg2_idx)
+            instruction[3] = reg2_idx
 
         return True  
 
     def create_label(self, line):
-        label = f'.L{self.label_num}'
-        self.label_num += 1
-        self.label_list[int(line)] = label
-        return label
+        if int(line) not in self.label_list:
+            label = f'.L{self.label_num}'
+            self.label_num += 1
+            self.label_list[int(line)] = label
+            return label
+        return self.label_list[int(line)]
     
     def op_add(self,instruction):
         '''
@@ -279,7 +310,7 @@ class CodeGenerator:
             # instruction[2] = function name
             # instruction[3] = number of arguments
             self.final_code.append("call " + instruction[2])
-            self.move_var("%eax",instruction[1])
+            self.emit_code("movl", "%eax", instruction[1])
             self.op_add(["+_int","%esp","%esp","$" + str(instruction[3]*4)])
         else:
             self.final_code.append("call " + instruction[1])
@@ -308,25 +339,12 @@ class CodeGenerator:
         self.emit_code("movl",instruction[2],instruction[1])
         self.free_register(instruction[2])
 
-    # def op_post_inc(self, instruction):
-    #     '''
-    #     This function is currently only implemented
-    #     for integer post increment
-    #     '''
-    #     src = instruction[2]
-    #     self.check_type(instruction)
-    #     reg = self.request_register()
-    #     self.emit_code("leal", f'1({instruction[2]})', reg)
-    #     self.emit_code("movl", reg, src)
-    #     self.free_register(reg)
-
     def op_pre_inc(self, instruction):
         '''
         This function is currently only implemented
         for integer pre increment
         '''
         self.check_type(instruction)
-        # self.final_code.append("addl" + " " + instruction[2] + ", " + instruction[3])
         self.emit_code("addl","$1",instruction[2])
         self.emit_code("movl",instruction[2],instruction[1])
         self.free_register(instruction[2])
@@ -337,7 +355,6 @@ class CodeGenerator:
         for integer pre increment
         '''
         self.check_type(instruction)
-        # self.final_code.append("addl" + " " + instruction[2] + ", " + instruction[3])
         self.emit_code("subl","$1",instruction[2])
         self.emit_code("movl",instruction[2],instruction[1])
         self.free_register(instruction[2])
@@ -354,6 +371,20 @@ class CodeGenerator:
     def op_goto(self, instruction):
         label = self.create_label(instruction[1])
         self.emit_code("jmp", label)
+
+    def op_less(self, instruction):
+        '''
+        This function is currently only implemented
+        for integer comparator
+        '''
+        self.check_type(instruction, None, None, False, True)
+        self.emit_code("cmpl",instruction[3],instruction[2])
+        reg = self.register_mapping[instruction[3]]
+        self.emit_code("setl", self.eight_bit_register[reg])
+        self.emit_code("movzbl", self.eight_bit_register[reg], instruction[3])
+        self.emit_code("movl", instruction[3], instruction[1])
+        self.free_register(instruction[2])
+        self.free_register(instruction[3])
 
     def gen_code(self, instruction):
         if not instruction:
@@ -403,6 +434,8 @@ class CodeGenerator:
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
             self.op_goto(instruction)
+        elif instruction[0][0] == "<":
+            self.op_less(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 
@@ -412,7 +445,7 @@ def main(file,code):
         codegen.final_code.append(f'label {instr.split()[0]}:')
         instr = instr.split()[1:]
         codegen.gen_code(instr)
-        # codegen.final_code.append('')
+        codegen.final_code.append('')
             
     to_print = []
     for line in codegen.final_code:
