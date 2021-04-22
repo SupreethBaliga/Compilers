@@ -445,10 +445,6 @@ class CodeGenerator:
         self.free_register(reg)
 
     def op_logical(self, instruction):
-        '''
-        This function is currently only implemented
-        for integer logical and/or operators
-        '''
         self.check_type(instruction, "%edx", "%ecx")
         reg = self.request_register("%eax")
         reg = self.register_mapping[reg]
@@ -468,6 +464,19 @@ class CodeGenerator:
         self.free_register(instruction[2])
         self.free_register(instruction[3])
         self.free_register(reg)
+
+    def op_logical_not(self, instruction):
+        self.check_type(instruction)
+        self.emit_code("cmpl", "$0", instruction[2])
+        reg = self.request_register("%edx")
+        reg = self.register_mapping[reg]
+        reg = self.eight_bit_register[reg]
+        self.emit_code("sete", reg)
+        self.emit_code("movzbl", reg, instruction[2])
+        self.emit_code("movl", instruction[2], instruction[1])
+
+        self.free_register(instruction[2])
+        self.free_register("%edx")
 
     def op_assgn(self, instruction):
         '''
@@ -530,7 +539,7 @@ class CodeGenerator:
             self.op_comparator(instruction)
         elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
             self.op_logical(instruction)
-        elif(instruction[0][0] == "="):
+        elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+":
             self.op_eq(instruction)
         elif(instruction[0][0] == "*"):
             self.op_mul(instruction)
@@ -561,6 +570,8 @@ class CodeGenerator:
             self.op_neg(instruction)
         elif instruction[0][0:6] == "UNARY~":
             self.op_not(instruction)
+        elif instruction[0][0:6] == "UNARY!":
+            self.op_logical_not(instruction)
         elif instruction[0][0:5] == "PRE++":
             self.op_pre_inc(instruction)
         elif instruction[0][0:5] == "PRE--":
