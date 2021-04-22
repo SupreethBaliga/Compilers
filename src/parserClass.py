@@ -232,7 +232,7 @@ class CParser():
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"])
         else:
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"])
-
+    
     def convertFloatRepToLong(self, val):
         float_rep = ''.join(bin(c).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', val))
         long_rep = int(float_rep,2)
@@ -1127,12 +1127,11 @@ class CParser():
                 # print(p[3].arglist)
                 # print()
                 for arg in reversed(p[3].arglist):
-                    # flds	-12(%ebp)  - for printf("%f\n", a) where a is float
-	                # subl	$4, %esp
-	                # leal	-8(%esp), %esp
-	                # fstpl	(%esp)
+                    # flds  -12(%ebp)  - for printf("%f\n", a) where a is float
+                    # subl  $4, %esp
+                    # leal  -8(%esp), %esp
+                    # fstpl (%esp)
                     # var_type = self.ST.ReturnSymTabEntry(arg)
-
                     if p[1].label == 'printf':
                         if arg[0][0] == '$':
                             self.TAC.emit('param', arg[0],'','')
@@ -1411,6 +1410,7 @@ class CParser():
                             return
 
                     elif p[1].label[-1] == '*':
+
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
                             print(f'Cannot perform unary operation * at line {p[1].lineno}')
@@ -1848,7 +1848,59 @@ class CParser():
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
+                return
 
+            elif str(p[2]) == '%':
+                if p[1].type[0] not in iit or p[3].type[0] not in iit:
+                    self.ST.error = 1
+                    print(f'Cannot perform modulo operation between expressions of type {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                    return
+
+                p0type = ['int']
+
+                if 'long int' in p[1].type or 'long int' in p[3].type:
+                    p0type[0] = 'long int'
+
+                if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
+                    p0type.append('unsigned')
+
+                p0typestr = "to"
+                for single_type in p0type:
+                    p0typestr += '_' + single_type
+                p0typestr = p0typestr.replace(' ','_')
+
+                isin = True
+                for single_type in p0type:
+                    if single_type not in p[1].type:
+                        isin = False
+                if isin == False:
+                    p[1].totype = p0type
+                    p1 = Node(p0typestr,[p[1]])
+                else:
+                    p1 = p[1]
+
+                isin = True
+                for single_type in p0type:
+                    if single_type not in p[3].type:
+                        isin = False
+                if isin == False:
+                    p[3].totype = p0type
+                    p3 = Node(p0typestr,[p[3]])
+                else:
+                    p3 = p[3]
+
+                p[0] = Node(str(p[2]),[p1,p3])
+                p[0].type = p0type
+                
+                p[0].label = p[0].label + '_' + p[0].type[0]
+                if len(p[0].type)==2:
+                    p[0].label = p[0].label + '_' +  p[0].type[1]
+
+                p[0].label = p[0].label.replace(" ", "_")
+                p[0].node.attr['label'] = p[0].label
+
+
+            
             elif len(p[1].type)>0  and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))])
@@ -1860,6 +1912,7 @@ class CParser():
                     p0typestr += '_' + single_type
 
                 p0typestr = p0typestr.replace(' ','_')
+                
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[1].type:
@@ -5452,13 +5505,12 @@ class CParser():
         self.ST.ModifySymbol("scanf", "check", "FUNC")
         self.ST.ModifySymbol("scanf", "type", ['int'])
         self.ST.ModifySymbol("scanf", "PARAM_NUMS", 2)
-
+        
         #abs with a single argument
         self.ST.InsertSymbol("abs", -1)
         self.ST.ModifySymbol("abs", "check", "FUNC")
         self.ST.ModifySymbol("abs", "type", ['int'])
         self.ST.ModifySymbol("abs", "PARAM_NUMS", 1)
-
         #sqrt with a single argument
         self.ST.InsertSymbol("sqrt", -1)
         self.ST.ModifySymbol("sqrt", "check", "FUNC")
