@@ -133,7 +133,7 @@ class CodeGenerator:
     def op_add(self,instruction):
         '''
         This function is currently only implemented
-        for integer addition
+        for integer addition and float
         '''
         if instruction[0][2:] =='int':
             self.check_type(instruction)
@@ -149,7 +149,7 @@ class CodeGenerator:
     def op_sub(self,instruction):
         '''
         This function is currently only implemented
-        for integer
+        for integer and float
         '''
         if instruction[0][2:] =='int':
             self.check_type(instruction)
@@ -166,7 +166,7 @@ class CodeGenerator:
     def op_eq(self,instruction):
         '''
         This function is currently only implemented
-        for integer
+        for integer and float
         '''
         if instruction[0][2:] =='int':
             self.check_type(instruction)
@@ -179,23 +179,30 @@ class CodeGenerator:
     def op_div(self, instruction):
         '''
         '''
-        edx = self.request_register('%edx')
-        eax = self.request_register('%eax')
-        # number is edx : eax
-        if not edx or not eax:
-            return
-        self.check_type(instruction)
-        self.emit_code("movl", instruction[2], "%eax")
-        self.emit_code("cltd")
-        self.emit_code("idivl", instruction[3])
-        self.emit_code("movl", "%eax", instruction[1])
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
-        self.free_register('%edx',True)
-        self.free_register('%eax',True)
+        if instruction[0][2:] =='int':
+            edx = self.request_register('%edx')
+            eax = self.request_register('%eax')
+            # number is edx : eax
+            if not edx or not eax:
+                return
+            self.check_type(instruction)
+            self.emit_code("movl", instruction[2], "%eax")
+            self.emit_code("cltd")
+            self.emit_code("idivl", instruction[3])
+            self.emit_code("movl", "%eax", instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            self.free_register('%edx',True)
+            self.free_register('%eax',True)
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fdivs", instruction[3])
+            self.emit_code("fstps", instruction[1])
 
     def op_mod(self, instruction):
         '''
+            Int implemented
+            Float not needed
         '''
         edx = self.request_register('%edx')
         eax = self.request_register('%eax')
@@ -215,18 +222,24 @@ class CodeGenerator:
     def op_mul(self,instruction):
         '''
         This function is currently only implemented
-        for integer multiplication
+        for integer multiplication and float
         '''
-        self.check_type(instruction)
-        self.emit_code("imull",instruction[2],instruction[3])
-        self.emit_code("movl",instruction[3],instruction[1])
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
+        if instruction[0][2:] =='int':
+            self.check_type(instruction)
+            self.emit_code("imull",instruction[2],instruction[3])
+            self.emit_code("movl",instruction[3],instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fmuls", instruction[3])
+            self.emit_code("fstps", instruction[1])
 
     def op_and(self,instruction):
         '''
         This function is currently only implemented
-        for integer bitwise and
+        for integer bitwise
+        float not needed
         '''
         self.check_type(instruction)
         self.emit_code("andl",instruction[2],instruction[3])
@@ -238,6 +251,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer bitwise or
+        float not needed
         '''
         self.check_type(instruction)
         self.emit_code("orl",instruction[2],instruction[3])
@@ -249,6 +263,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer bitwise xor
+        float not needed
         '''
         self.check_type(instruction)
         self.emit_code("xorl",instruction[2],instruction[3])
@@ -260,6 +275,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer left bit shift
+        Float not needed
         '''
         if not self.check_type(instruction, None, '%ecx'):
             return
@@ -273,6 +289,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer right bit shift
+        Float not needed
         '''
         if not self.check_type(instruction, None, '%ecx'):
             return
@@ -337,16 +354,25 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer negation (2's complement)
+        Float implemented
         '''
-        self.check_type(instruction)
-        self.emit_code("negl",instruction[2])
-        self.emit_code("movl",instruction[2],instruction[1])
-        self.free_register(instruction[2])
+        if instruction[0][2:] =='int':
+            self.check_type(instruction)
+            self.emit_code("negl",instruction[2])
+            self.emit_code("movl",instruction[2],instruction[1])
+            self.free_register(instruction[2])
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fchs", '')
+            self.emit_code("fstps", instruction[1])
+
+        
         
     def op_not(self, instruction):
         '''
         This function is currently only implemented
         for integer bitwise not (1's complement)
+        Float not needed
         '''
         self.check_type(instruction)
         self.emit_code("notl",instruction[2])
@@ -357,6 +383,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer pre increment
+        Float not needed
         '''
         self.check_type(instruction)
         self.emit_code("addl","$1",instruction[2])
@@ -367,6 +394,7 @@ class CodeGenerator:
         '''
         This function is currently only implemented
         for integer pre increment
+        Float not needed
         '''
         self.check_type(instruction)
         self.emit_code("subl","$1",instruction[2])
@@ -476,6 +504,15 @@ class CodeGenerator:
         self.emit_code("flds", instruction[1])
         self.emit_code("fstps", instruction[2])
 
+    def op_printf_push_float(self, instruction):
+        '''
+        This function handles pushing of float arguments for printf
+        '''
+        self.emit_code("flds", instruction[1])
+        self.emit_code("subl", "$4", "%esp")
+        self.emit_code("leal", "-8(%esp)", "%esp")
+        self.emit_code("fstpl", "(%esp)")
+
     def gen_code(self, instruction):
         if not instruction:
             return
@@ -532,10 +569,10 @@ class CodeGenerator:
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
             self.op_goto(instruction)
-        elif instruction[0][0] == "<":
-            self.op_less(instruction)
         elif instruction[0] == 'load_float':
             self.op_load_float(instruction)
+        elif instruction[0] == 'printf_push_float':
+            self.op_printf_push_float(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 

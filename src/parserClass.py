@@ -2,6 +2,7 @@
 import ply.yacc as yacc
 import pygraphviz as pgv
 import sys
+import struct
 
 # Get the token map from lexer
 from lexerClass import CLexer
@@ -231,6 +232,12 @@ class CParser():
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"])
         else:
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"])
+
+    def convertFloatRepToLong(self, val):
+        float_rep = ''.join(bin(c).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', val))
+        long_rep = int(float_rep,2)
+        self.TAC.floatvals.append(long_rep)
+        return len(self.TAC.floatvals)-1
 
     def build(self):
         # Debug is kept true only while testing
@@ -480,10 +487,29 @@ class CParser():
         if self.isError :
             return
         p[0] = Node(str(p[1]))
+        idx = self.convertFloatRepToLong(p[1])
         p[0].type = ['float']
         if self.ST.error:
             return
-        p[0].temp = f'${p[1]}'
+        p[0].temp = self.TAC.newtemp()
+        self.ST.InsertSymbol(p[0].temp, 0)
+        self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+        self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+        self.updateSizeInSymTab(p[0].type, p[0].temp)
+        if self.ST.isGlobal(p[0].temp):
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+        else :
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+            found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+            var_size = found['sizeAllocInBytes']
+            if found["varclass"] == "Local":
+                self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                if found["offset"] >0:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                else:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+            p[0].temp = found['temp']
+        self.TAC.emit('load_float', f'.LF{idx}', p[0].temp, '')
 
     def p_CharConst(self,p):
         '''
@@ -1098,8 +1124,25 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
+                # print(p[3].arglist)
+                # print()
                 for arg in reversed(p[3].arglist):
-                    self.TAC.emit('param', arg,'','')
+                    # flds	-12(%ebp)  - for printf("%f\n", a) where a is float
+	                # subl	$4, %esp
+	                # leal	-8(%esp), %esp
+	                # fstpl	(%esp)
+                    # var_type = self.ST.ReturnSymTabEntry(arg)
+
+                    if p[1].label == 'printf':
+                        if arg[0][0] == '$':
+                            self.TAC.emit('param', arg[0],'','')
+                        else:
+                            if 'float' in arg[1]:
+                                self.TAC.emit('printf_push_float', arg[0])
+                            else:
+                                self.TAC.emit('param', arg[0],'','')
+                    else:  
+                        self.TAC.emit('param', arg[0],'','')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 if found["type"] == ['void']:
@@ -1213,24 +1256,26 @@ class CParser():
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-            if p[1] == None:
+            if p[1] is None:
                 return
             p[0].param_nums = 1
             p[0].params = []
             p[0].params.append(p[1].type) 
-            p[0].type = ['arg list']
-            p[0].arglist.append(p[1].temp)
+            # p[0].type = ['arg list']
+            if p[1].type is None:
+                p[1].type = ['Dummy']
+            p[0].arglist =[[p[1].temp, p[1].type]]
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
-            if p[1] == None:
+            if p[1] is None:
                 return
             p[0].param_nums = p[1].param_nums + 1
-            p[0].type = ['arg list']
+            # p[0].type = ['arg list']
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
             p[0].arglist = p[1].arglist
-            p[0].arglist.append(p[3].temp)
+            p[0].arglist.append([p[3].temp,p[3].type])
 
     def p_unary_expression(self,p):
         '''
@@ -1366,7 +1411,6 @@ class CParser():
                             return
 
                     elif p[1].label[-1] == '*':
-
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
                             print(f'Cannot perform unary operation * at line {p[1].lineno}')
@@ -4736,16 +4780,16 @@ class CParser():
         # AST Done
         p[0] = p[1]
 
-    def p_labeled_statement_1(self, p):
-        '''
-        labeled_statement : ID ':' statement
-        '''
-        if self.isError :
-            return
+    # def p_labeled_statement_1(self, p):
+    #     '''
+    #     labeled_statement : ID ':' statement
+    #     '''
+    #     if self.isError :
+    #         return
 
-        p1val = p[1]['lexeme']
-        p[1] = Node(str(p1val))
-        p[0] = Node('ID:',[p[1],p[3]])
+    #     p1val = p[1]['lexeme']
+    #     p[1] = Node(str(p1val))
+    #     p[0] = Node('ID:',[p[1],p[3]])
 
     def p_labeled_statement_2(self, p):
         '''
@@ -5408,6 +5452,18 @@ class CParser():
         self.ST.ModifySymbol("scanf", "check", "FUNC")
         self.ST.ModifySymbol("scanf", "type", ['int'])
         self.ST.ModifySymbol("scanf", "PARAM_NUMS", 2)
+
+        #abs with a single argument
+        self.ST.InsertSymbol("abs", -1)
+        self.ST.ModifySymbol("abs", "check", "FUNC")
+        self.ST.ModifySymbol("abs", "type", ['int'])
+        self.ST.ModifySymbol("abs", "PARAM_NUMS", 1)
+
+        #sqrt with a single argument
+        self.ST.InsertSymbol("sqrt", -1)
+        self.ST.ModifySymbol("sqrt", "check", "FUNC")
+        self.ST.ModifySymbol("sqrt", "type", ['float'])
+        self.ST.ModifySymbol("sqrt", "PARAM_NUMS", 1)
 
     def p_translation_unit(self, p):
         '''
