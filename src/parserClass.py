@@ -1366,7 +1366,7 @@ class CParser():
                             return
 
                     elif p[1].label[-1] == '*':
-                        
+
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
                             print(f'Cannot perform unary operation * at line {p[1].lineno}')
@@ -1387,6 +1387,7 @@ class CParser():
                                 p[0].vars = p[2].vars
                             except:
                                 pass
+
 
                     elif p[1].label[-1] == '&':
 
@@ -1420,7 +1421,6 @@ class CParser():
                     return
 
 
-
                 if p[2].totype is not None and p[2].totype != p[2].type:
                     p2.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p2.temp, 0)
@@ -1443,8 +1443,10 @@ class CParser():
                     self.TAC.emit('cast',p2.temp,p[2].temp,p[2].totype) 
 
                 else:
-                    p2.temp = p[2].temp
-
+                    try:
+                        p2.temp = p[2].temp
+                    except:
+                        pass
 
                 p[0].varname = p[2].varname
                 p[0].temp = self.TAC.newtemp()
