@@ -1373,15 +1373,23 @@ class CParser():
                                 p[0].type = ['int']
                             else:
                                 pass
-                            if p[0].type != p[2].type:
-                                p[2].totype = p[0].type
-                                p2str = 'to'
+
+                            if p[0].label[-1] != '!':
+                                if p[0].type != p[2].type:
+                                    p[2].totype = p[0].type
+                                    p2str = 'to'
+                                    for single_type in p[0].type:
+                                        p2str += '_' + single_type
+                                    p2 = Node(p2str, [p[2]])
+                                else:
+                                    p[2].totype = None
+                                    p2 = p[2]
+
                                 for single_type in p[0].type:
-                                    p2str += '_' + single_type
-                                p2 = Node(p2str, [p[2]])
-                            else:
-                                p[2].totype = None
-                                p2 = p[2]
+                                    p[0].label += '_' + single_type
+                                p[0].label = p[0].label.replace(' ','_')
+                                p[0].node.attr['label'] = p[0].label
+
                         else:
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
@@ -1404,6 +1412,11 @@ class CParser():
                             else:
                                 p[2].totype = None
                                 p2 = p[2]
+
+                            for single_type in p[0].type:
+                                p[0].label += '_' + single_type
+                            p[0].label = p[0].label.replace(' ','_')
+                            p[0].node.attr['label'] = p[0].label
 
                         else:
                             self.ST.error = 1
