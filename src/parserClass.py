@@ -52,6 +52,8 @@ class Node:
         self.arglist = []
         self.type = []
         self.totype = None
+        self.param_nums = None
+        self.params = None
 
         # This field is only for Marker nodes used in TAC
         self.quad = None
@@ -1049,8 +1051,7 @@ class CParser():
         elif (len(p) == 5):
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
-                
-                if p[1] is None or p[1].type is None or p[1].param_nums or p[3].param_num is None or p[1].type == [] or p[1].params is None:
+                if p[1] is None or p[1].type is None or p[1].param_nums is None or p[3].param_nums is None or p[1].type == [] or p[1].params is None:
                     self.ST.error = 1
                     print(f'Cannot perform function call at line {p.lineno(2)}')
                     return               
@@ -1272,7 +1273,7 @@ class CParser():
 
         elif (len(p) == 4):
             p[0] = Node(',',[p[1],p[3]])
-            if p[1] is None or p[1].param_nums or p[1].arglist is None or p[1].params is None or p[3] is None or p[3].temp is None or p[3].type is None or p[3].type == [] or p[3].param_nums is None:
+            if p[1] is None or p[1].param_nums is None or p[1].arglist is None or p[1].params is None or p[3] is None or p[3].temp is None or p[3].type is None or p[3].type == []:
                 return
             p[0].param_nums = p[1].param_nums + 1
             # p[0].type = ['arg list']
