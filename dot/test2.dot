@@ -3,260 +3,242 @@ digraph "" {
 	node [label="\N"];
 	{
 		graph [rank=same];
-		2		 [label=func1];
+		2		 [label="max
+"];
 	}
 	{
 		graph [rank=same];
-		14		 [label=l];
+		8		 [label="a
+0(%ebp)"];
+		9		 [label="b
+4(%ebp)"];
+		8 -> 9		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		15		 [label=RETURN];
+		11		 [label="a
+0(%ebp)"];
 	}
 	{
 		graph [rank=same];
-		16		 [label=";"];
+		12		 [label="RETURN
+"];
 	}
 	{
 		graph [rank=same];
-		7		 [label=DDFuncCall];
-		17		 [label=SCOPE];
-		7 -> 17		 [style=invis];
+		13		 [label=";
+"];
 	}
 	{
 		graph [rank=same];
-		20		 [label=func2];
+		15		 [label="b
+4(%ebp)"];
 	}
 	{
 		graph [rank=same];
-		27		 [label=arr];
-		28		 [label=4];
+		16		 [label="RETURN
+"];
+	}
+	{
+		graph [rank=same];
+		17		 [label=";
+"];
+	}
+	{
+		graph [rank=same];
+		10		 [label=">=_int
+-4(%ebp)"];
+		14		 [label="SCOPE
+"];
+		10 -> 14		 [style=invis];
+		18		 [label="SCOPE
+"];
+		14 -> 18		 [style=invis];
+	}
+	{
+		graph [rank=same];
+		19		 [label="IF-ELSE
+"];
+	}
+	{
+		graph [rank=same];
+		20		 [label=";
+"];
+	}
+	{
+		graph [rank=same];
+		7		 [label="DDFuncCall
+"];
+		21		 [label="SCOPE
+"];
+		7 -> 21		 [style=invis];
+	}
+	{
+		graph [rank=same];
+		22		 [label="FUNC
+"];
+	}
+	{
+		graph [rank=same];
+		24		 [label="main
+"];
+	}
+	{
+		graph [rank=same];
+		27		 [label="a
+"];
+		28		 [label="4
+$4"];
 		27 -> 28		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		30		 [label=1];
-		31		 [label=2];
-		30 -> 31		 [style=invis];
+		29		 [label="=_int
+-4(%ebp)"];
 	}
 	{
 		graph [rank=same];
-		32		 [label=","];
-		33		 [label=3];
+		32		 [label="b
+"];
+		33		 [label="6
+$6"];
 		32 -> 33		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		34		 [label=","];
-		35		 [label=4];
-		34 -> 35		 [style=invis];
+		30		 [label=";
+"];
+		34		 [label="=_int
+-8(%ebp)"];
+		30 -> 34		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		36		 [label=","];
+		37		 [label="c
+"];
+		38		 [label="9
+$9"];
+		37 -> 38		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		29		 [label=DDArrSub];
-		37		 [label="{}"];
-		29 -> 37		 [style=invis];
+		35		 [label=";
+"];
+		39		 [label="=_int
+-12(%ebp)"];
+		35 -> 39		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		38		 [label="=int * arr"];
+		45		 [label="a
+-4(%ebp)"];
+		46		 [label="b
+-8(%ebp)"];
+		45 -> 46		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		39		 [label=";"];
+		44		 [label="max
+"];
+		47		 [label=",
+"];
+		44 -> 47		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		42		 [label=";"];
+		48		 [label="FuncCall
+-16(%ebp)"];
+		49		 [label="c
+-12(%ebp)"];
+		48 -> 49		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		46		 [label=arr];
-		47		 [label=1];
-		46 -> 47		 [style=invis];
+		43		 [label="max
+"];
+		50		 [label=",
+"];
+		43 -> 50		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		48		 [label=ArrSub];
+		42		 [label="final
+"];
+		51		 [label="FuncCall
+-20(%ebp)"];
+		42 -> 51		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		45		 [label=";"];
-		49		 [label=RETURN];
-		45 -> 49		 [style=invis];
+		40		 [label=";
+"];
+		52		 [label="=_int
+-24(%ebp)"];
+		40 -> 52		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		50		 [label=";"];
+		53		 [label=";
+"];
 	}
 	{
 		graph [rank=same];
-		25		 [label=DDFuncCall];
-		51		 [label=SCOPE];
-		25 -> 51		 [style=invis];
+		25		 [label="DDFuncCall
+"];
+		54		 [label="SCOPE
+"];
+		25 -> 54		 [style=invis];
 	}
 	{
 		graph [rank=same];
-		54		 [label=main];
+		55		 [label="FUNC
+"];
 	}
-	{
-		graph [rank=same];
-		57		 [label=a];
-		58		 [label=1];
-		57 -> 58		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		60		 [label=b];
-		61		 [label=2];
-		60 -> 61		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		59		 [label="=int"];
-		62		 [label="=int"];
-		59 -> 62		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		63		 [label=","];
-	}
-	{
-		graph [rank=same];
-		68		 [label=a];
-		69		 [label=b];
-		68 -> 69		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		67		 [label=func1];
-		70		 [label=","];
-		67 -> 70		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		66		 [label=ans];
-		71		 [label=FuncCall];
-		66 -> 71		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		64		 [label=";"];
-		72		 [label="=int"];
-		64 -> 72		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		77		 [label=a];
-		78		 [label=b];
-		77 -> 78		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		76		 [label=func2];
-		79		 [label=","];
-		76 -> 79		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		74		 [label=ans];
-		80		 [label=FuncCall];
-		74 -> 80		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		73		 [label=";"];
-		75		 [label="=int"];
-		73 -> 75		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		82		 [label=0];
-	}
-	{
-		graph [rank=same];
-		81		 [label=";"];
-		83		 [label=RETURN];
-		81 -> 83		 [style=invis];
-	}
-	{
-		graph [rank=same];
-		84		 [label=";"];
-	}
-	{
-		graph [rank=same];
-		55		 [label=DDFuncCall];
-		85		 [label=SCOPE];
-		55 -> 85		 [style=invis];
-	}
-	0	 [label=SourceNode];
-	18	 [label=FUNC];
-	0 -> 18;
-	52	 [label=FUNC];
-	0 -> 52;
-	86	 [label=FUNC];
-	0 -> 86;
+	0	 [label="SourceNode
+"];
+	0 -> 22;
+	0 -> 55;
 	7 -> 2;
-	15 -> 14;
+	10 -> 8;
+	10 -> 9;
+	12 -> 11;
+	13 -> 12;
+	14 -> 13;
 	16 -> 15;
 	17 -> 16;
-	18 -> 7;
 	18 -> 17;
-	25 -> 20;
+	19 -> 10;
+	19 -> 14;
+	19 -> 18;
+	20 -> 19;
+	21 -> 20;
+	22 -> 7;
+	22 -> 21;
+	25 -> 24;
 	29 -> 27;
 	29 -> 28;
-	32 -> 30;
-	32 -> 31;
+	30 -> 29;
 	34 -> 32;
 	34 -> 33;
-	36 -> 34;
-	36 -> 35;
-	37 -> 36;
-	38 -> 29;
-	38 -> 37;
+	35 -> 30;
+	35 -> 34;
+	39 -> 37;
 	39 -> 38;
-	42 -> 39;
-	45 -> 42;
-	48 -> 46;
+	40 -> 35;
+	40 -> 39;
+	47 -> 45;
+	47 -> 46;
+	48 -> 44;
 	48 -> 47;
-	49 -> 48;
-	50 -> 45;
+	50 -> 48;
 	50 -> 49;
+	51 -> 43;
 	51 -> 50;
-	52 -> 25;
+	52 -> 42;
 	52 -> 51;
+	53 -> 40;
+	53 -> 52;
+	54 -> 53;
+	55 -> 25;
 	55 -> 54;
-	59 -> 57;
-	59 -> 58;
-	62 -> 60;
-	62 -> 61;
-	63 -> 59;
-	63 -> 62;
-	64 -> 63;
-	70 -> 68;
-	70 -> 69;
-	71 -> 67;
-	71 -> 70;
-	72 -> 66;
-	72 -> 71;
-	73 -> 64;
-	73 -> 72;
-	75 -> 74;
-	75 -> 80;
-	79 -> 77;
-	79 -> 78;
-	80 -> 76;
-	80 -> 79;
-	81 -> 73;
-	81 -> 75;
-	83 -> 82;
-	84 -> 81;
-	84 -> 83;
-	85 -> 84;
-	86 -> 55;
-	86 -> 85;
 }

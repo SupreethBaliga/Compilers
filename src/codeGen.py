@@ -135,32 +135,47 @@ class CodeGenerator:
         This function is currently only implemented
         for integer addition
         '''
-        self.check_type(instruction)
-        self.emit_code("addl",instruction[2],instruction[3])
-        self.emit_code("movl",instruction[3],instruction[1])
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
-
+        if instruction[0][2:] =='int':
+            self.check_type(instruction)
+            self.emit_code("addl",instruction[2],instruction[3])
+            self.emit_code("movl",instruction[3],instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fadds", instruction[3])
+            self.emit_code("fstps", instruction[1])
+                
     def op_sub(self,instruction):
         '''
         This function is currently only implemented
         for integer
         '''
-        self.check_type(instruction)
-        self.emit_code("subl",instruction[3],instruction[2])
-        self.emit_code("movl",instruction[2],instruction[1])
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
+        if instruction[0][2:] =='int':
+            self.check_type(instruction)
+            self.emit_code("subl",instruction[3],instruction[2])
+            self.emit_code("movl",instruction[2],instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fsubs", instruction[3])
+            self.emit_code("fstps", instruction[1])
+
 
     def op_eq(self,instruction):
         '''
         This function is currently only implemented
         for integer
         '''
-        self.check_type(instruction)
-        self.emit_code("movl",instruction[2],instruction[1])
-        self.free_register(instruction[2])
-    
+        if instruction[0][2:] =='int':
+            self.check_type(instruction)
+            self.emit_code("movl",instruction[2],instruction[1])
+            self.free_register(instruction[2])
+        elif instruction[0][2:] =='float':
+            self.emit_code("flds", instruction[2])
+            self.emit_code("fstps", instruction[1])
+
     def op_div(self, instruction):
         '''
         '''
@@ -454,6 +469,13 @@ class CodeGenerator:
         if instruction[0][0] == '>':
             self.op_shr(instruction)            
 
+    def op_load_float(self, instruction):
+        '''
+        This function is for generating floats
+        '''
+        self.emit_code("flds", instruction[1])
+        self.emit_code("fstps", instruction[2])
+
     def gen_code(self, instruction):
         if not instruction:
             return
@@ -510,6 +532,10 @@ class CodeGenerator:
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
             self.op_goto(instruction)
+        elif instruction[0][0] == "<":
+            self.op_less(instruction)
+        elif instruction[0] == 'load_float':
+            self.op_load_float(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 

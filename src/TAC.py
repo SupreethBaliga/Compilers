@@ -12,6 +12,7 @@ class TAC():
         self.label_count = 0
         self.nextstat = 0
         self.strList = []
+        self.floatvals = []
 
     def newtemp(self):
         self.temp_count += 1
@@ -108,4 +109,6 @@ class TAC():
         for i in range(0,len(self.strList)):
             self.emit(f'.LC{i}:','','','')
             self.emit('.string', self.strList[i])
-        return
+        for i in range(0,len(self.floatvals)):
+            self.emit(f'.LF{i}:','','','')
+            self.emit('.long', self.floatvals[i])

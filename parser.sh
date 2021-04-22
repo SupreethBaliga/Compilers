@@ -84,6 +84,9 @@ do
         echo "Success"
         dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
     fi;
+    python src/codeGen.py > test1.s 
+    gcc -m32 test1.s -lm 
+
 
     echo "<----------------------------------------------------------------------->"
 done
