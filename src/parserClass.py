@@ -553,7 +553,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
 
-            elif p[1].type[0] not in iit:
+            elif p[1].type[0] not in iit and p[1].type[0][-1] != '*':
                 self.ST.error = 1
                 print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
 
@@ -1253,7 +1253,7 @@ class CParser():
                 elif 'const' in p[2].type:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
-                elif p[2].type[0] not in iit:
+                elif p[2].type[0] not in iit and p[2].type[0][-1] != '*':
                     self.ST.error = 1
                     print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
                 elif p[2].isTerminal == False and p[2].isvar==False:
