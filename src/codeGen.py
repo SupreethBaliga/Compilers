@@ -63,7 +63,6 @@ class CodeGenerator:
             return None
 
         register = self.register_stack.pop()
-        # print(register)
         return register
 
     def free_register(self, reg_idx, start=None):
@@ -113,7 +112,7 @@ class CodeGenerator:
         if(len(instruction) > 3):
             src2 = instruction[3]
             if eight_bit2 is True:
-                reg2_idx = self.request_register("%edx")
+                reg2_idx = self.request_register("%ebx")
             else:
                 reg2_idx = self.request_register(req_reg2)
             if not reg2_idx:
@@ -372,29 +371,106 @@ class CodeGenerator:
         label = self.create_label(instruction[1])
         self.emit_code("jmp", label)
 
-    def op_less(self, instruction):
+    def op_comparator(self, instruction):
         '''
         This function is currently only implemented
         for integer comparator
         '''
-        self.check_type(instruction, None, None, False, True)
+        self.check_type(instruction)
         self.emit_code("cmpl",instruction[3],instruction[2])
-        reg = self.register_mapping[instruction[3]]
-        self.emit_code("setl", self.eight_bit_register[reg])
-        self.emit_code("movzbl", self.eight_bit_register[reg], instruction[3])
+        
+        reg = self.request_register("%edx")
+        reg = self.register_mapping[reg]
+        reg = self.eight_bit_register[reg]
+
+        if instruction[0][0:2] == "<=":
+            self.emit_code("setle", reg)
+        elif instruction[0][0:2] == ">=":
+            self.emit_code("setge", reg)
+        elif instruction[0][0:2] == "==":
+            self.emit_code("sete", reg)
+        elif instruction[0][0:2] == "!=":
+            self.emit_code("setne", reg)
+        elif instruction[0][0] == "<":
+            self.emit_code("setl", reg)
+        elif instruction[0][0] == ">":
+            self.emit_code("setg", reg)
+        self.emit_code("movzbl", reg, instruction[3])
         self.emit_code("movl", instruction[3], instruction[1])
         self.free_register(instruction[2])
         self.free_register(instruction[3])
+        self.free_register(reg)
+
+    def op_logical(self, instruction):
+        '''
+        This function is currently only implemented
+        for integer logical and/or operators
+        '''
+        self.check_type(instruction, "%edx", "%ecx")
+        reg = self.request_register("%eax")
+        reg = self.register_mapping[reg]
+        self.emit_code("movl", "$0", reg)
+        self.emit_code("testl", instruction[2], instruction[2])
+        self.emit_code("setne", self.eight_bit_register["%eax"])
+        self.emit_code("movl", "$0", instruction[2])
+        self.emit_code("testl", instruction[3], instruction[3])
+        self.emit_code("setne", self.eight_bit_register["%edx"])
+
+        if instruction[0][0:2] == "&&":
+            self.emit_code("andl",instruction[2],reg)
+        elif instruction[0][0:2] == "||":
+            self.emit_code("orl",instruction[2],reg)
+        self.emit_code("movl", reg, instruction[1])
+
+        self.free_register(instruction[2])
+        self.free_register(instruction[3])
+        self.free_register(reg)
+
+    def op_assgn(self, instruction):
+        '''
+        This function is currently only implemented
+        for integer assignment operators
+        '''
+        reg = self.request_register()
+        instruction.insert(1, instruction[1])
+        if instruction[0][0] == '*':
+            self.op_mul(instruction)
+        if instruction[0][0] == '/':
+            self.op_div(instruction)
+        if instruction[0][0] == '%':
+            self.op_mod(instruction)
+        if instruction[0][0] == '+':
+            self.op_add(instruction)
+        if instruction[0][0] == '-':
+            self.op_sub(instruction)
+        if instruction[0][0] == '&':
+            self.op_and(instruction)
+        if instruction[0][0] == '^':
+            self.op_xor(instruction)
+        if instruction[0][0] == '|':
+            self.op_or(instruction)
+        if instruction[0][0] == '<':
+            self.op_shl(instruction)
+        if instruction[0][0] == '>':
+            self.op_shr(instruction)            
 
     def gen_code(self, instruction):
         if not instruction:
             return
         # Currently these instructions only work for int
         #Add cases for lengths
-        if(instruction[0][0] == "+"):
+        if instruction[0][0:2] == "*=" or instruction[0][0:2] == "/=" or instruction[0][0:2] == "%=" or instruction[0][0:2] == "+=" or instruction[0][0:2] == "-=" or instruction[0][0:2] == "&=" or instruction[0][0:2] == "^=" or instruction[0][0:2] == "|=":
+            self.op_assgn(instruction)
+        elif len(instruction[0]) > 2 and (instruction[0][0:2] == "+=" or instruction[0][0:2] == "+="):
+            self.op_assgn(instruction)
+        elif(instruction[0][0] == "+"):
             self.op_add(instruction)
         elif(instruction[0][0] == "-"):
             self.op_sub(instruction)
+        elif instruction[0][0:2] == "<=" or instruction[0][0:2] == ">=" or instruction[0][0:2] == "==" or instruction[0][0:2] == "!=" or instruction[0][0] == "<" or instruction[0][0] == ">":
+            self.op_comparator(instruction)
+        elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
+            self.op_logical(instruction)
         elif(instruction[0][0] == "="):
             self.op_eq(instruction)
         elif(instruction[0][0] == "*"):
@@ -434,8 +510,6 @@ class CodeGenerator:
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
             self.op_goto(instruction)
-        elif instruction[0][0] == "<":
-            self.op_less(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 
