@@ -356,9 +356,9 @@ class CParser():
 
             if isarr > 0:
                 temp_type = []
-                temp_type.append(p[0].type[0]+' ')
+                temp_type.append(p[0].type[0])
                 for i in range(isarr):
-                    temp_type[0] += '*'
+                    temp_type[0] += ' *'
 
                 for i in range(len(p[0].type)):
                     if i>isarr:
@@ -545,7 +545,7 @@ class CParser():
                 p[0].dimensionList.append('isFirstAccess')
 
         elif (len(p) == 3):
-            if p[1].type == None or p[1].type == []:
+            if p[1] == None or p[1].type == None or p[1].type == []:
                 self.ST.error = 1
                 print(f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
 
@@ -611,7 +611,7 @@ class CParser():
                 p[0] = Node('.',[p[1],p[3]])
                 # ----------------------------------------------------------
 
-                if p[1] == None or p[1].type == None:
+                if p[1] == None or p[1].type == None or p[1].type == []:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
@@ -839,7 +839,7 @@ class CParser():
 
                 p[0] = Node('->',[p[1],p[3]])
 
-                if p[1] == None or p[1].type == None:
+                if p[1] == None or p[1].type == None or p[1].type == []:
                     self.ST.error = 1
                     print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
@@ -929,9 +929,9 @@ class CParser():
 
                     if isarr > 0:
                         temp_type = []
-                        temp_type.append(p[0].type[0]+' ')
+                        temp_type.append(p[0].type[0])
                         for i in range(isarr):
-                            temp_type[0] += '*'
+                            temp_type[0] += ' *'
 
                         for i in range(len(p[0].type)):
                             if i>isarr:
@@ -1111,19 +1111,15 @@ class CParser():
                     self.TAC.emit('ifnz goto','',p[0].temp,'')
                     self.TAC.emit('goto','','','')
             elif p[2] == '[':
-                
-                if p[3] is None:
+
+                if p[3] is None or p[3].type is None or p[3].type == [] or p[1] is None or p[1].type is None or p[1].type == []:
                     self.ST.error = 1
-                    print(f'Invalid array subscript at line {p.lineno(2)}')
+                    print(f'Invalid call to access array element at line {p.lineno(2)}')
                     return
 
                 flag = 0
-                if 'int' in p[3].type:
+                if p[3].type[0] in iit:
                     flag = 1    
-                elif 'long int' in p[3].type:
-                    flag = 1
-                elif 'char' in p[3].type:
-                    flag = 1
 
                 if flag==0:
                     self.ST.error = 1
@@ -1134,16 +1130,23 @@ class CParser():
                         self.ST.error = 1
                         print(f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
                         return
-                    else:                        
+                    else:        
+
                         p[0] = Node('ArrSub',[p[1],p[3]])
-                        p[0].type = p[1].type
-                        p[0].type[0] = p[0].type[0][0:-1]
-                        if p[0].type[0][-1] == ' ':
-                            p[0].type[0] = p[0].type[0][0:-1]
+                        p[0].type = []
+                        for single_type in p[1].type:
+                            if single_type[0] == '[' and single_type[-1] == ']':
+                                pass
+                            else:
+                                p[0].type.append(single_type)
+
+                        p[0].type[0] = p[0].type[0][0:-2]
+                        if p[0].type[0][-1] != '*':
                             p[0].isvar = 1
                         for i in range(len(p[1].type)):
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
                                 p[0].type.append(p[1].type[i])
+
                 ############################ DOO TACCC
 
                 p[0].dimensionList = p[1].dimensionList
@@ -1244,7 +1247,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 3):
             if p[1] == '++' or p[1] == '--':
-                if p[2] is None or p[2].type is None:
+                if p[2] is None or p[2].type is None or p[2].type == []:
                     self.ST.error = 1
                     print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
                 elif 'const' in p[2].type:
@@ -1313,7 +1316,7 @@ class CParser():
                 p[0] = p[1]
                 if ((p[2] is not None) and (p[2].node is not None)):
 
-                    if p[2].type is None:
+                    if p[2].type is None or p[2].type == []:
                         self.ST.error = 1
                         print(f'Cannot perform unary operation at line {p[1].lineno}')
                         return
@@ -1546,7 +1549,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 5):
             p[0] = Node('CAST',[p[2],p[4]])
-            if p[2] is None or p[2].type is None:
+            if p[2] is None or p[2].type is None or p[2].type == [] or p[4] is None or p[4].type is None or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform casting at line {p.lineno(1)}')
                 return
@@ -1683,9 +1686,9 @@ class CParser():
 
             if isarr > 0:
                 temp_type = []
-                temp_type.append(p[0].type[0]+' ')
+                temp_type.append(p[0].type[0])
                 for i in range(isarr):
-                    temp_type[0] += '*'
+                    temp_type[0] += ' *'
 
                 for i in range(len(p[0].type)):
                     if i>isarr:
@@ -1796,7 +1799,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
 
@@ -1941,7 +1944,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
@@ -2105,7 +2108,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
@@ -2258,7 +2261,7 @@ class CParser():
             p[0] = p[1]
         elif (len(p) == 4):
             # print(p[1].type, p[3].type)
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
@@ -2437,7 +2440,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
@@ -2615,7 +2618,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
@@ -2760,7 +2763,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
@@ -2908,7 +2911,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None:
+            if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
@@ -3056,7 +3059,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None:
+            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
 
@@ -3102,7 +3105,7 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
-            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None:
+            if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
             else:
@@ -3146,8 +3149,10 @@ class CParser():
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 8):
-            if p[1] is None or p[1].type is None:
-                p[1].type = []
+            if p[1] is None or p[1].type is None or p[1].type == []:
+                self.ST.error = 1
+                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+                return
 
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
@@ -3857,9 +3862,9 @@ class CParser():
 
                 if isarr > 0:
                     temp_type = []
-                    temp_type.append(p[1].type[0]+' ')
+                    temp_type.append(p[1].type[0])
                     for i in range(isarr):
-                        temp_type[0] += '*'
+                        temp_type[0] += ' *'
 
                     for i in range(len(p[1].type)):
                         if i>isarr:
@@ -3894,7 +3899,7 @@ class CParser():
                     temp_type.append(p[1].type[0])
                     for i in range(len(p[1].type)):
                         if p[1].type[i] == '*':
-                            temp_type[0] += '*'
+                            temp_type[0] += ' *'
                         else:
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
@@ -5170,7 +5175,12 @@ class CParser():
                 if functype is None:
                     functype = []
 
-                if '*' in functype and len(p[2].type)>0 and '*' not in p[2].type[0] and p[2].type[0] not in iit :
+                if p[2] is None or p[2].type is None or p[2].type == []:
+                    self.ST.error = 1
+                    print(f'Cannot return expression at line {p.lineno(1)}')
+
+
+                elif '*' in functype and len(p[2].type)>0 and '*' not in p[2].type[0] and p[2].type[0] not in iit :
                     self.ST.error = 1
                     print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
 
@@ -5260,9 +5270,9 @@ class CParser():
 
                 if isarr > 0:
                     temp_type = []
-                    temp_type.append(p[0].type[0]+' ')
+                    temp_type.append(p[0].type[0])
                     for i in range(isarr):
-                        temp_type[0] += '*'
+                        temp_type[0] += ' *'
 
                     for i in range(len(p[0].type)):
                         if i>isarr:
