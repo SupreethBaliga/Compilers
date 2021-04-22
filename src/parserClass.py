@@ -1877,7 +1877,6 @@ class CParser():
 
 
             
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3273,7 +3272,13 @@ class CParser():
 
                 p[4].totype = p0type
 
-                if p[4].totype is not None and p[4].totype != p[4].type:
+                p4type = []
+                for single_type in p[4].type:
+                    if single_type != 'arr' and single_type[0] != '[' and single_type[-1] != ']':
+                        p4type.append(single_type)
+
+
+                if p[4].totype is not None and p[4].totype != p4type:
                     p4.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p4.temp, 0)
                     self.ST.ModifySymbol(p4.temp, "type", p[4].totype)
@@ -3300,7 +3305,12 @@ class CParser():
 
                 p[7].totype = p0type
 
-                if p[7].totype is not None and p[7].totype != p[7].type:
+                p7type = []
+                for single_type in p[7].type:
+                    if single_type != 'arr' and single_type[0] != '[' and single_type[-1] != ']':
+                        p7type.append(single_type)
+
+                if p[7].totype is not None and p[7].totype != p7type:
                     p7.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p7.temp, 0)
                     self.ST.ModifySymbol(p7.temp, "type", p[7].totype)
@@ -3406,10 +3416,14 @@ class CParser():
 
                         isin = True
                         for single_type in p[0].type:
-                            if single_type not in p[3].type:
-                                isin = False
+                            if single_type != 'arr' and (single_type[0] != '[' and single_type[-1] != ']'):
+                                if single_type not in p[3].type:
+                                    isin = False
                         if isin == False:
-                            p[3].totype = p[0].type
+                            p[3].totype = []
+                            for single_type in p[0].type:
+                                if single_type != 'arr' and (single_type[0] != '[' and single_type[-1] != ']'):
+                                    p[3].totype.append(single_type)
                             p3str = 'to'
                             for single_type in p[0].type:
                                 p3str += '_' + single_type
@@ -3963,7 +3977,7 @@ class CParser():
                 for single_type in p[0].type:
                     if single_type not in p[3].type:
                         isin = False
-                if isin == False:
+                if isin == False and 'arr' not in p[1].type and 'init_list' not in p[3].type:
                     p[3].totype = p[0].type
                     p3str = 'to'
                     for single_type in p[0].type:
@@ -4051,7 +4065,7 @@ class CParser():
             if self.ST.error:
                 return
 
-            if p[3].totype is not None and p[3].totype != p[3].type:
+            if p[3].totype is not None and p[3].totype != p[3].type and 'init_list' not in p[3].type and 'arr' not in p[3].totype:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
                 self.ST.ModifySymbol(p3.temp, "type", p[3].totype)
