@@ -1363,7 +1363,14 @@ class CParser():
                             return
 
                     elif p[1].label[-1] == '*':
-                        if len(p[2].type)>0 and p[2].type[0][-1] != '*':
+                        
+                        if p[2] is None or p[2].type is None or p[2].type ==[]:
+                            self.ST.error = 1
+                            print(f'Cannot perform unary operation * at line {p[1].lineno}')
+                            return              
+
+
+                        elif len(p[2].type)>0 and p[2].type[0][-1] != '*':
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
@@ -1383,8 +1390,12 @@ class CParser():
                         # What to do for pointer to structs
                         # if 'struct *' in p[2].type:
 
+                        if p[2] is None or p[2].type is None or p[2].type ==[]:
+                            self.ST.error = 1
+                            print(f'Cannot perform unary operation * at line {p[1].lineno}')
+                            return        
 
-                        if len(p[2].type)>0 and 'struct' != p[2].type[0] and 'union' != p[2].type[0] and p[2].isvar==0:
+                        elif len(p[2].type)>0 and 'struct' != p[2].type[0] and 'union' != p[2].type[0] and p[2].isvar==0:
                             self.ST.error = 1
                             print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
                             return
