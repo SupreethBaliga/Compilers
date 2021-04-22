@@ -299,7 +299,8 @@ class CParser():
                 p[0].isvar = 1
 
             if 'unsigned' in type_list or 'signed' in type_list:
-                type_list.append('int')
+                if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                    type_list.append('int')
 
             if 'long' in type_list and 'int' in type_list:
                 p[0].type.append('long int')
@@ -1863,6 +1864,7 @@ class CParser():
 
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p0type.append('unsigned')
+
 
                 p0typestr = "to"
                 for single_type in p0type:
@@ -3911,7 +3913,8 @@ class CParser():
                     p[1].isvar = 1
 
                 if 'unsigned' in type_list or 'signed' in type_list:
-                    type_list.append('int')
+                    if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                        type_list.append('int')
                 p[1].type = []
                 if 'long' in type_list and 'int' in type_list:
                     p[1].type.append('long int')
@@ -5318,7 +5321,8 @@ class CParser():
                 
 
                 if 'unsigned' in type_list or 'signed' in type_list:
-                    type_list.append('int')
+                    if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                        type_list.append('int')
 
                 p[0].type = []
                 if 'long' in type_list and 'int' in type_list:
