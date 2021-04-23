@@ -3169,14 +3169,14 @@ class CParser():
     def p_logical_and_expression(self, p):
         '''
         logical_and_expression : inclusive_or_expression
-                            | logical_and_expression AND_OP globalmarker1 inclusive_or_expression
+                            | logical_and_expression AND_OP globalmarker1 inclusive_or_expression globalmarker1
         '''
         # Grammar changed
         if self.isError :
             return
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 5):
+        elif (len(p) == 6):
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
@@ -3187,6 +3187,7 @@ class CParser():
                 if self.ST.error:
                     return
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
+                self.TAC.backpatch(p[1].falselist,p[5].quad)
                 p[0].falselist = p[1].falselist + p[4].falselist
                 p[0].truelist = p[4].truelist
 
@@ -3209,12 +3210,15 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
+                self.TAC.emit('=_int', p[0].temp, '$0', '')
+                self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
                 self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
 
     def p_logical_or_expression(self, p):
         '''
         logical_or_expression : logical_and_expression
-                            | logical_or_expression OR_OP globalmarker1 logical_and_expression
+                            | logical_or_expression OR_OP globalmarker1 logical_and_expression globalmarker1
         '''
         # Grammar Changed
         if self.isError :
@@ -3222,7 +3226,7 @@ class CParser():
         #AST done
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 5):
+        elif (len(p) == 6):
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
@@ -3232,6 +3236,7 @@ class CParser():
                 if self.ST.error:
                     return
                 self.TAC.backpatch(p[1].falselist,p[3].quad)
+                self.TAC.backpatch(p[1].truelist,p[5].quad)
                 p[0].truelist = p[1].truelist + p[4].truelist
                 p[0].falselist = p[4].falselist
 
@@ -3254,6 +3259,11 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
+                self.TAC.emit('=_int', p[0].temp, '$1', '')
+                self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                self.TAC.emit('ifnz goto', '' , p[4].temp, '')
                 self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
 
     def p_conditional_expression(self, p):
@@ -3452,7 +3462,7 @@ class CParser():
 
                 else:
                     p7.temp = p[7].temp
-                
+
 
 
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
