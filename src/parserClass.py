@@ -58,6 +58,7 @@ class Node:
         # This field is only for Marker nodes used in TAC
         self.quad = None
         self.dimensionList = None
+        self.addr = None
 
         if children is None:
             self.isTerminal = True
@@ -573,6 +574,7 @@ class CParser():
         # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
         if (len(p) == 2):
             p[0] = p[1]
+            p[0].addr = p[1].temp
 
             if p[1] == None or p[1].type == None:
                 self.ST.error = 1
@@ -820,8 +822,9 @@ class CParser():
                 if p[1].label == 'UNARY*':
                     p[0].temp = p[1].temp[1:-1]
                     found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
-                    self.TAC.emit('+long', p[0].temp, p[0].temp, found['vars'][p[3].label]['offset'])
-                
+                    self.TAC.emit('+_int', p[0].temp, p[0].temp, f"${found['vars'][p[3].label]['offset']}")
+                    p[0].temp = f'({p[0].temp})'
+
                 # self.TAC.emit('.', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
@@ -1058,8 +1061,9 @@ class CParser():
                     p[0].temp = found['temp']
                 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
-                self.TAC.emit('+long', p[0].temp, p[1].temp, found['vars'][p[3].label]['offset'])
+                self.TAC.emit('+_int', p[0].temp, p[1].temp, f"${found['vars'][p[3].label]['offset']}")
                 # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
+                p[0].temp = f'({p[0].temp})'
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1273,7 +1277,7 @@ class CParser():
                     else:
                         self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
                     
-                    var = p[1].temp.split('(')[0]
+                    var = p[1].addr.split('(')[0]
                     if var[0] != '-':
                         var = '+' + var
                     self.TAC.emit('+_int', p[0].temp, f'%ebp{var}', p[0].temp)
@@ -1283,6 +1287,8 @@ class CParser():
                     p[0].falselist.append(self.TAC.nextstat+1)
                     self.TAC.emit('ifnz goto','',p[0].temp,'')
                     self.TAC.emit('goto','','','')
+                
+                p[0].addr = p[1].addr
 
     def p_argument_expression_list(self,p):
         '''
@@ -3652,19 +3658,7 @@ class CParser():
         
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
-            if p[1].label == '->':
-                self.TAC.emit(p[0].label, f'({p[1].temp})', p[3].temp, '')
-            elif p[1].label == '.':
-                found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
-                if "*" in found["type"]:
-                    self.TAC.emit(p[0].label, f'({p[1].temp})', p[3].temp, '')
-                else:
-                    self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
-            elif p[0].label == '=_struct':
-                found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
-                self.TAC.emit(p[0].label, p[1].temp, p[3].temp, f"${sizes[' '.join(p[3].type)]}")    
-            else:
-                self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+            self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -4896,17 +4890,6 @@ class CParser():
             return
         # AST Done
         p[0] = p[1]
-
-    # def p_labeled_statement_1(self, p):
-    #     '''
-    #     labeled_statement : ID ':' statement
-    #     '''
-    #     if self.isError :
-    #         return
-
-    #     p1val = p[1]['lexeme']
-    #     p[1] = Node(str(p1val))
-    #     p[0] = Node('ID:',[p[1],p[3]])
 
     def p_labeled_statement_2(self, p):
         '''

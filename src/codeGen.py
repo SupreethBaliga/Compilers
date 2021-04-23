@@ -475,21 +475,21 @@ class CodeGenerator:
             
             reg = self.request_register("%edx")
             reg = self.register_mapping[reg]
-            reg = self.eight_bit_register[reg]
+            eight_reg = self.eight_bit_register[reg]
 
             if instruction[0][0:2] == "<=":
-                self.emit_code("setle", reg)
+                self.emit_code("setle", eight_reg)
             elif instruction[0][0:2] == ">=":
-                self.emit_code("setge", reg)
+                self.emit_code("setge", eight_reg)
             elif instruction[0][0:2] == "==":
-                self.emit_code("sete", reg)
+                self.emit_code("sete", eight_reg)
             elif instruction[0][0:2] == "!=":
-                self.emit_code("setne", reg)
+                self.emit_code("setne", eight_reg)
             elif instruction[0][0] == "<":
-                self.emit_code("setl", reg)
+                self.emit_code("setl", eight_reg)
             elif instruction[0][0] == ">":
-                self.emit_code("setg", reg)
-            self.emit_code("movzbl", reg, instruction[3])
+                self.emit_code("setg", eight_reg)
+            self.emit_code("movzbl", eight_reg, instruction[3])
             self.emit_code("movl", instruction[3], instruction[1])
             self.free_register(instruction[2])
             self.free_register(instruction[3])
@@ -609,7 +609,12 @@ class CodeGenerator:
         '''
         reg = self.request_register()
         instruction.insert(1, instruction[1])
-        instruction[1] = self.dereg(instruction[1])
+        instruction[1] = self.deref(instruction[1])
+
+        if instruction[0][0] == '<' or instruction[0][0] == '>':
+            instruction[0] = instruction[0][0:2] + instruction[0][3:]
+        else:
+            instruction[0] = instruction[0][0] + instruction[0][2:]
         if instruction[0][0] == '*':
             self.op_mul(instruction)
         if instruction[0][0] == '/':
@@ -705,7 +710,7 @@ class CodeGenerator:
         #Add cases for lengths
         if instruction[0][0:2] == "*=" or instruction[0][0:2] == "/=" or instruction[0][0:2] == "%=" or instruction[0][0:2] == "+=" or instruction[0][0:2] == "-=" or instruction[0][0:2] == "&=" or instruction[0][0:2] == "^=" or instruction[0][0:2] == "|=":
             self.op_assgn(instruction)
-        elif len(instruction[0]) > 2 and (instruction[0][0:2] == "+=" or instruction[0][0:2] == "+="):
+        elif len(instruction[0]) > 2 and (instruction[0][0:3] == "<<=" or instruction[0][0:3] == ">>="):
             self.op_assgn(instruction)
         elif(instruction[0][0] == "+"):
             self.op_add(instruction)
