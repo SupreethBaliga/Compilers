@@ -356,12 +356,12 @@ class CodeGenerator:
         for integer negation (2's complement)
         Float implemented
         '''
-        if instruction[0][2:] =='int':
+        if instruction[0][7:] =='int':
             self.check_type(instruction)
             self.emit_code("negl",instruction[2])
             self.emit_code("movl",instruction[2],instruction[1])
             self.free_register(instruction[2])
-        elif instruction[0][2:] =='float':
+        elif instruction[0][7:] =='float':
             self.emit_code("flds", instruction[2])
             self.emit_code("fchs", '')
             self.emit_code("fstps", instruction[1])
@@ -419,30 +419,104 @@ class CodeGenerator:
         This function is currently only implemented
         for integer comparator
         '''
-        self.check_type(instruction)
-        self.emit_code("cmpl",instruction[3],instruction[2])
-        
-        reg = self.request_register("%edx")
-        reg = self.register_mapping[reg]
-        reg = self.eight_bit_register[reg]
+        if instruction[0][3:]=='int' or instruction[0][2:]=='int':
+            self.check_type(instruction)
+            self.emit_code("cmpl",instruction[3],instruction[2])
+            
+            reg = self.request_register("%edx")
+            reg = self.register_mapping[reg]
+            reg = self.eight_bit_register[reg]
 
-        if instruction[0][0:2] == "<=":
-            self.emit_code("setle", reg)
-        elif instruction[0][0:2] == ">=":
-            self.emit_code("setge", reg)
-        elif instruction[0][0:2] == "==":
-            self.emit_code("sete", reg)
-        elif instruction[0][0:2] == "!=":
-            self.emit_code("setne", reg)
-        elif instruction[0][0] == "<":
-            self.emit_code("setl", reg)
-        elif instruction[0][0] == ">":
-            self.emit_code("setg", reg)
-        self.emit_code("movzbl", reg, instruction[3])
-        self.emit_code("movl", instruction[3], instruction[1])
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
-        self.free_register(reg)
+            if instruction[0][0:2] == "<=":
+                self.emit_code("setle", reg)
+            elif instruction[0][0:2] == ">=":
+                self.emit_code("setge", reg)
+            elif instruction[0][0:2] == "==":
+                self.emit_code("sete", reg)
+            elif instruction[0][0:2] == "!=":
+                self.emit_code("setne", reg)
+            elif instruction[0][0] == "<":
+                self.emit_code("setl", reg)
+            elif instruction[0][0] == ">":
+                self.emit_code("setg", reg)
+            self.emit_code("movzbl", reg, instruction[3])
+            self.emit_code("movl", instruction[3], instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            self.free_register(reg)
+        elif instruction[0][3:]=='float' or instruction[0][2:]=='float':
+            reg = self.request_register("%edx")
+            reg = self.register_mapping[reg]
+        
+            if instruction[0][0] == '<':
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('seta', self.eight_bit_register[reg])
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+            elif instruction[0][0] == '>':
+                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', instruction[2])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('seta', self.eight_bit_register[reg])
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+            elif instruction[0][0:2] == '<=':
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('setnb', self.eight_bit_register[reg])
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+            elif instruction[0][0:2] == '>=':
+                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', instruction[2])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('setnb', self.eight_bit_register[reg])
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+            elif instruction[0][0:2] == '==':
+                reg1 = self.request_register("%ecx")
+                reg1 = self.register_mapping[reg1]
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('setnp', self.eight_bit_register[reg])
+                self.emit_code('movl', '$0', reg1)
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('cmovne', reg1, reg)
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+                self.free_register(reg1)
+            elif instruction[0][0:2] == '!=':
+                reg1 = self.request_register("%ecx")
+                reg1 = self.register_mapping[reg1]
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('setp', self.eight_bit_register[reg])
+                self.emit_code('movl', '$1', reg1)
+                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', instruction[3])
+                self.emit_code('fucomip', '%st(1)', '%st')
+                self.emit_code('fstp', '%st(0)')
+                self.emit_code('cmovne', reg1, reg)
+                self.emit_code('movzbl', self.eight_bit_register[reg], reg)
+                self.emit_code('movl', reg, instruction[1])
+                self.free_register(reg1)
+                
+            self.free_register(reg)
+
 
     def op_logical(self, instruction):
         self.check_type(instruction, "%edx", "%ecx")
