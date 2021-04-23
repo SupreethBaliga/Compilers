@@ -390,8 +390,8 @@ class CodeGenerator:
             # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
             
             self.emit_code("call ", instruction[1])
-            if instruction[1] not in math_func_list:
-                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+            if instruction[1] not in math_func_list or instruction[1] == "printf" or instruction[1] == "scanf":
+                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
             else:
                 self.emit_code('addl', '$16', '%esp')
             # isntruction[0] = call
