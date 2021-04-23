@@ -1097,34 +1097,44 @@ class CParser():
                             print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
                             return
 
-                        if '*' in i['type'] and p[3].params[ctr][0] in dft:
+                        if p[3].params is None or p[3].params[0] is None:
                             self.ST.error = 1
-                            print(f'Cannot assign float value to pointer at line {p.lineno(2)}')
+                            print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
                             return
-                        if 'struct' in i['type'][0]  and 'struct' not in p[3].params[ctr]:
+                        if '*' in i['type'] and p[3].params[ctr][0][-1] == '*':
+                            # Any pointer to pointer is allowed, only warning at max
+                            continue
+
+                        if '*' in i['type'] and p[3].params[ctr][0][-1] != '*' and p[3].params[ctr][0] not in iit:
+                            self.ST.error = 1
+                            print(f'Cannot assign non-pointer/integral value to pointer at line {p.lineno(2)}')
+                            return
+                        if 'struct' in i['type']  and 'struct' not in p[3].params[ctr]:
                             self.ST.error = 1
                             print(f'Cannot assign non-struct value to struct object at line {p.lineno(2)}')
+                            print(i['type'], p[3].params[ctr])
                             return
-                        if 'struct' not in i['type'][0]  and 'struct' in p[3].params[ctr]:
+                        if 'struct' not in i['type']  and 'struct' in p[3].params[ctr]:
                             self.ST.error = 1
                             print(f'Cannot assign struct value to non-struct  at line {p.lineno(2)}')
                             return
-                        if 'struct' in i['type'][0]  and 'struct'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
+                        if 'struct' in i['type']  and 'struct'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
                             self.ST.error = 1
                             print(f'Cannot assign struct value between incompatible objects at line {p.lineno(2)}')
                             return
-                        if 'union' in i['type'][0]  and 'union' not in p[3].params[ctr]:
+                        if 'union' in i['type']  and 'union' not in p[3].params[ctr]:
                             self.ST.error = 1
                             print(f'Cannot assign non-union value to union object at line {p.lineno(2)}')
                             return
-                        if 'union' not in i['type'][0]  and 'union' in p[3].params[ctr]:
+                        if 'union' not in i['type']  and 'union' in p[3].params[ctr]:
                             self.ST.error = 1
                             print(f'Cannot assign union value to non-union  at line {p.lineno(2)}')
                             return
-                        if 'union' in i['type'][0]  and 'union'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
+                        if 'union' in i['type']  and 'union'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
                             self.ST.error = 1
                             print(f'Cannot assign union value between incompatible objects at line {p.lineno(2)}')
                             return
+
 
                     p[0].type = p[1].ret_type
                 
