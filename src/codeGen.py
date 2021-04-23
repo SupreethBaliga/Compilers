@@ -3,7 +3,7 @@ import copy
 fileName = "TAC/test1.txt"
 file = open(fileName,"r")
 code = file.readlines()
-
+math_func_list = ['scanf', 'printf', 'sqrt', 'ceil', 'floor', 'pow', 'fabs', 'log', 'log10','fmod', 'exp', 'cos','sin' ,'acos', 'asin', 'tan', 'atan']
 class CodeGenerator:
     
     def __init__(self):
@@ -340,12 +340,29 @@ class CodeGenerator:
             # instruction[1] = variable where return value is stored
             # instruction[2] = function name
             # instruction[3] = number of arguments
-            self.final_code.append("call " + instruction[2])
-            self.emit_code("movl", "%eax", instruction[1])
-            self.op_add(["+_int","%esp","%esp","$" + str(instruction[3]*4)])
+            
+            # original
+            # self.final_code.append("call " + instruction[2])
+            # self.emit_code("movl", "%eax", instruction[1])
+            # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+            
+            self.emit_code("call ", instruction[2])
+            if instruction[2] in math_func_list:
+                self.emit_code('fstps', instruction[1])
+                self.emit_code('addl', '$16', '%esp')
+            else:   
+                self.emit_code("movl", "%eax", instruction[1])
+                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
         else:
-            self.final_code.append("call " + instruction[1])
-            self.op_add(["+_int","%esp","%esp","$" + str(instruction[2]*4)])
+            # original
+            # self.final_code.append("call " + instruction[1])
+            # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
+            
+            self.emit_code("call ", instruction[1])
+            if instruction[1] not in math_func_list:
+                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+            else:
+                self.emit_code('addl', '$16', '%esp')
             # isntruction[0] = call
             # instruction[1] = function name
             # instruction[2] = number of arguments
@@ -514,7 +531,7 @@ class CodeGenerator:
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
                 self.emit_code('movl', reg, instruction[1])
                 self.free_register(reg1)
-                
+
             self.free_register(reg)
 
 
@@ -596,6 +613,40 @@ class CodeGenerator:
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
 
+    def op_math_func_push_float(self, instruction):
+        '''
+        This function handles pushing of float arguments for math funcs
+        '''
+        self.emit_code("flds", instruction[1])
+        self.emit_code("subl", "$8", "%esp")
+        self.emit_code("leal", "-8(%esp)", "%esp")
+        self.emit_code("fstpl", "(%esp)")
+    
+    def op_math_func_push_int(self, instruction):
+        '''
+        This function handles pushing of int arguments for math funcs
+        '''
+        self.emit_code("fildl", instruction[1])
+        self.emit_code("subl", "$8", "%esp")
+        self.emit_code("leal", "-8(%esp)", "%esp")
+        self.emit_code("fstpl", "(%esp)")
+
+    def op_pow_func_push_int(self, instruction):
+        '''
+        This function handles pushing of int arguments for pow func
+        '''
+        self.emit_code("fildl", instruction[1])
+        self.emit_code("leal", "-8(%esp)", "%esp")
+        self.emit_code("fstpl", "(%esp)")
+
+    def op_pow_func_push_float(self, instruction):
+        '''
+        This function handles pushing of int arguments for pow func
+        '''
+        self.emit_code("flds", instruction[1])
+        self.emit_code("leal", "-8(%esp)", "%esp")
+        self.emit_code("fstpl", "(%esp)")
+
     def gen_code(self, instruction):
         if not instruction:
             return
@@ -614,6 +665,8 @@ class CodeGenerator:
         elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
             self.op_logical(instruction)
         elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+":
+            if instruction[0][0:6] == "UNARY+":
+                instruction[0] = "=" + instruction[0][6:]
             self.op_eq(instruction)
         elif(instruction[0][0] == "*"):
             self.op_mul(instruction)
@@ -658,6 +711,14 @@ class CodeGenerator:
             self.op_load_float(instruction)
         elif instruction[0] == 'printf_push_float':
             self.op_printf_push_float(instruction)
+        elif instruction[0] == 'math_func_push_float':
+            self.op_math_func_push_float(instruction)
+        elif instruction[0] == 'math_func_push_int':
+            self.op_math_func_push_int(instruction)
+        elif instruction[0] == 'pow_func_push_int':
+            self.op_pow_func_push_int(instruction)
+        elif instruction[0] == 'pow_func_push_float':
+            self.op_pow_func_push_float(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 

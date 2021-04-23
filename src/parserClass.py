@@ -480,8 +480,25 @@ class CParser():
         p[0].type = ['int']
         if self.ST.error:
             return
-        p[0].temp = f'${p[1]}'
-        # self.TAC.emit('=int', p[0].temp, p[1])
+        p[0].temp = self.TAC.newtemp()
+        self.ST.InsertSymbol(p[0].temp, 0)
+        self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+        self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+        self.updateSizeInSymTab(p[0].type, p[0].temp)
+        if self.ST.isGlobal(p[0].temp):
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+        else :
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+            found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+            var_size = found['sizeAllocInBytes']
+            if found["varclass"] == "Local":
+                self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                if found["offset"] >0:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                else:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+            p[0].temp = found['temp']
+        self.TAC.emit('=_int', p[0].temp, f'${p[1]}')
 
     def p_FloatConst(self,p):
         '''
@@ -1132,6 +1149,8 @@ class CParser():
 
                 # print(p[3].arglist)
                 # print()
+                math_funcs_list_single = ["sqrt", "ceil", "floor", "fabs", "log", "log10", "exp", "cos" ,"sin", "acos", "asin", "tan", "atan"]
+                math_funcs_list_double = ["pow", 'fmod']
                 for arg in reversed(p[3].arglist):
                     # flds  -12(%ebp)  - for printf("%f\n", a) where a is float
                     # subl  $4, %esp
@@ -1146,6 +1165,20 @@ class CParser():
                                 self.TAC.emit('printf_push_float', arg[0])
                             else:
                                 self.TAC.emit('param', arg[0],'','')
+                    elif p[1].label in math_funcs_list_single:
+                        if 'float' in arg[1]:
+                            self.TAC.emit('math_func_push_float', arg[0])
+                        elif 'int' in arg[1]:
+                            self.TAC.emit('math_func_push_int', arg[0])
+                        else: # modify this later with more data types
+                            self.TAC.emit('math_func_push_int', arg[0])
+                    elif p[1].label in math_funcs_list_double:
+                        if 'float' in arg[1]:
+                            self.TAC.emit('pow_func_push_float', arg[0])
+                        elif 'int' in arg[1]:
+                            self.TAC.emit('pow_func_push_int', arg[0])
+                        else:
+                            self.TAC.emit('pow_func_push_int', arg[0])
                     else:  
                         self.TAC.emit('param', arg[0],'','')
 
@@ -5529,13 +5562,13 @@ class CParser():
         # printf with 2 arguments (string, placeholder value)
         self.ST.InsertSymbol("printf", -1)
         self.ST.ModifySymbol("printf", "check", "FUNC")
-        self.ST.ModifySymbol("printf", "type", ['int'])
+        self.ST.ModifySymbol("printf", "type", ['void'])
         self.ST.ModifySymbol("printf", "PARAM_NUMS", 2)
 
         # scanf with 2 arguments (string, placeholder value)
         self.ST.InsertSymbol("scanf", -1)
         self.ST.ModifySymbol("scanf", "check", "FUNC")
-        self.ST.ModifySymbol("scanf", "type", ['int'])
+        self.ST.ModifySymbol("scanf", "type", ['void'])
         self.ST.ModifySymbol("scanf", "PARAM_NUMS", 2)
         
         #abs with a single argument
@@ -5543,11 +5576,96 @@ class CParser():
         self.ST.ModifySymbol("abs", "check", "FUNC")
         self.ST.ModifySymbol("abs", "type", ['int'])
         self.ST.ModifySymbol("abs", "PARAM_NUMS", 1)
+
         #sqrt with a single argument
         self.ST.InsertSymbol("sqrt", -1)
         self.ST.ModifySymbol("sqrt", "check", "FUNC")
         self.ST.ModifySymbol("sqrt", "type", ['float'])
         self.ST.ModifySymbol("sqrt", "PARAM_NUMS", 1)
+
+        #ceil with a single argument
+        self.ST.InsertSymbol("ceil", -1)
+        self.ST.ModifySymbol("ceil", "check", "FUNC")
+        self.ST.ModifySymbol("ceil", "type", ['float'])
+        self.ST.ModifySymbol("ceil", "PARAM_NUMS", 1)
+
+        #floor with a single argument
+        self.ST.InsertSymbol("floor", -1)
+        self.ST.ModifySymbol("floor", "check", "FUNC")
+        self.ST.ModifySymbol("floor", "type", ['float'])
+        self.ST.ModifySymbol("floor", "PARAM_NUMS", 1)
+
+        #pow with  2 arguments
+        self.ST.InsertSymbol("pow", -1)
+        self.ST.ModifySymbol("pow", "check", "FUNC")
+        self.ST.ModifySymbol("pow", "type", ['float'])
+        self.ST.ModifySymbol("pow", "PARAM_NUMS", 2)
+
+        #fabs with a single argument
+        self.ST.InsertSymbol("fabs", -1)
+        self.ST.ModifySymbol("fabs", "check", "FUNC")
+        self.ST.ModifySymbol("fabs", "type", ['float'])
+        self.ST.ModifySymbol("fabs", "PARAM_NUMS", 1)
+
+        #log with a single argument
+        self.ST.InsertSymbol("log", -1)
+        self.ST.ModifySymbol("log", "check", "FUNC")
+        self.ST.ModifySymbol("log", "type", ['float'])
+        self.ST.ModifySymbol("log", "PARAM_NUMS", 1)
+
+        #log10 with a single argument
+        self.ST.InsertSymbol("log10", -1)
+        self.ST.ModifySymbol("log10", "check", "FUNC")
+        self.ST.ModifySymbol("log10", "type", ['float'])
+        self.ST.ModifySymbol("log10", "PARAM_NUMS", 1)
+
+        #fmod with  2 arguments
+        self.ST.InsertSymbol("fmod", -1)
+        self.ST.ModifySymbol("fmod", "check", "FUNC")
+        self.ST.ModifySymbol("fmod", "type", ['float'])
+        self.ST.ModifySymbol("fmod", "PARAM_NUMS", 2)
+
+        #exp with a single argument
+        self.ST.InsertSymbol("exp", -1)
+        self.ST.ModifySymbol("exp", "check", "FUNC")
+        self.ST.ModifySymbol("exp", "type", ['float'])
+        self.ST.ModifySymbol("exp", "PARAM_NUMS", 1)
+
+        # cos with a single argument
+        self.ST.InsertSymbol("cos", -1)
+        self.ST.ModifySymbol("cos", "check", "FUNC")
+        self.ST.ModifySymbol("cos", "type", ['float'])
+        self.ST.ModifySymbol("cos", "PARAM_NUMS", 1)
+
+        # sin with a single argument
+        self.ST.InsertSymbol("sin", -1)
+        self.ST.ModifySymbol("sin", "check", "FUNC")
+        self.ST.ModifySymbol("sin", "type", ['float'])
+        self.ST.ModifySymbol("sin", "PARAM_NUMS", 1)
+
+        # acos with a single argument
+        self.ST.InsertSymbol("acos", -1)
+        self.ST.ModifySymbol("acos", "check", "FUNC")
+        self.ST.ModifySymbol("acos", "type", ['float'])
+        self.ST.ModifySymbol("acos", "PARAM_NUMS", 1)
+
+        # asin with a single argument
+        self.ST.InsertSymbol("asin", -1)
+        self.ST.ModifySymbol("asin", "check", "FUNC")
+        self.ST.ModifySymbol("asin", "type", ['float'])
+        self.ST.ModifySymbol("asin", "PARAM_NUMS", 1)
+
+        # tan with a single argument
+        self.ST.InsertSymbol("tan", -1)
+        self.ST.ModifySymbol("tan", "check", "FUNC")
+        self.ST.ModifySymbol("tan", "type", ['float'])
+        self.ST.ModifySymbol("tan", "PARAM_NUMS", 1)
+        
+        # atan with a single argument
+        self.ST.InsertSymbol("atan", -1)
+        self.ST.ModifySymbol("atan", "check", "FUNC")
+        self.ST.ModifySymbol("atan", "type", ['float'])
+        self.ST.ModifySymbol("atan", "PARAM_NUMS", 1)
 
     def p_translation_unit(self, p):
         '''
