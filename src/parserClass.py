@@ -54,7 +54,7 @@ class Node:
         self.totype = None
         self.param_nums = None
         self.params = None
-
+        self.numdef = 0
         # This field is only for Marker nodes used in TAC
         self.quad = None
         self.dimensionList = None
@@ -4916,6 +4916,7 @@ class CParser():
             return
 
         p[0] = Node('CASE:',[p[3],p[6]])
+        p[0].numdef = p[6].numdef
         if self.ST.error:
             return
         p[0].breaklist = p[6].breaklist
@@ -4930,6 +4931,7 @@ class CParser():
             return
 
         p[0] = Node('DEFAULT:',[p[4]])
+        p[0].numdef = 1 + p[4].numdef
         if self.ST.error:
             return
         p[0].breaklist = p[4].breaklist
@@ -4975,6 +4977,7 @@ class CParser():
             p[0] = Node('SCOPE',[p[3]])
             if self.ST.error:
                 return
+            p[0].numdef = p[3].numdef
             p[0].truelist = p[3].truelist
             p[0].falselist = p[3].falselist
             p[0].breaklist = p[3].breaklist
@@ -5010,6 +5013,8 @@ class CParser():
             return
         if (len(p) == 2):
             p[0] = Node(';',[p[1]])
+            if p[1] is not None:
+                p[0].numdef = p[1].numdef
             if p[1] != None and not self.ST.error:
                 p[0].truelist = p[1].truelist
                 p[0].falselist = p[1].falselist
@@ -5021,6 +5026,8 @@ class CParser():
             p[0] = Node(';',[p[1],p[3]])
             if self.ST.error:
                 return
+            if p[1] is not None and p[3] is not None:
+                p[0].numdef = p[1].numdef + p[3].numdef
             self.TAC.backpatch(p[1].nextlist,p[2].quad)
             if(p[3] != None):
                 p[0].breaklist = p[1].breaklist + p[3].breaklist
@@ -5066,6 +5073,11 @@ class CParser():
             return
         if(len(p) == 7):
             p[0] = Node(str(p[1]).upper(),[p[3],p[6]])
+            if p[6].numdef > 1:
+                self.ST.error = 1
+                print(f'Cannot have multiple default labels in a single switch statement at line {p.lineno(1)}')
+
+
             if self.ST.error:
                 return
             p[0].nextlist = p[6].breaklist + p[6].nextlist
