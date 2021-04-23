@@ -107,7 +107,14 @@ class CodeGenerator:
             return False
 
         reg2_idx = None
-        self.move_var(src1,reg1_idx)
+        if src1[0] == "%" and len(src1) > 4:
+            offset = int(src1[4:])
+            self.emit_code("leal", f'{offset}(%ebp)', reg1_idx)
+        elif src1[0] == "(":
+            self.move_var(src1[1:-1],reg1_idx)
+            self.emit_code("movl", f'({self.register_mapping[reg1_idx]})', reg1_idx)
+        else:
+            self.move_var(src1,reg1_idx)
         instruction[2] = reg1_idx
         if(len(instruction) > 3):
             src2 = instruction[3]
@@ -117,7 +124,11 @@ class CodeGenerator:
                 reg2_idx = self.request_register(req_reg2)
             if not reg2_idx:
                 return False
-            self.move_var(src2,reg2_idx)
+            if src2[0] == "(":
+                self.move_var(src2[1:-1],reg2_idx)
+                self.emit_code("movl", f'({self.register_mapping[reg2_idx]})', reg2_idx)
+            else:
+                self.move_var(src2,reg2_idx)
             instruction[3] = reg2_idx
 
         return True  
@@ -130,6 +141,15 @@ class CodeGenerator:
             return label
         return self.label_list[int(line)]
     
+    def deref(self, dest):
+        if dest[0] != '(':
+            return dest
+        dest = dest[1:-1]
+        register = self.request_register()
+        self.emit_code("movl", dest, register)
+        register = self.register_mapping[register]
+        return f'({register})'
+
     def op_add(self,instruction):
         '''
         This function is currently only implemented
@@ -162,19 +182,22 @@ class CodeGenerator:
             self.emit_code("fsubs", instruction[3])
             self.emit_code("fstps", instruction[1])
 
-
     def op_eq(self,instruction):
         '''
         This function is currently only implemented
         for integer and float
         '''
-        if instruction[0][2:] =='int':
-            self.check_type(instruction)
-            self.emit_code("movl",instruction[2],instruction[1])
-            self.free_register(instruction[2])
-        elif instruction[0][2:] =='float':
+        if instruction[0][2:] =='float':
             self.emit_code("flds", instruction[2])
             self.emit_code("fstps", instruction[1])
+        else:
+            self.check_type(instruction)
+            instruction[1] = self.deref(instruction[1])
+            self.emit_code("movl",instruction[2],instruction[1])
+            self.free_register(instruction[2])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
 
     def op_div(self, instruction):
         '''
@@ -315,8 +338,12 @@ class CodeGenerator:
         # %eax
         if(len(instruction) == 2):
             register = self.request_register("%eax")
+            instruction[1] = self.deref(instruction[1])
             self.emit_code("movl",instruction[1],register)
             self.free_register(register,True)
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         self.op_sub(["-_int","%esp","%ebp","$20"])
         
         self.final_code.append("pop %edi")
@@ -329,7 +356,11 @@ class CodeGenerator:
         self.final_code.append("ret ")
 
     def op_param(self,instruction):
+        instruction[1] = self.deref(instruction[1])
         self.final_code.append("push " + instruction[1])
+        if instruction[1][0] == '(':
+            instruction[1] = instruction[1][1:-1]
+            self.free_register(instruction[1])
     
     def op_function_call(self,instruction):
         # Function call valid right now only for 4 bytes argument
@@ -340,7 +371,7 @@ class CodeGenerator:
             # instruction[1] = variable where return value is stored
             # instruction[2] = function name
             # instruction[3] = number of arguments
-            
+             
             # original
             # self.final_code.append("call " + instruction[2])
             # self.emit_code("movl", "%eax", instruction[1])
@@ -381,9 +412,7 @@ class CodeGenerator:
         elif instruction[0][7:] =='float':
             self.emit_code("flds", instruction[2])
             self.emit_code("fchs", '')
-            self.emit_code("fstps", instruction[1])
-
-        
+            self.emit_code("fstps", instruction[1]) 
         
     def op_not(self, instruction):
         '''
@@ -421,7 +450,11 @@ class CodeGenerator:
     def op_ifnz_goto(self, instruction):
         reg = self.request_register()
         src = instruction[3]
-        self.move_var(src,reg)
+        if src[0] == "(":
+            self.move_var(src[1:-1],reg)
+            self.emit_code("movl", f'({self.register_mapping[reg]})', reg)
+        else:
+            self.move_var(src,reg)
         self.emit_code("cmp", "$0", reg)
         label = self.create_label(instruction[2])
         self.emit_code("jne", label)
@@ -531,7 +564,7 @@ class CodeGenerator:
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
                 self.emit_code('movl', reg, instruction[1])
                 self.free_register(reg1)
-
+                
             self.free_register(reg)
 
 
@@ -576,6 +609,7 @@ class CodeGenerator:
         '''
         reg = self.request_register()
         instruction.insert(1, instruction[1])
+        instruction[1] = self.dereg(instruction[1])
         if instruction[0][0] == '*':
             self.op_mul(instruction)
         if instruction[0][0] == '/':
@@ -595,7 +629,11 @@ class CodeGenerator:
         if instruction[0][0] == '<':
             self.op_shl(instruction)
         if instruction[0][0] == '>':
-            self.op_shr(instruction)            
+            self.op_shr(instruction)
+        
+        if instruction[1][0] == '(':
+            instruction[1] = instruction[1][1:-1]
+            self.free_register(instruction[1])         
 
     def op_load_float(self, instruction):
         '''
@@ -612,7 +650,7 @@ class CodeGenerator:
         self.emit_code("subl", "$4", "%esp")
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
-
+    
     def op_math_func_push_float(self, instruction):
         '''
         This function handles pushing of float arguments for math funcs
@@ -621,7 +659,7 @@ class CodeGenerator:
         self.emit_code("subl", "$8", "%esp")
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
-    
+
     def op_math_func_push_int(self, instruction):
         '''
         This function handles pushing of int arguments for math funcs
@@ -647,6 +685,19 @@ class CodeGenerator:
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
 
+    def op_amp(self, instruction):
+        '''
+        This function handles the & operator
+        '''
+        reg = self.request_register()
+        instruction[2] = self.deref(instruction[2])
+        self.emit_code("leal", instruction[2] , reg)
+        self.emit_code("movl", reg, instruction[1])
+        self.free_register(reg)
+        if instruction[2][0] == '(':
+            instruction[2] = instruction[2][1:-1]
+            self.free_register(instruction[2])
+    
     def gen_code(self, instruction):
         if not instruction:
             return
@@ -664,8 +715,8 @@ class CodeGenerator:
             self.op_comparator(instruction)
         elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
             self.op_logical(instruction)
-        elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+":
-            if instruction[0][0:6] == "UNARY+":
+        elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
+            if instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
                 instruction[0] = "=" + instruction[0][6:]
             self.op_eq(instruction)
         elif(instruction[0][0] == "*"):
@@ -699,6 +750,8 @@ class CodeGenerator:
             self.op_not(instruction)
         elif instruction[0][0:6] == "UNARY!":
             self.op_logical_not(instruction)
+        elif instruction[0][0:6] == "UNARY&":
+            self.op_amp(instruction)
         elif instruction[0][0:5] == "PRE++":
             self.op_pre_inc(instruction)
         elif instruction[0][0:5] == "PRE--":

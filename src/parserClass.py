@@ -1258,25 +1258,25 @@ class CParser():
                     p[0].temp = found['temp']
 
                 if isFirstAccess:
-                    self.TAC.emit('=int', p[0].temp, p[3].temp , '') 
+                    self.TAC.emit('=_int', p[0].temp, p[3].temp , '') 
                 else:
                     curDimension = p[0].dimensionList[-1]
-                    self.TAC.emit('*int', p[0].temp, p[1].temp , f'${curDimension}')
-                    self.TAC.emit('+int', p[0].temp, p[0].temp, p[3].temp)
+                    self.TAC.emit('*_int', p[0].temp, p[1].temp , f'${curDimension}')
+                    self.TAC.emit('+_int', p[0].temp, p[0].temp, p[3].temp)
 
                 
                 p[0].dimensionList.pop()
 
                 if len(p[0].dimensionList) == 0:
                     if(p[0].type[0][-1] == '*'):
-                        self.TAC.emit('*int', p[0].temp, p[0].temp, '$8')
+                        self.TAC.emit('*_int', p[0].temp, p[0].temp, '$8')
                     else:
-                        self.TAC.emit('*int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
+                        self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
                     
                     var = p[1].temp.split('(')[0]
                     if var[0] != '-':
                         var = '+' + var
-                    self.TAC.emit('+int', p[0].temp, f'%ebp{var}', p[0].temp)
+                    self.TAC.emit('+_int', p[0].temp, f'%ebp{var}', p[0].temp)
                     p[0].temp = f'({p[0].temp})'
 
                     p[0].truelist.append(self.TAC.nextstat)
