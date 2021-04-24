@@ -1,7 +1,7 @@
 import copy
+import sys
+file = open(sys.argv[1], 'r')
 
-fileName = "TAC/test1.txt"
-file = open(fileName,"r")
 code = file.readlines()
 math_func_list = ['scanf', 'printf', 'sqrt', 'ceil', 'floor', 'pow', 'fabs', 'log', 'log10','fmod', 'exp', 'cos','sin' ,'acos', 'asin', 'tan', 'atan']
 class CodeGenerator:

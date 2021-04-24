@@ -64,8 +64,7 @@ class TAC():
 
 
     def print_code(self, filename):
-        # file = f"TAC/{filename}.txt"
-        file = "TAC/test1.txt"
+        file = f"TAC/{filename}.txt"
         outputFileTAC = open(file,"w")
         orig_stdout = sys.stdout
         sys.stdout = outputFileTAC

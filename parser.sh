@@ -83,9 +83,9 @@ do
     else
         echo "Success"
         dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
+        python src/codeGen.py TAC/$fileNameCore.txt > $fileNameCore.s 
+        gcc -m32 $fileNameCore.s -lm
     fi;
-    python src/codeGen.py > test1.s 
-    gcc -m32 test1.s -lm 
 
 
     echo "<----------------------------------------------------------------------->"

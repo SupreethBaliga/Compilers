@@ -4653,7 +4653,7 @@ class CParser():
                         | direct_declarator '[' IntegerConst ']'
                         | direct_declarator '(' markerFuncPush parameter_type_list ')'
         '''
-            # | direct_declarator '(' identifier_list ')'
+                        # | direct_declarator '(' identifier_list ')'
         if self.isError :
             return
         if (len(p) == 2):
@@ -4805,20 +4805,20 @@ class CParser():
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
         
-    def p_identifier_list(self, p):
-        '''
-        identifier_list : ID
-                        | identifier_list ',' ID
-        '''
-        if self.isError :
-            return
-        # AST Done
-        if (len(p) == 2):
-            p[0] = Node(str(p[1]['lexeme']))
-        else:
-            p3val = p[3]['lexeme']
-            p[3] = Node(str(p3val))
-            p[0] = Node(',',[p[1],p[3]])
+    # def p_identifier_list(self, p):
+    #     '''
+    #     identifier_list : ID
+    #                     | identifier_list ',' ID
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # AST Done
+    #     if (len(p) == 2):
+    #         p[0] = Node(str(p[1]['lexeme']))
+    #     else:
+    #         p3val = p[3]['lexeme']
+    #         p[3] = Node(str(p3val))
+    #         p[0] = Node(',',[p[1],p[3]])
 
     def p_type_name(self, p):
         '''
@@ -4904,15 +4904,14 @@ class CParser():
     def p_initializer(self, p):
         '''
         initializer : assignment_expression
-                    | '{' initializer_list '}'
-                    | '{' initializer_list ',' '}'
         '''
+                    # | '{' initializer_list '}'
         if self.isError :
             return
         # AST done
         if len(p) == 2:
             p[0] = p[1]
-        elif len(p) == 4 or len(p) == 5:
+        elif len(p) == 4:
             p[0] = Node('{}',[p[2]])
             p[0].type = ['init_list']
 
@@ -5100,9 +5099,9 @@ class CParser():
 
     def p_selection_statement(self, p):
         '''
-        selection_statement : IF '(' expression ')' globalmarker1 statement globalN1
-                            | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
-                            | SWITCH '(' expression ')' markerSwitch statement
+        selection_statement : IF '(' expression ')' globalmarker1 compound_statement globalN1
+                            | IF '(' expression ')' globalmarker1 compound_statement globalN1 ELSE globalmarker1 compound_statement
+                            | SWITCH '(' expression ')' markerSwitch compound_statement
         '''
         if self.isError :
             return
@@ -5218,10 +5217,10 @@ class CParser():
 
     def p_iteration_statement_1(self, p):
         '''
-        iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 statement
-                            | DO globalmarker1 statement WHILE '(' globalmarker1 expression ')' ';'
-                            | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 statement
-                            | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement
+        iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 compound_statement
+                            | DO globalmarker1 compound_statement WHILE '(' globalmarker1 expression ')' ';'
+                            | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 compound_statement
+                            | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 compound_statement
         '''
         # Grammar rules separated to differentiate between length 11 cases
         # Grammar Changes done for all 3
@@ -5291,8 +5290,8 @@ class CParser():
 
     def p_iteration_statement_2(self, p):
         '''
-        iteration_statement : FOR '(' markerForPush declaration globalmarker1 expression_statement ')' globalmarker1 statement markerForPop
-                            | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement markerForPop
+        iteration_statement : FOR '(' markerForPush declaration globalmarker1 expression_statement ')' globalmarker1 compound_statement markerForPop
+                            | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 compound_statement markerForPop
         '''
         # Grammar rule separated to differentiate between length 11 cases
         # Grammar Changes done 
