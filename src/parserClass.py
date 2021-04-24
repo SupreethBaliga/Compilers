@@ -1372,8 +1372,32 @@ class CParser():
                     return
                 
                 p[0].varname = p[2].varname
-                p[0].temp = p[2].temp
-                self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
+
+                p[0].temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p[0].temp, 0)
+                self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+                self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[0].type, p[0].temp)
+                if self.ST.isGlobal(p[0].temp):
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p[0].temp = found['temp']
+                self.TAC.emit('=_int', p[0].temp, p[2].temp, '')
+                if str(p[1]) == '++':
+                    self.TAC.emit('+_int', p[0].temp, p[0].temp, f'$1')
+                    self.TAC.emit('+_int', p[2].temp, p[2].temp, f'$1')
+                else:
+                    self.TAC.emit('-_int', p[0].temp, p[0].temp, f'$1')
+                    self.TAC.emit('-_int', p[2].temp, p[2].temp, f'$1')
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -3259,10 +3283,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
-                self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
-                self.TAC.emit('=_int', p[0].temp, '$0', '')
+                # self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
+                # self.TAC.emit('=_int', p[0].temp, '$0', '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                # self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
+
+                self.TAC.emit('=_int', p[0].temp, "$0", '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                self.TAC.emit('goto', self.TAC.nextstat + 5, '', '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[4].temp, '')
                 self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
-                self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
+                self.TAC.emit('=_int', p[0].temp, '$1', '')
 
     def p_logical_or_expression(self, p):
         '''
@@ -3308,12 +3339,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
-                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
-                self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
-                self.TAC.emit('=_int', p[0].temp, '$1', '')
-                self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
-                self.TAC.emit('ifnz goto', '' , p[4].temp, '')
-                self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
+                # self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
+                # self.TAC.emit('=_int', p[0].temp, '$1', '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                # self.TAC.emit('ifnz goto', '' , p[4].temp, '')
+                # self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
+
+                self.TAC.emit('=_int', p[0].temp, "$1", '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[4].temp, '')
+                self.TAC.emit('=_int', p[0].temp, '$0', '')
 
     def p_conditional_expression(self, p):
         '''
@@ -4916,18 +4952,18 @@ class CParser():
             p[0] = Node('{}',[p[2]])
             p[0].type = ['init_list']
 
-    def p_initializer_list(self, p):
-        '''
-        initializer_list : initializer
-                        | initializer_list ',' initializer
-        '''
-        if self.isError :
-            return
-        # AST done
-        if len(p) == 2:
-            p[0] = p[1]
-        else:
-            p[0] = Node(',',[p[1],p[3]])
+    # def p_initializer_list(self, p):
+    #     '''
+    #     initializer_list : initializer
+    #                     | initializer_list ',' initializer
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # AST done
+    #     if len(p) == 2:
+    #         p[0] = p[1]
+    #     else:
+    #         p[0] = Node(',',[p[1],p[3]])
 
     def p_statement(self, p):
         '''
