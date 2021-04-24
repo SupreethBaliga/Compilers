@@ -3,6 +3,7 @@ import ply.yacc as yacc
 import pygraphviz as pgv
 import sys
 import struct
+import json
 
 # Get the token map from lexer
 from lexerClass import CLexer
@@ -255,6 +256,22 @@ class CParser():
         found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
         if found: # Change this accordingly
 
+
+            # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
+
+            # if 'STRUCT' ==  entry['check']:
+                # print(json.dumps(self.Table[0], indent=2))
+
+                # print(json.dumps(self.ST.TT.Table, indent=2),)    #self.ST.TT.Table, '\n\n\n')
+                # print(p[1]['lexeme'], entry['type'][0].lower(),  entry['check'].lower(), p.lineno(1) )
+                # foundt = self.ST.TT.ReturnTypeTabEntry(entry['type'][0], entry['check'].lower()) #tmp, struct, p.lineno()
+                # print('hi2')
+                # print(foundt)
+
+
+                # print('\n\n\n')
+
+
             try :
                 entry['type']
             except:
@@ -418,6 +435,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
                 return
+
         else:
             p[0] = Node('error')
         # Three address code
@@ -791,11 +809,18 @@ class CParser():
 
                     if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
 
-                        self.ST.error = 1
-                        print(f'Nested structures/unions not allowed at line {p.lineno(2)}') 
+                        strtype = ''
+                        if 'struct' in  p[0].type[0]:
+                            strtype = 'struct'
+                        elif 'union' in p[0].type[0]:
+                            strtype = 'union'
 
-                        # Uncomment and COMPLETE (there is no 'entry' here) if multi-level struct to be implemented. (nested struct data should be inside symbol table)
-                        # found, entry = self.ST.ReturnSymTabEntry(p3val, p.lineno(3))
+                        typet = self.ST.TT.ReturnTypeTabEntry(p[0].type[1], strtype, p.lineno(3))
+                        p[0].vars = typet['vars']
+
+                        # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
+
+
                         # print(p3val, p.lineno(3))
                         # p[0].vars = entry['vars']
 
@@ -804,7 +829,7 @@ class CParser():
 
                     elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
                         self.ST.error = 1
-                        print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
+                        print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(2)}') 
 
 
                     # Useful if we implement nested struct/union
@@ -823,7 +848,17 @@ class CParser():
                 
                 if p[1].label == 'UNARY*':
                     p[0].temp = p[1].temp[1:-1]
+                    
+
+                    # # Uncomment if you need entry from type table instead. But note that type table does not have offset
+                    # strtype = ''
+                    # if 'struct' in  p[1].type[0]:
+                    #     strtype = 'struct'
+                    # elif 'union' in p[1].type[0]:
+                    #     strtype = 'union'
+                    # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
                     found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+
                     self.TAC.emit('+_int', p[0].temp, p[0].temp, f"${found['vars'][p[3].label]['offset']}")
                     p[0].temp = f'({p[0].temp})'
 
@@ -1024,11 +1059,18 @@ class CParser():
 
                     if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
 
-                        self.ST.error = 1
-                        print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
+                        # self.ST.error = 1
+                        # print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
 
-                        # Uncomment and COMPLETE (there is no 'entry' here) if multi-level struct to be implemented. (nested struct data should be inside symbol table)
-                        # p[0].vars = entry['vars']
+                        strtype = ''
+                        if 'struct' in  p[0].type[0]:
+                            strtype = 'struct'
+                        elif 'union' in p[0].type[0]:
+                            strtype = 'union'
+
+                        typet = self.ST.TT.ReturnTypeTabEntry(p[0].type[1], strtype, p.lineno(3))
+                        p[0].vars = typet['vars']
+
 
                     elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
                         self.ST.error = 1
@@ -1062,7 +1104,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
                 
+                
+                # # Uncomment if you need entry from type table instead. But note that type table does not have offset
+                # strtype = ''
+                # if 'struct' in  p[1].type[0]:
+                #     strtype = 'struct'
+                # elif 'union' in p[1].type[0]:
+                #     strtype = 'union'
+                # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
+
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
+
                 self.TAC.emit('+_int', p[0].temp, p[1].temp, f"${found['vars'][p[3].label]['offset']}")
                 # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
                 p[0].temp = f'({p[0].temp})'
@@ -4376,7 +4428,6 @@ class CParser():
                 if 'struct' in p[1].type or 'union' in p[1].type:
                     p[1].vars = entry['vars']
 
-                # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
                 elif 'struct *' in p[1].type or 'union *' in p[1].type:
                     p[1].vars = entry['vars']
                 # Remove when we started to give error at declaration of double/triple pointer to struct itself
