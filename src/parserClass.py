@@ -4905,8 +4905,6 @@ class CParser():
         '''
         initializer : assignment_expression
         '''
-                    # | '{' initializer_list '}'
-
         if self.isError :
             return
         # AST done
