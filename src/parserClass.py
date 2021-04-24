@@ -283,7 +283,128 @@ class CParser():
                 p[0] = Node(str(p[1]['lexeme']))
                 p[0].type = []
                 p[0].type.append('func')
-                p[0].ret_type = entry['type']
+                p[0].ret_type = []
+
+
+                type_list = entry['type']
+
+                isarr = 0
+                # print(entry)
+                # print(entry['type'])
+                for i in range(len(entry['type'])):
+                    if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
+                        isarr += 1
+
+
+                if 'unsigned' in type_list or 'signed' in type_list:
+                    if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                        type_list.append('int')
+
+                if 'long' in type_list and 'int' in type_list:
+                    p[0].ret_type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'int':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'long' in type_list and 'double' in type_list:
+                    p[0].ret_type.append('long double')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'double':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'long' in type_list:
+                    p[0].ret_type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long':
+                            p[0].ret_type.append(single_type)
+
+                elif 'int' in type_list:
+                    p[0].ret_type.append('int')
+                    for single_type in type_list:
+                        if single_type != 'int':
+                            p[0].ret_type.append(single_type)
+
+                elif 'short' in type_list:
+                    p[0].ret_type.append('short')
+                    for single_type in type_list:
+                        if single_type != 'short':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'char' in type_list:
+                    p[0].ret_type.append('char')
+                    for single_type in type_list:
+                        if single_type != 'char':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'bool' in type_list:
+                    p[0].ret_type.append('bool')
+                    for single_type in type_list:
+                        if single_type != 'bool':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'str' in type_list:
+                    p[0].ret_type.append('str')
+                    for single_type in type_list:
+                        if single_type != 'str':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'float' in type_list:
+                    p[0].ret_type.append('float')
+                    for single_type in type_list:
+                        if single_type != 'float':
+                            p[0].ret_type.append(single_type)
+
+                elif 'double' in type_list:
+                    p[0].ret_type.append('double')
+                    for single_type in type_list:
+                        if single_type != 'double':
+                            p[0].ret_type.append(single_type)
+
+                if isarr > 0:
+                    temp_type = []
+                    temp_type.append(p[0].ret_type[0])
+                    for i in range(isarr):
+                        temp_type[0] += ' *'
+
+                    for i in range(len(p[0].ret_type)):
+                        if i>isarr:
+                            temp_type.append(p[0].ret_type[i])
+                    p[0].ret_type = temp_type
+                    p[0].ret_type.append('arr')
+                    for i in range(len(type_list)):
+                        if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                            p[0].ret_type.append(type_list[len(type_list)-i-1])
+
+                if 'struct' in type_list:
+                    p[0].ret_type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[0].ret_type.append(single_type)     
+
+                if 'union' in type_list:
+                    p[0].ret_type.append('union')
+                    for single_type in type_list:
+                        if single_type != 'union':
+                                p[0].ret_type.append(single_type)     
+
+                if 'void' in type_list:
+                    p[0].ret_type.append('void')
+                    for single_type in type_list:
+                        if single_type != 'void':
+                                p[0].ret_type.append(single_type)     
+
+                if '*' in type_list:
+                    temp_type = []
+                    temp_type.append(p[0].ret_type[0])
+                    for i in range(1, len(p[0].ret_type)):
+                            if p[0].ret_type[i] == '*':
+                                temp_type[0] += ' *'
+                            else:
+                                temp_type.append(p[0].ret_type[i])
+                    p[0].ret_type = temp_type
+
+
+
                 p[0].param_nums = entry['PARAM_NUMS']
                 p[0].params = []
                 if '#scope' in entry.keys():
@@ -1432,11 +1553,12 @@ class CParser():
 
 
 
-
-
-
                     p[0].type = p[1].ret_type
-                
+
+
+
+
+
                 p[0].varname = p[1].varname
                 if self.ST.error:
                     return
@@ -1639,11 +1761,13 @@ class CParser():
                         | unary_operator cast_expression
                         | SIZEOF '(' type_name ')'
         '''
+        
         if self.isError :
             return
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
+
             if p[1] == '++' or p[1] == '--':
                 if p[2] is None or p[2].type is None or p[2].type == []:
                     self.ST.error = 1
@@ -1807,7 +1931,7 @@ class CParser():
                             return              
 
 
-                        elif len(p[2].type)>0 and p[2].type[0][-1] != '*':
+                        elif len(p[2].type)>0 and p[2].type[0][-1] != '*' and ('*' not in p[2].type):
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
@@ -1856,6 +1980,7 @@ class CParser():
 
 
                 if p[2].totype is not None and p[2].totype != p[2].type:
+
                     p2.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p2.temp, 0)
                     self.ST.ModifySymbol(p2.temp, "type", p[2].totype)
@@ -1877,6 +2002,7 @@ class CParser():
                     self.TAC.emit('cast',p2.temp,p[2].temp,' '.join(p[2].totype).replace(' ','_')) 
 
                 else:
+
                     try:
                         p2.temp = p[2].temp
                     except:
