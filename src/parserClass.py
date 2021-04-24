@@ -3821,7 +3821,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
-
+        
             #updating variable class
             if p[0].variables[var_name]:
                 isGlobal = self.ST.isGlobal(var_name)
@@ -3852,17 +3852,16 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(1))
                 elif 'struct' in p[0].variables[var_name] :
                     struct_size = 0
-                    found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
                     if found:
-                        for var in found['vars']:
-                            struct_size += found['vars'][var]['sizeAllocInBytes']
+                        struct_size = found['sizeAllocInBytes']
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                 elif 'union' in p[0].variables[var_name]:
                     struct_size = 0
-                    found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
                     if found:
+                        struct_size = found['sizeAllocInBytes']
                         for var in found['vars']:
-                            struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
                             found['vars'][var]['offset'] = 0
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                 elif 'long' in p[0].variables[var_name]:
@@ -3889,14 +3888,16 @@ class CParser():
 
                 if 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
                     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-                    struct_size = 0
-                    for var in found['vars']:
-                        if 'struct' in p[0].variables[var_name]:
-                            struct_size += found['vars'][var]['sizeAllocInBytes']
-                        else:
-                            struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
+                    struct_size = found['sizeAllocInBytes']
+                    # for var in found['vars']:
+                    #     if 'struct' in p[0].variables[var_name]:
+                    #         struct_size += found['vars'][var]['sizeAllocInBytes']
+                    #     else:
+                    #         struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
                     sizes[' '.join(reversed(found['type'][-2:]))] = struct_size
                     
+            
+            
             # updating sizes to be allocated based on the type
 
             # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
@@ -4327,6 +4328,20 @@ class CParser():
             else:
                 if ((p[5] is not None) and (p[5].node is not None)):
                     p[0].onlyAddEdge([p[5]])
+            
+            # print(p[1].type)
+            # print(p2val)
+            data_struct_found = self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
+            # print(data_struct_found)
+            struct_size = 0
+            for var in data_struct_found['vars']:
+                if 'sizeAllocInBytes' in data_struct_found['vars'][var].keys():
+                    if p[1].type[0] =='struct':
+                        struct_size += data_struct_found['vars'][var]['sizeAllocInBytes']
+                    else:
+                        struct_size = max(struct_size, data_struct_found['vars'][var]['sizeAllocInBytes'])
+            
+            self.ST.TT.ModifySymbol(p2val, "sizeAllocInBytes", struct_size,p.lineno(1), 1)
 
         elif (len(p) == 7): # not needed anymore
             p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
@@ -4503,9 +4518,9 @@ class CParser():
     def p_struct_declarator(self, p):
         '''
         struct_declarator : declarator
-                        | ':' constant_expression
-                        | declarator ':' constant_expression
         '''
+        # | ':' constant_expression
+        # | declarator ':' constant_expression
         if self.isError :
             return
         #AST done
@@ -4534,7 +4549,6 @@ class CParser():
         for var_name in p[0].variables.keys():
             self.ST.ModifySymbol(var_name, 'type', p[0].variables[var_name], p.lineno(0))
             self.ST.ModifySymbol(var_name, "varclass", "Local", p.lineno(0))
-
             # updating sizes
             if p[0].variables[var_name]:
                 #handling arrays
@@ -4547,6 +4561,34 @@ class CParser():
 
                 if '*' in p[0].variables[var_name]:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
+                elif 'struct' in p[0].variables[var_name] :
+                    struct_size = 0
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                    if found:
+                        if 'sizeAllocInBytes' in found.keys():
+                            struct_size = found['sizeAllocInBytes']
+                        else:
+                            struct_size = 0
+                            print('Cannot define object of the same struct within itself.')
+                            self.ST.error = 1
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    else:
+                        self.ST.error = 1
+                elif 'union' in p[0].variables[var_name]:
+                    struct_size = 0
+                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                    if found:
+                        if found and 'sizeAllocInBytes' in found.keys():
+                            struct_size = found['sizeAllocInBytes']
+                            for var in found['vars']:
+                                found['vars'][var]['offset'] = 0
+                        else:
+                            struct_size = 0
+                            print('Cannot define object of the same union within itself.')
+                            self.ST.error = 1
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    else:
+                        self.ST.error = 1
                 elif 'long' in p[0].variables[var_name]:
                     if 'int' in p[0].variables[var_name]:
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
@@ -4568,7 +4610,8 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["bool"], p.lineno(0))
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
-
+            else:
+                self.ST.ModifySymbol(var_name, "sizeAllocInBytes", 0, p.lineno(0))
     def p_declarator(self, p):
         '''
         declarator : direct_declarator
@@ -4609,8 +4652,8 @@ class CParser():
                         | direct_declarator '(' markerFuncPush ')'
                         | direct_declarator '[' IntegerConst ']'
                         | direct_declarator '(' markerFuncPush parameter_type_list ')'
-                        | direct_declarator '(' identifier_list ')'
         '''
+            # | direct_declarator '(' identifier_list ')'
         if self.isError :
             return
         if (len(p) == 2):
@@ -4809,7 +4852,6 @@ class CParser():
         if self.isError :
             return
         # AST done
-
         if len(p) == 2:
             p[0] = Node('AbsDecl',[p[1]])
             p[0].type = p[1].type
@@ -5545,8 +5587,7 @@ class CParser():
 
                 else:
                     p2.temp = p[2].temp
-                
-
+                 
                 self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
@@ -5887,18 +5928,18 @@ class CParser():
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
                     elif 'struct' in p[0].variables[var_name] :
                         struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
                         if found:
-                            for var in found['vars']:
-                                struct_size += found['vars'][var]['sizeAllocInBytes']
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                            struct_size = found['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     elif 'union' in p[0].variables[var_name]:
                         struct_size = 0
-                        found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(0))
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
                         if found:
+                            struct_size = found['sizeAllocInBytes']
                             for var in found['vars']:
-                                struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
+                                found['vars'][var]['offset'] = 0
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     elif 'long' in p[0].variables[var_name]:
                         if 'int' in p[0].variables[var_name]:
                             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))
