@@ -4836,6 +4836,7 @@ class CParser():
                         struct_size = max(struct_size, data_struct_found['vars'][var]['sizeAllocInBytes'])
             
             self.ST.TT.ModifySymbol(p2val, "sizeAllocInBytes", struct_size,p.lineno(1), 1)
+            sizes[f'{p[1].type[0]} {p2val}'] = struct_size
 
         elif (len(p) == 7): # not needed anymore
             p[0].node.attr['label'] = p[0].node.attr['label'] + '{}'
@@ -6204,6 +6205,12 @@ class CParser():
         self.ST.ModifySymbol("atan", "check", "FUNC")
         self.ST.ModifySymbol("atan", "type", ['float'])
         self.ST.ModifySymbol("atan", "PARAM_NUMS", 1)
+
+        # malloc with 1 arguments
+        self.ST.InsertSymbol("malloc", -1)
+        self.ST.ModifySymbol("malloc", "check", "FUNC")
+        self.ST.ModifySymbol("malloc", "type", ['void', '*'])
+        self.ST.ModifySymbol("malloc", "PARAM_NUMS", 1)
 
     def p_translation_unit(self, p):
         '''
