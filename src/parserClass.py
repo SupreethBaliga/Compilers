@@ -3,6 +3,7 @@ import ply.yacc as yacc
 import pygraphviz as pgv
 import sys
 import struct
+import json
 
 # Get the token map from lexer
 from lexerClass import CLexer
@@ -255,6 +256,22 @@ class CParser():
         found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
         if found: # Change this accordingly
 
+
+            # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
+
+            # if 'STRUCT' ==  entry['check']:
+                # print(json.dumps(self.Table[0], indent=2))
+
+                # print(json.dumps(self.ST.TT.Table, indent=2),)    #self.ST.TT.Table, '\n\n\n')
+                # print(p[1]['lexeme'], entry['type'][0].lower(),  entry['check'].lower(), p.lineno(1) )
+                # foundt = self.ST.TT.ReturnTypeTabEntry(entry['type'][0], entry['check'].lower()) #tmp, struct, p.lineno()
+                # print('hi2')
+                # print(foundt)
+
+
+                # print('\n\n\n')
+
+
             try :
                 entry['type']
             except:
@@ -266,7 +283,128 @@ class CParser():
                 p[0] = Node(str(p[1]['lexeme']))
                 p[0].type = []
                 p[0].type.append('func')
-                p[0].ret_type = entry['type']
+                p[0].ret_type = []
+
+
+                type_list = entry['type']
+
+                isarr = 0
+                # print(entry)
+                # print(entry['type'])
+                for i in range(len(entry['type'])):
+                    if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
+                        isarr += 1
+
+
+                if 'unsigned' in type_list or 'signed' in type_list:
+                    if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                        type_list.append('int')
+
+                if 'long' in type_list and 'int' in type_list:
+                    p[0].ret_type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'int':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'long' in type_list and 'double' in type_list:
+                    p[0].ret_type.append('long double')
+                    for single_type in type_list:
+                        if single_type != 'long' and single_type != 'double':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'long' in type_list:
+                    p[0].ret_type.append('long int')
+                    for single_type in type_list:
+                        if single_type != 'long':
+                            p[0].ret_type.append(single_type)
+
+                elif 'int' in type_list:
+                    p[0].ret_type.append('int')
+                    for single_type in type_list:
+                        if single_type != 'int':
+                            p[0].ret_type.append(single_type)
+
+                elif 'short' in type_list:
+                    p[0].ret_type.append('short')
+                    for single_type in type_list:
+                        if single_type != 'short':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'char' in type_list:
+                    p[0].ret_type.append('char')
+                    for single_type in type_list:
+                        if single_type != 'char':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'bool' in type_list:
+                    p[0].ret_type.append('bool')
+                    for single_type in type_list:
+                        if single_type != 'bool':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'str' in type_list:
+                    p[0].ret_type.append('str')
+                    for single_type in type_list:
+                        if single_type != 'str':
+                            p[0].ret_type.append(single_type)
+                
+                elif 'float' in type_list:
+                    p[0].ret_type.append('float')
+                    for single_type in type_list:
+                        if single_type != 'float':
+                            p[0].ret_type.append(single_type)
+
+                elif 'double' in type_list:
+                    p[0].ret_type.append('double')
+                    for single_type in type_list:
+                        if single_type != 'double':
+                            p[0].ret_type.append(single_type)
+
+                if isarr > 0:
+                    temp_type = []
+                    temp_type.append(p[0].ret_type[0])
+                    for i in range(isarr):
+                        temp_type[0] += ' *'
+
+                    for i in range(len(p[0].ret_type)):
+                        if i>isarr:
+                            temp_type.append(p[0].ret_type[i])
+                    p[0].ret_type = temp_type
+                    p[0].ret_type.append('arr')
+                    for i in range(len(type_list)):
+                        if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                            p[0].ret_type.append(type_list[len(type_list)-i-1])
+
+                if 'struct' in type_list:
+                    p[0].ret_type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[0].ret_type.append(single_type)     
+
+                if 'union' in type_list:
+                    p[0].ret_type.append('union')
+                    for single_type in type_list:
+                        if single_type != 'union':
+                                p[0].ret_type.append(single_type)     
+
+                if 'void' in type_list:
+                    p[0].ret_type.append('void')
+                    for single_type in type_list:
+                        if single_type != 'void':
+                                p[0].ret_type.append(single_type)     
+
+                if '*' in type_list:
+                    temp_type = []
+                    temp_type.append(p[0].ret_type[0])
+                    for i in range(1, len(p[0].ret_type)):
+                            if p[0].ret_type[i] == '*':
+                                temp_type[0] += ' *'
+                            else:
+                                temp_type.append(p[0].ret_type[i])
+                    p[0].ret_type = temp_type
+
+
+
                 p[0].param_nums = entry['PARAM_NUMS']
                 p[0].params = []
                 if '#scope' in entry.keys():
@@ -418,6 +556,7 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
                 return
+
         else:
             p[0] = Node('error')
         # Three address code
@@ -791,10 +930,19 @@ class CParser():
 
                     if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
 
-                        self.ST.error = 1
-                        print(f'Nested structures/unions not allowed at line {p.lineno(2)}') 
+                        strtype = ''
+                        if 'struct' in  p[0].type[0]:
+                            strtype = 'struct'
+                        elif 'union' in p[0].type[0]:
+                            strtype = 'union'
 
-                        # Uncomment and COMPLETE (there is no 'entry' here) if multi-level struct to be implemented. (nested struct data should be inside symbol table)
+                        typet = self.ST.TT.ReturnTypeTabEntry(p[0].type[1], strtype, p.lineno(3))
+                        p[0].vars = typet['vars']
+
+                        # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
+
+
+                        # print(p3val, p.lineno(3))
                         # p[0].vars = entry['vars']
 
 
@@ -802,7 +950,7 @@ class CParser():
 
                     elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
                         self.ST.error = 1
-                        print(f'Multilevel pointer for structures not allowed at line {p.lineno(1)}') 
+                        print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(2)}') 
 
 
                     # Useful if we implement nested struct/union
@@ -821,7 +969,17 @@ class CParser():
                 
                 if p[1].label == 'UNARY*':
                     p[0].temp = p[1].temp[1:-1]
+                    
+
+                    # # Uncomment if you need entry from type table instead. But note that type table does not have offset
+                    # strtype = ''
+                    # if 'struct' in  p[1].type[0]:
+                    #     strtype = 'struct'
+                    # elif 'union' in p[1].type[0]:
+                    #     strtype = 'union'
+                    # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
                     found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+
                     self.TAC.emit('+_int', p[0].temp, p[0].temp, f"${found['vars'][p[3].label]['offset']}")
                     p[0].temp = f'({p[0].temp})'
 
@@ -1022,11 +1180,18 @@ class CParser():
 
                     if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
 
-                        self.ST.error = 1
-                        print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
+                        # self.ST.error = 1
+                        # print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
 
-                        # Uncomment and COMPLETE (there is no 'entry' here) if multi-level struct to be implemented. (nested struct data should be inside symbol table)
-                        # p[0].vars = entry['vars']
+                        strtype = ''
+                        if 'struct' in  p[0].type[0]:
+                            strtype = 'struct'
+                        elif 'union' in p[0].type[0]:
+                            strtype = 'union'
+
+                        typet = self.ST.TT.ReturnTypeTabEntry(p[0].type[1], strtype, p.lineno(3))
+                        p[0].vars = typet['vars']
+
 
                     elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
                         self.ST.error = 1
@@ -1060,7 +1225,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
                 
+                
+                # # Uncomment if you need entry from type table instead. But note that type table does not have offset
+                # strtype = ''
+                # if 'struct' in  p[1].type[0]:
+                #     strtype = 'struct'
+                # elif 'union' in p[1].type[0]:
+                #     strtype = 'union'
+                # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
+
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
+
                 self.TAC.emit('+_int', p[0].temp, p[1].temp, f"${found['vars'][p[3].label]['offset']}")
                 # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
                 p[0].temp = f'({p[0].temp})'
@@ -1072,7 +1247,7 @@ class CParser():
         elif (len(p) == 5):
             if p[2] == '(':
                 p[0] = Node('FuncCall',[p[1],p[3]])
-                if p[1] is None or p[1].type is None or p[1].param_nums is None or p[3].param_nums is None or p[1].type == [] or p[1].params is None:
+                if p[1] is None or p[1].type is None or p[1].param_nums is None or p[3] is None or p[3].param_nums is None or p[1].type == [] or p[1].params is None:
                     self.ST.error = 1
                     print(f'Cannot perform function call at line {p.lineno(2)}')
                     return               
@@ -1088,56 +1263,302 @@ class CParser():
                     return
                 else:
                     ctr = -1
-                    for i in p[1].params:
+                    for param in p[1].params:
+
                         # call id, len(p[1].params)
                         ctr += 1
-                        # found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
-                        if p[3].params is None or p[3].params[0] is None:
+
+
+
+                        entry = param
+
+                        temp_type_list = []
+                        temp2_type_list = []
+                        nums_arr = []
+
+                        for single_type in entry['type']:
+                            if single_type != '*':
+                                temp_type_list.append(single_type)
+                                if single_type[0] != '[' or single_type[-1] != ']':
+                                    temp2_type_list.append(single_type)
+
+                            if single_type[0] == '[' and single_type[-1] == ']':
+                                if single_type[1:-1] == '':
+                                    self.ST.error = 1
+                                    print('Cannot have empty indices for array declarations at line', entry['line'])
+                                    return
+                                elif int(single_type[1:-1]) <= 0:
+                                    self.ST.error = 1
+                                    print('Cannot have non-positive integers for array declarations at line', entry['line'])
+                                    return
+
+                        if len(temp2_type_list) != len(set(temp2_type_list)):
                             self.ST.error = 1
-                            print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
+                            print('variables cannot have duplicating type of declarations at line', entry['line'])
                             return
 
-                        if p[3].params is None or p[3].params[0] is None:
+                        if 'long' in entry['type'] and 'short' in entry['type']:
                             self.ST.error = 1
-                            print(f'Invalid argument(s) to call function at line {p.lineno(2)}')
+                            print('variable cannot be both long and short at line', entry['line'])
                             return
-                        if '*' in i['type'] and p[3].params[ctr][0][-1] == '*':
-                            # Any pointer to pointer is allowed, only warning at max
-                            continue
+                        elif 'unsigned' in entry['type'] and 'signed' in entry['type']:
+                            self.ST.error = 1
+                            print('variable cannot be both signed and unsigned at line', entry['line'])
+                            return
+                        elif 'void' in entry['type'] and '*' not in entry['type']:
+                            self.ST.error = 1
+                            print('Cannot have a void type variable at line ', entry['line'])
+                            return
+                        else:
+                            data_type_count = 0
+                            if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type'] or 'char' in entry['type']:
+                                data_type_count += 1
+                            if 'bool' in  entry['type']:
+                                data_type_count += 1
+                            if 'float' in entry['type']:
+                                data_type_count += 1
+                            if 'double' in entry['type']:
+                                data_type_count += 1
+                            if 'void' in entry['type']:
+                                data_type_count += 1
+                            if 'struct' in entry['type']:
+                                data_type_count += 1
+                            if 'union' in entry['type']:
+                                data_type_count += 1
+                            if data_type_count > 1:    
+                                self.ST.error = 1
+                                print('Two or more conflicting data types specified for variable at line', entry['line']) 
+                                return
+                            if 'long' in entry['type']:
+                                if 'char' in entry['type'] or 'bool' in  entry['type'] or 'float' in  entry['type'] or 'void' in  entry['type']:
+                                    self.ST.error = 1
+                                    print('Two or more conflicting data types specified for variable at line', entry['line'])
+                                    return
+                            
 
-                        if '*' in i['type'] and p[3].params[ctr][0][-1] != '*' and p[3].params[ctr][0] not in iit:
+
+
+
+
+
+                        isarr = 0
+                        for i in range(len(entry['type'])):
+                            if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
+                                isarr += 1
+                        
+
+                        type_list = entry['type']
+
+
+
+                        if 'unsigned' in type_list or 'signed' in type_list:
+                            if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                                type_list.append('int')
+                        paramtype = []
+                        if 'long' in type_list and 'int' in type_list:
+                            paramtype.append('long int')
+                            for single_type in type_list:
+                                if single_type != 'long' and single_type != 'int':
+                                    paramtype.append(single_type)
+                        
+                        elif 'long' in type_list and 'double' in type_list:
+                            paramtype.append('long double')
+                            for single_type in type_list:
+                                if single_type != 'long' and single_type != 'double':
+                                    paramtype.append(single_type)
+                        
+                        elif 'long' in type_list:
+                            paramtype.append('long int')
+                            for single_type in type_list:
+                                if single_type != 'long':
+                                    paramtype.append(single_type)
+
+                        elif 'int' in type_list:
+                            paramtype.append('int')
+                            for single_type in type_list:
+                                if single_type != 'int':
+                                    paramtype.append(single_type)
+
+                        elif 'short' in type_list:
+                            paramtype.append('short')
+                            for single_type in type_list:
+                                if single_type != 'short':
+                                    paramtype.append(single_type)
+                        
+                        elif 'char' in type_list:
+                            paramtype.append('char')
+                            for single_type in type_list:
+                                if single_type != 'char':
+                                    paramtype.append(single_type)
+                        
+                        elif 'bool' in type_list:
+                            paramtype.append('bool')
+                            for single_type in type_list:
+                                if single_type != 'bool':
+                                    paramtype.append(single_type)
+                        
+                        elif 'str' in type_list:
+                            paramtype.append('str')
+                            for single_type in type_list:
+                                if single_type != 'str':
+                                    paramtype.append(single_type)
+                        
+                        elif 'float' in type_list:
+                            paramtype.append('float')
+                            for single_type in type_list:
+                                if single_type != 'float':
+                                    paramtype.append(single_type)
+
+                        elif 'double' in type_list:
+                            paramtype.append('double')
+                            for single_type in type_list:
+                                if single_type != 'double':
+                                    paramtype.append(single_type)
+
+                        if isarr > 0:
+                            temp_type = []
+                            temp_type.append(paramtype[0])
+                            for i in range(isarr):
+                                temp_type[0] += ' *'
+
+                            for i in range(len(paramtype)):
+                                if i>isarr:
+                                    temp_type.append(paramtype[i])
+                            paramtype = temp_type
+                            paramtype.append('arr')
+                            for i in range(len(type_list)):
+                                if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
+                                    paramtype.append(type_list[len(type_list)-i-1])
+
+                        if 'struct' in type_list:
+                            paramtype.append('struct')
+                            for single_type in type_list:
+                                if single_type != 'struct':
+                                        paramtype.append(single_type)     
+
+                        if 'union' in type_list:
+                            paramtype.append('union')
+                            for single_type in type_list:
+                                if single_type != 'union':
+                                        paramtype.append(single_type)     
+
+                        if 'void' in type_list:
+                            paramtype.append('void')
+                            for single_type in type_list:
+                                if single_type != 'void':
+                                        paramtype.append(single_type)     
+
+
+                        if '*' in type_list:
+                            temp_type = []
+                            temp_type.append(paramtype[0])
+                            for i in range(1, len(paramtype)):
+                                if paramtype[i] == '*':
+                                    temp_type[0] += ' *'
+                                else:
+                                    temp_type.append(paramtype[i])
+                            paramtype = temp_type
+
+
+
+
+
+                        # print(paramtype)
+
+
+
+                        if p[3] is None or paramtype is None or p[3].params[ctr] is None or paramtype == [] or p[3].params[ctr] == []:
                             self.ST.error = 1
-                            print(f'Cannot assign non-pointer/integral value to pointer at line {p.lineno(2)}')
+                            print(f'Cannot call function at line {p.lineno(2)}')
                             return
-                        if 'struct' in i['type']  and 'struct' not in p[3].params[ctr]:
+
+
+
+                        # Remove when we started to give error at declaration of double/triple pointer to struct itself
+                        if ('struct' in paramtype[0] or 'union' in paramtype[0]) and '* *' in paramtype[0] :
                             self.ST.error = 1
-                            print(f'Cannot assign non-struct value to struct object at line {p.lineno(2)}')
-                            print(i['type'], p[3].params[ctr])
+                            print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
                             return
-                        if 'struct' not in i['type']  and 'struct' in p[3].params[ctr]:
+
+                        if ('struct' in paramtype or 'union' in paramtype) and ('struct' not in p[3].params[ctr] and 'union' not in p[3].params[ctr]):
+                            self.ST.error = 1;
+                            print(f'Need struct/union value {paramtype} to call function but got non- struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
+                            return
+
+                        if ('struct' not in paramtype and 'union' not in paramtype) and ('struct'  in p[3].params[ctr] or 'union'  in p[3].params[ctr]):
+                            self.ST.error = 1;
+                            print(f'Need non-struct/union value {paramtype} to call function but got struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
+                            return
+
+                        if 'struct' in paramtype and 'struct' in p[3].params[ctr] and paramtype[1] != p[3].params[ctr][1]:
+                            self.ST.error = 1;
+                            print(f'Incompatible struct types to call function at line {p.lineno(2)}')
+                        
+                        
+                        if paramtype[0] in aat and p[3].params[ctr][0] not in aat and p[3].params[ctr][0][-1] != '*':
                             self.ST.error = 1
-                            print(f'Cannot assign struct value to non-struct  at line {p.lineno(2)}')
+                            print(f'Invalid parameter type to call function at line {p.lineno(2)}')
                             return
-                        if 'struct' in i['type']  and 'struct'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
+
+                        if paramtype[0] not in aat and paramtype[0][-1] != '*' and p[3].params[ctr][0] in aat:
                             self.ST.error = 1
-                            print(f'Cannot assign struct value between incompatible objects at line {p.lineno(2)}')
+                            print(f'Invalid parameter type to call function at line {p.lineno(2)}')
                             return
-                        if 'union' in i['type']  and 'union' not in p[3].params[ctr]:
+
+                        
+                        if paramtype[0][-1] == '*' and p[3].params[ctr][0] not in iit and p[3].params[ctr][0][-1] != '*' and 'str' not in p[3].params[ctr]:    
                             self.ST.error = 1
-                            print(f'Cannot assign non-union value to union object at line {p.lineno(2)}')
+                            print(f'Incompatible assignment between pointer and {p[3].params[ctr]} at line {p.lineno(2)}')
                             return
-                        if 'union' not in i['type']  and 'union' in p[3].params[ctr]:
-                            self.ST.error = 1
-                            print(f'Cannot assign union value to non-union  at line {p.lineno(2)}')
+
+                        if self.ST.error:
                             return
-                        if 'union' in i['type']  and 'union'  in p[3].params[ctr] and p[3].params[ctr][1] not in i['type']:
-                            self.ST.error = 1
-                            print(f'Cannot assign union value between incompatible objects at line {p.lineno(2)}')
-                            return
+
+                        
+                        isin = True
+                        p3totype = []
+                        for single_type in paramtype:
+                            if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                                p3totype.append(single_type)
+                                if single_type not in p[3].type:
+                                    isin = False
+
+                        if isin == False: 
+                            
+
+                            # Check and confirm
+                            p3temp = self.TAC.newtemp()
+                            self.ST.InsertSymbol(p3temp, 0)
+                            self.ST.ModifySymbol(p3temp, "type", p3totype)
+                            self.ST.ModifySymbol(p3temp, "check", "TEMP")
+                            self.updateSizeInSymTab(p3totype, p3temp)
+                            if self.ST.isGlobal(p3temp):
+                                self.ST.ModifySymbol(p3temp, "varclass", "Global")
+                            else :
+                                self.ST.ModifySymbol(p3temp, "varclass", "Local")
+                                found, entry = self.ST.ReturnSymTabEntry(p3temp)
+                                var_size = found['sizeAllocInBytes']
+                                if found["varclass"] == "Local":
+                                    self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                                    if found["offset"] >0:
+                                        self.ST.ModifySymbol(p3temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                    else:
+                                        self.ST.ModifySymbol(p3temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                p3temp = found['temp']  
+
+
+
+                            self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_')) 
+
+
 
 
                     p[0].type = p[1].ret_type
-                
+
+
+
+
+
                 p[0].varname = p[1].varname
                 if self.ST.error:
                     return
@@ -1340,11 +1761,13 @@ class CParser():
                         | unary_operator cast_expression
                         | SIZEOF '(' type_name ')'
         '''
+        
         if self.isError :
             return
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
+
             if p[1] == '++' or p[1] == '--':
                 if p[2] is None or p[2].type is None or p[2].type == []:
                     self.ST.error = 1
@@ -1372,8 +1795,31 @@ class CParser():
                     return
                 
                 p[0].varname = p[2].varname
-                p[0].temp = p[2].temp
-                self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
+                p[0].temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p[0].temp, 0)
+                self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+                self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[0].type, p[0].temp)
+                if self.ST.isGlobal(p[0].temp):
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p[0].temp = found['temp']
+                self.TAC.emit('=_int', p[0].temp, p[2].temp, '')
+                if str(p[1]) == '++':
+                    self.TAC.emit('+_int', p[0].temp, p[0].temp, f'$1')
+                    self.TAC.emit('+_int', p[2].temp, p[2].temp, f'$1')
+                else:
+                    self.TAC.emit('-_int', p[0].temp, p[0].temp, f'$1')
+                    self.TAC.emit('-_int', p[2].temp, p[2].temp, f'$1')
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -1485,7 +1931,7 @@ class CParser():
                             return              
 
 
-                        elif len(p[2].type)>0 and p[2].type[0][-1] != '*':
+                        elif len(p[2].type)>0 and p[2].type[0][-1] != '*' and ('*' not in p[2].type):
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
@@ -1520,7 +1966,7 @@ class CParser():
                             p[0].type[0] += ' *'
                             p[0].vars = p[2].vars
                         else:
-                            p[0].type = ['int', 'long', 'unsigned']
+                            p[0].type = ['int', 'unsigned']
                             # How to check if this is pointer
 
                     try:
@@ -1534,6 +1980,7 @@ class CParser():
 
 
                 if p[2].totype is not None and p[2].totype != p[2].type:
+
                     p2.temp = self.TAC.newtemp()
                     self.ST.InsertSymbol(p2.temp, 0)
                     self.ST.ModifySymbol(p2.temp, "type", p[2].totype)
@@ -1555,6 +2002,7 @@ class CParser():
                     self.TAC.emit('cast',p2.temp,p[2].temp,' '.join(p[2].totype).replace(' ','_')) 
 
                 else:
+
                     try:
                         p2.temp = p[2].temp
                     except:
@@ -2499,10 +2947,10 @@ class CParser():
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*') or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
-                p[1].totype = ['int', 'long', 'unsigned']
-                p1 = Node('to_int_long_unsigned',[p[1]] )      
-                p[3].totype = ['int', 'long', 'unsigned'] 
-                p3 = Node('to_int_long_unsigned',[p[3]] )
+                p[1].totype = ['int', 'unsigned']
+                p1 = Node('to_int_unsigned',[p[1]] )      
+                p[3].totype = ['int', 'unsigned'] 
+                p3 = Node('to_int_unsigned',[p[3]] )
                 p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = ['int']
                 p[0].label += '_*'
@@ -2678,10 +3126,10 @@ class CParser():
 
             elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*' ) or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
 
-                p[1].totype = ['int', 'long', 'unsigned']
-                p1 = Node('to_int_long_unsigned',[p[1]] )      
-                p[3].totype = ['int', 'long', 'unsigned'] 
-                p3 = Node('to_int_long_unsigned',[p[3]] )
+                p[1].totype = ['int', 'unsigned']
+                p1 = Node('to_int_unsigned',[p[1]] )      
+                p[3].totype = ['int', 'unsigned'] 
+                p3 = Node('to_int_unsigned',[p[3]] )
                 
                 p[0] = Node(str(p[2]),[p1,p3])
                 p[0].type = ['int']
@@ -3259,10 +3707,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
-                self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
-                self.TAC.emit('=_int', p[0].temp, '$0', '')
+                # self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
+                # self.TAC.emit('=_int', p[0].temp, '$0', '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                # self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
+
+                self.TAC.emit('=_int', p[0].temp, "$0", '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                self.TAC.emit('goto', self.TAC.nextstat + 5, '', '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[4].temp, '')
                 self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
-                self.TAC.emit('&&', p[0].temp, p[1].temp, p[4].temp)
+                self.TAC.emit('=_int', p[0].temp, '$1', '')
 
     def p_logical_or_expression(self, p):
         '''
@@ -3308,12 +3763,17 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p[0].temp = found['temp']
 
-                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
-                self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
-                self.TAC.emit('=_int', p[0].temp, '$1', '')
-                self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
-                self.TAC.emit('ifnz goto', '' , p[4].temp, '')
-                self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
+                # self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
+                # self.TAC.emit('=_int', p[0].temp, '$1', '')
+                # self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                # self.TAC.emit('ifnz goto', '' , p[4].temp, '')
+                # self.TAC.emit('||', p[0].temp, p[1].temp, p[4].temp)
+
+                self.TAC.emit('=_int', p[0].temp, "$1", '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[4].temp, '')
+                self.TAC.emit('=_int', p[0].temp, '$0', '')
 
     def p_conditional_expression(self, p):
         '''
@@ -3607,7 +4067,7 @@ class CParser():
                                 p3str += '_' + single_type
                             p3str = p3str.replace(' ','_')
                             if '*' == p[0].type[0][-1]:
-                                p3str = 'to_int_long_unsigned'
+                                p3str = 'to_int_unsigned'
                             p3 = Node(p3str, [p[3]]) 
                         else:
                             p3 = p[3]   
@@ -3619,7 +4079,7 @@ class CParser():
                         elif 'union' in p[0].type:
                             p[0].label += '_union'
                         elif p[0].type[0][-1] == '*':
-                            p[0].label += '_int_long_unsigned'
+                            p[0].label += '_int_unsigned'
                         else:
                             p[0].label += '_' + p[0].type[0]
                             if 'unsigned' in p[0].type:
@@ -4079,7 +4539,7 @@ class CParser():
                 if '*' in type_list:
                     temp_type = []
                     temp_type.append(p[1].type[0])
-                    for i in range(len(p[1].type)):
+                    for i in range(1, len(p[1].type)):
                         if p[1].type[i] == '*':
                             temp_type[0] += ' *'
                         else:
@@ -4094,7 +4554,6 @@ class CParser():
                 if 'struct' in p[1].type or 'union' in p[1].type:
                     p[1].vars = entry['vars']
 
-                # # Uncomment when struct pointers have variables stored too, right now entry['vars'] doesn't exist for structure object pointers
                 elif 'struct *' in p[1].type or 'union *' in p[1].type:
                     p[1].vars = entry['vars']
                 # Remove when we started to give error at declaration of double/triple pointer to struct itself
@@ -4152,7 +4611,7 @@ class CParser():
                         p3str += '_' + single_type
                     p3str = p3str.replace(' ','_')
                     if '*' == p[0].type[0][-1]:
-                        p3str = 'to_int_long_unsigned'
+                        p3str = 'to_int_unsigned'
                     p3 = Node(p3str, [p[3]]) 
                 else:
                     p3 = p[3]   
@@ -4165,7 +4624,7 @@ class CParser():
                 elif 'union' in p[0].type:
                     p[0].label += '_union'
                 elif len(p[0].type)>0 and p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
-                    p[0].label += '_int_long_unsigned'
+                    p[0].label += '_int_unsigned'
                 else:
                     p[0].label += '_' + p[0].type[0]
                     if 'unsigned' in p[0].type:
@@ -4189,7 +4648,7 @@ class CParser():
                 # elif 'union' in p[0].type:
                 #     p[0].label += '_union'
                 # elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
-                #     p[0].label += '_int_long_unsigned'
+                #     p[0].label += '_int__unsigned'
                 # elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
                 #     p[0].label += '_' + p[0].type[0] + '_arr'
                 # else:
@@ -4466,9 +4925,9 @@ class CParser():
                     print('Two or more conflicting data types specified for function at line', p.lineno(3))
 
         # Remove if support added for nested structures
-        if len(p[1].type)>0 and ('struct' in p[1].type[0] or 'union' in p[1].type[0]):
-            self.ST.error = 1
-            print(f'Cannot have nested structures/unions at line', p.lineno(3))
+        # if len(p[1].type)>0 and ('struct' in p[1].type[0] or 'union' in p[1].type[0]):
+        #     self.ST.error = 1
+        #     print(f'Cannot have nested structures/unions at line', p.lineno(3))
 
         # Here p[1] has the datatypes like int, float ......
 
@@ -4914,18 +5373,18 @@ class CParser():
             p[0] = Node('{}',[p[2]])
             p[0].type = ['init_list']
 
-    def p_initializer_list(self, p):
-        '''
-        initializer_list : initializer
-                        | initializer_list ',' initializer
-        '''
-        if self.isError :
-            return
-        # AST done
-        if len(p) == 2:
-            p[0] = p[1]
-        else:
-            p[0] = Node(',',[p[1],p[3]])
+    # def p_initializer_list(self, p):
+    #     '''
+    #     initializer_list : initializer
+    #                     | initializer_list ',' initializer
+    #     '''
+    #     if self.isError :
+    #         return
+    #     # AST done
+    #     if len(p) == 2:
+    #         p[0] = p[1]
+    #     else:
+    #         p[0] = Node(',',[p[1],p[3]])
 
     def p_statement(self, p):
         '''
@@ -5553,7 +6012,7 @@ class CParser():
                         p2str += '_' + single_type
                     p2str = p2str.replace(' ','_')
                     if '*' == p[0].type[0][-1]:
-                        p2str = 'to_int_long_unsigned'
+                        p2str = 'to_int_unsigned'
                     p2 = Node(p2str, [p[2]]) 
                 else:
                     p2 = p[2]   
@@ -5926,18 +6385,18 @@ class CParser():
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))
                     elif 'struct' in p[0].variables[var_name] :
                         struct_size = 0
-                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
                         if found:
                             struct_size = found['sizeAllocInBytes']
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
                     elif 'union' in p[0].variables[var_name]:
                         struct_size = 0
-                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(0))
                         if found:
                             struct_size = found['sizeAllocInBytes']
                             for var in found['vars']:
                                 found['vars'][var]['offset'] = 0
-                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(0))
                     elif 'long' in p[0].variables[var_name]:
                         if 'int' in p[0].variables[var_name]:
                             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(0))

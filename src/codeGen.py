@@ -383,17 +383,18 @@ class CodeGenerator:
                 self.emit_code('addl', '$16', '%esp')
             else:   
                 self.emit_code("movl", "%eax", instruction[1])
-                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+                # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
         else:
             # original
             # self.final_code.append("call " + instruction[1])
             # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
             
             self.emit_code("call ", instruction[1])
-            if instruction[1] not in math_func_list or instruction[1] == "printf" or instruction[1] == "scanf":
-                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
-            else:
-                self.emit_code('addl', '$16', '%esp')
+            # Due to the problems occurring in printf
+            # if instruction[1] not in math_func_list or instruction[1] == "printf" or instruction[1] == "scanf":
+            #     self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
+            # else:
+            #     self.emit_code('addl', '$16', '%esp')
             # isntruction[0] = call
             # instruction[1] = function name
             # instruction[2] = number of arguments
@@ -425,27 +426,27 @@ class CodeGenerator:
         self.emit_code("movl",instruction[2],instruction[1])
         self.free_register(instruction[2])
 
-    def op_pre_inc(self, instruction):
-        '''
-        This function is currently only implemented
-        for integer pre increment
-        Float not needed
-        '''
-        self.check_type(instruction)
-        self.emit_code("addl","$1",instruction[2])
-        self.emit_code("movl",instruction[2],instruction[1])
-        self.free_register(instruction[2])
+    # def op_pre_inc(self, instruction):
+    #     '''
+    #     This function is currently only implemented
+    #     for integer pre increment
+    #     Float not needed
+    #     '''
+    #     self.check_type(instruction)
+    #     self.emit_code("addl","$1",instruction[2])
+    #     self.emit_code("movl",instruction[2],instruction[1])
+    #     self.free_register(instruction[2])
 
-    def op_pre_dec(self, instruction):
-        '''
-        This function is currently only implemented
-        for integer pre increment
-        Float not needed
-        '''
-        self.check_type(instruction)
-        self.emit_code("subl","$1",instruction[2])
-        self.emit_code("movl",instruction[2],instruction[1])
-        self.free_register(instruction[2])
+    # def op_pre_dec(self, instruction):
+    #     '''
+    #     This function is currently only implemented
+    #     for integer pre increment
+    #     Float not needed
+    #     '''
+    #     self.check_type(instruction)
+    #     self.emit_code("subl","$1",instruction[2])
+    #     self.emit_code("movl",instruction[2],instruction[1])
+    #     self.free_register(instruction[2])
 
     def op_ifnz_goto(self, instruction):
         reg = self.request_register()
@@ -567,27 +568,26 @@ class CodeGenerator:
                 
             self.free_register(reg)
 
+    # def op_logical(self, instruction):
+    #     self.check_type(instruction, "%edx", "%ecx")
+    #     reg = self.request_register("%eax")
+    #     reg = self.register_mapping[reg]
+    #     self.emit_code("movl", "$0", reg)
+    #     self.emit_code("testl", instruction[2], instruction[2])
+    #     self.emit_code("setne", self.eight_bit_register["%eax"])
+    #     self.emit_code("movl", "$0", instruction[2])
+    #     self.emit_code("testl", instruction[3], instruction[3])
+    #     self.emit_code("setne", self.eight_bit_register["%edx"])
 
-    def op_logical(self, instruction):
-        self.check_type(instruction, "%edx", "%ecx")
-        reg = self.request_register("%eax")
-        reg = self.register_mapping[reg]
-        self.emit_code("movl", "$0", reg)
-        self.emit_code("testl", instruction[2], instruction[2])
-        self.emit_code("setne", self.eight_bit_register["%eax"])
-        self.emit_code("movl", "$0", instruction[2])
-        self.emit_code("testl", instruction[3], instruction[3])
-        self.emit_code("setne", self.eight_bit_register["%edx"])
+    #     if instruction[0][0:2] == "&&":
+    #         self.emit_code("andl",instruction[2],reg)
+    #     elif instruction[0][0:2] == "||":
+    #         self.emit_code("orl",instruction[2],reg)
+    #     self.emit_code("movl", reg, instruction[1])
 
-        if instruction[0][0:2] == "&&":
-            self.emit_code("andl",instruction[2],reg)
-        elif instruction[0][0:2] == "||":
-            self.emit_code("orl",instruction[2],reg)
-        self.emit_code("movl", reg, instruction[1])
-
-        self.free_register(instruction[2])
-        self.free_register(instruction[3])
-        self.free_register(reg)
+    #     self.free_register(instruction[2])
+    #     self.free_register(instruction[3])
+    #     self.free_register(reg)
 
     def op_logical_not(self, instruction):
         self.check_type(instruction)
@@ -718,8 +718,8 @@ class CodeGenerator:
             self.op_sub(instruction)
         elif instruction[0][0:2] == "<=" or instruction[0][0:2] == ">=" or instruction[0][0:2] == "==" or instruction[0][0:2] == "!=" or instruction[0][0] == "<" or instruction[0][0] == ">":
             self.op_comparator(instruction)
-        elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
-            self.op_logical(instruction)
+        # elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
+        #     self.op_logical(instruction)
         elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
             if instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
                 instruction[0] = "=" + instruction[0][6:]
@@ -757,10 +757,10 @@ class CodeGenerator:
             self.op_logical_not(instruction)
         elif instruction[0][0:6] == "UNARY&":
             self.op_amp(instruction)
-        elif instruction[0][0:5] == "PRE++":
-            self.op_pre_inc(instruction)
-        elif instruction[0][0:5] == "PRE--":
-            self.op_pre_dec(instruction)
+        # elif instruction[0][0:5] == "PRE++":
+        #     self.op_pre_inc(instruction)
+        # elif instruction[0][0:5] == "PRE--":
+        #     self.op_pre_dec(instruction)
         elif instruction[0][0:4] == "ifnz" and instruction[1][0:4] == "goto":
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
