@@ -2221,6 +2221,11 @@ class CParser():
                 type_list=[]
 
             p[0].type = []
+                                         
+            if 'unsigned' in type_list or 'signed' in type_list:
+                if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
+                    type_list.append('int')
+                                             
             if 'long' in type_list and 'int' in type_list:
                 p[0].type.append('long int')
                 for single_type in type_list:
