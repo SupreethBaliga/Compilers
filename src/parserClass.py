@@ -1522,7 +1522,7 @@ class CParser():
                         for single_type in paramtype:
                             if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
                                 p3totype.append(single_type)
-                                if single_type not in p[3].type:
+                                if single_type not in p[3].params[ctr]:
                                     isin = False
 
                         if isin == False: 
@@ -1550,7 +1550,15 @@ class CParser():
 
 
 
-                            self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_')) 
+                            
+                            fromtype = p[3].params[ctr]
+                            currtype = []
+                            for single_type in fromtype:
+                                if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                                    currtype.append(single_type)
+                            currtyprstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                            self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_') + currtyprstr) 
 
 
 
@@ -2019,7 +2027,19 @@ class CParser():
                             else:
                                 self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                         p2.temp = found['temp']  
-                    self.TAC.emit('cast',p2.temp,p[2].temp,' '.join(p[2].totype).replace(' ','_')) 
+                    
+
+
+
+                    fromtype = p[2].type
+                    currtype = []
+                    for single_type in fromtype:
+                        if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                            currtype.append(single_type)
+                    cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+
+                    self.TAC.emit('cast',p2.temp,p[2].temp,' '.join(p[2].totype).replace(' ','_') + cstr) 
 
                 else:
 
@@ -2382,7 +2402,16 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit('cast',p[0].temp, p[4].temp, ' '.join(p[4].totype).replace(' ','_'))
+
+            fromtype = p[4].type
+            currtype = []
+            for single_type in fromtype:
+                if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                    currtype.append(single_type)
+            cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+
+            self.TAC.emit('cast',p[0].temp, p[4].temp, ' '.join(p[4].totype).replace(' ','_') + cstr)
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2526,7 +2555,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_')) 
+            
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -2552,7 +2589,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -2692,7 +2737,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -2719,7 +2772,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -2842,7 +2903,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -2869,7 +2938,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3023,7 +3100,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -3050,7 +3135,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3203,7 +3296,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp,' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -3230,7 +3331,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3348,7 +3457,14 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -3375,7 +3491,14 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+                
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3496,7 +3619,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -3523,7 +3654,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+                
+                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3644,7 +3783,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p1.temp = found['temp']  
-                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_')) 
+
+                fromtype = p[1].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p1.temp,p[1].temp, ' '.join(p[1].totype).replace(' ','_') + cstr) 
 
             else:
                 p1.temp = p[1].temp
@@ -3671,7 +3818,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_')) 
+                
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -3915,7 +4070,7 @@ class CParser():
             elif len(p[4].type)>0 and p[4].type[0] in aat and len(p[7].type)>0 and p[7].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[4].type[0]), aat.index(p[7].type[0]))])
-                if 'unsigned' in p[4].type or 'unsigned' in p[7].type and p[0].type[0] in dit:
+                if 'unsigned' in p[4].type or 'unsigned' in p[7].type and p0type[0] in dit:
                     p0type.append('unsigned')
             else:
                 isError = True
@@ -3975,7 +4130,15 @@ class CParser():
                             else:
                                 self.ST.ModifySymbol(p4.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                         p4.temp = found['temp']  
-                    self.TAC.emit('cast',p4.temp,p[4].temp, ' '.join(p[4].totype).replace(' ','_')) 
+
+                    fromtype = p[4].type
+                    currtype = []
+                    for single_type in fromtype:
+                        if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                            currtype.append(single_type)
+                    cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                    self.TAC.emit('cast',p4.temp,p[4].temp, ' '.join(p[4].totype).replace(' ','_') + cstr) 
 
                 else:
                     p4.temp = p[4].temp
@@ -4007,7 +4170,15 @@ class CParser():
                             else:
                                 self.ST.ModifySymbol(p7.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                         p7.temp = found['temp']  
-                    self.TAC.emit('cast',p7.temp,p[7].temp, ' '.join(p[7].totype).replace(' ','_')) 
+
+                    fromtype = p[7].type
+                    currtype = []
+                    for single_type in fromtype:
+                        if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                            currtype.append(single_type)
+                    cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                    self.TAC.emit('cast',p7.temp,p[7].temp, ' '.join(p[7].totype).replace(' ','_') + cstr) 
 
                 else:
                     p7.temp = p[7].temp
@@ -4160,7 +4331,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_')) 
+                
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -4751,7 +4930,15 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                     p3.temp = found['temp']  
-                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_')) 
+
+                fromtype = p[3].type
+                currtype = []
+                for single_type in fromtype:
+                    if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                        currtype.append(single_type)
+                cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                self.TAC.emit('cast',p3.temp,p[3].temp, ' '.join(p[3].totype).replace(' ','_') + cstr) 
 
             else:
                 p3.temp = p[3].temp
@@ -6081,7 +6268,16 @@ class CParser():
                             else:
                                 self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                         p2.temp = found['temp']  
-                    self.TAC.emit('cast',p2.temp,p[2].temp, ' '.join(p[2].totype).replace(' ','_')) 
+
+
+                    fromtype = p[2].type
+                    currtype = []
+                    for single_type in fromtype:
+                        if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
+                            currtype.append(single_type)
+                    cstr =',' +  ' '.join(currtype).replace(' ','_')
+
+                    self.TAC.emit('cast',p2.temp,p[2].temp, ' '.join(p[2].totype).replace(' ','_') + cstr) 
 
                 else:
                     p2.temp = p[2].temp
