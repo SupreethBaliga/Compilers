@@ -175,7 +175,9 @@ sizes = {
     'long double':10,
     'PTR': 4,
     'bool': 1,
-    'void': 0
+    'void': 0,
+    'int unsigned': 4,
+    'unsigned int': 4
 }
 class CParser():
     tokens = CLexer.tokens
@@ -1851,7 +1853,25 @@ class CParser():
                     p[0].temp = found['temp']
 
                 p[0].varname = p[2].varname
-                self.TAC.emit('sizeof', p[0].temp, p[2].temp)
+                if p[2].type is None or p[2].type == []:
+                    self.ST.error = 1
+                    print(f'Invalid type given in line number {p.lineno(1)}')
+                    return
+                new_p2_list = []
+                for elem in p[2].type:
+                    new_p2_list = new_p2_list + elem.split(' ')
+                # print(new_p2_list)
+                req_type = 'void'
+                if '*' in new_p2_list:
+                    req_type = 'PTR'
+                else:
+                    req_type = ' '.join(new_p2_list)
+                if req_type in sizes:
+                    self.TAC.emit('=_int', p[0].temp, f'${sizes[req_type]}')
+                else:
+                    self.ST.error = 1
+                    print(f'Invalid type given in line number {p.lineno(1)}')
+                return
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2079,7 +2099,22 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
                 p[0].temp = found['temp']
 
-            self.TAC.emit('sizeof', p[0].temp, p[3].type)
+            if p[3].type is None or p[3].type == []:
+                self.ST.error = 1
+                print(f'Invalid type given in line number {p.lineno(1)}')
+                return
+            req_type = 'void'
+            if '*' in p[3].type:
+                req_type = 'PTR'
+            else:
+                req_type = ' '.join(p[3].type)
+
+            if req_type in sizes:
+                self.TAC.emit('=_int', p[0].temp, f'${sizes[req_type]}')
+            else:
+                self.ST.error = 1
+                print(f'Invalid type given in line number {p.lineno(1)}')
+                return
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
