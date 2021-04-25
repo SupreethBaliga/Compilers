@@ -150,6 +150,45 @@ class CodeGenerator:
         register = self.register_mapping[register]
         return f'({register})'
 
+    def float_deref(self, instruction, rege1 = None, rege2 = None, rege3 = None):
+        flag1, flag2, flag3 = 0, 0, 0
+        reg1 = instruction[1]
+        if instruction[1][0] == '(':
+            reg1 = self.request_register(rege1)
+            self.emit_code("movl", instruction[1][1:-1], reg1)
+            reg1 = self.register_mapping[reg1]
+            reg1 = f'({reg1})'
+            flag1 = 1
+        
+        reg2 = None
+        if len(instruction) > 2:
+            reg2 = instruction[2]
+        if len(instruction) > 2 and instruction[2][0] == '(':
+            reg2 = self.request_register(rege2)
+            self.emit_code("movl", instruction[2][1:-1], reg2)
+            reg2 = self.register_mapping[reg2]
+            reg2 = f'({reg2})'
+            flag2 = 1
+        
+        reg3 = None
+        if len(instruction) > 3:
+            reg3 = instruction[3]
+        if len(instruction) > 3 and instruction[3][0] == '(':
+            reg3 = self.request_register(rege3)
+            self.emit_code("movl", instruction[3][1:-1], reg3)
+            reg3 = self.register_mapping[reg3]
+            reg3 = f'({reg3})'
+            flag3 = 1
+
+        if flag1 == 1:
+            self.free_register(reg1[1:-1])
+        if flag2 == 1:
+            self.free_register(reg2[1:-1])
+        if flag3 == 1:
+            self.free_register(reg3[1:-1])
+
+        return reg1, reg2, reg3
+
     def op_add(self,instruction):
         '''
         This function is currently only implemented
@@ -162,9 +201,10 @@ class CodeGenerator:
             self.free_register(instruction[2])
             self.free_register(instruction[3])
         elif instruction[0][2:] =='float':
-            self.emit_code("flds", instruction[2])
-            self.emit_code("fadds", instruction[3])
-            self.emit_code("fstps", instruction[1])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fadds", reg3)
+            self.emit_code("fstps", reg1)
                 
     def op_sub(self,instruction):
         '''
@@ -178,9 +218,10 @@ class CodeGenerator:
             self.free_register(instruction[2])
             self.free_register(instruction[3])
         elif instruction[0][2:] =='float':
-            self.emit_code("flds", instruction[2])
-            self.emit_code("fsubs", instruction[3])
-            self.emit_code("fstps", instruction[1])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fsubs", reg3)
+            self.emit_code("fstps", reg1)
 
     def op_eq(self,instruction):
         '''
@@ -188,8 +229,10 @@ class CodeGenerator:
         for integer and float
         '''
         if instruction[0][2:] =='float':
-            self.emit_code("flds", instruction[2])
-            self.emit_code("fstps", instruction[1])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fstps", reg1)
+            
         else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
@@ -218,9 +261,10 @@ class CodeGenerator:
             self.free_register('%edx',True)
             self.free_register('%eax',True)
         elif instruction[0][2:] =='float':
-            self.emit_code("flds", instruction[2])
-            self.emit_code("fdivs", instruction[3])
-            self.emit_code("fstps", instruction[1])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fdivs", reg3)
+            self.emit_code("fstps", reg1)
 
     def op_mod(self, instruction):
         '''
@@ -254,9 +298,10 @@ class CodeGenerator:
             self.free_register(instruction[2])
             self.free_register(instruction[3])
         elif instruction[0][2:] =='float':
-            self.emit_code("flds", instruction[2])
-            self.emit_code("fmuls", instruction[3])
-            self.emit_code("fstps", instruction[1])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fmuls", reg3)
+            self.emit_code("fstps", reg1)
 
     def op_and(self,instruction):
         '''
@@ -411,9 +456,10 @@ class CodeGenerator:
             self.emit_code("movl",instruction[2],instruction[1])
             self.free_register(instruction[2])
         elif instruction[0][7:] =='float':
-            self.emit_code("flds", instruction[2])
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
             self.emit_code("fchs", '')
-            self.emit_code("fstps", instruction[1]) 
+            self.emit_code("fstps", reg1) 
         
     def op_not(self, instruction):
         '''
@@ -498,72 +544,74 @@ class CodeGenerator:
         elif instruction[0][3:]=='float' or instruction[0][2:]=='float':
             reg = self.request_register("%edx")
             reg = self.register_mapping[reg]
+
+            rege1, rege2, rege3 = self.float_deref(instruction, "%ebx", "%eax", "%esi")
         
             if instruction[0][0] == '<':
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('seta', self.eight_bit_register[reg])
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
             elif instruction[0][0] == '>':
-                self.emit_code('flds', instruction[3])
-                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', rege3)
+                self.emit_code('flds', rege2)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('seta', self.eight_bit_register[reg])
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
             elif instruction[0][0:2] == '<=':
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('setnb', self.eight_bit_register[reg])
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
             elif instruction[0][0:2] == '>=':
-                self.emit_code('flds', instruction[3])
-                self.emit_code('flds', instruction[2])
+                self.emit_code('flds', rege3)
+                self.emit_code('flds', rege2)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('setnb', self.eight_bit_register[reg])
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
             elif instruction[0][0:2] == '==':
                 reg1 = self.request_register("%ecx")
                 reg1 = self.register_mapping[reg1]
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('setnp', self.eight_bit_register[reg])
                 self.emit_code('movl', '$0', reg1)
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('cmovne', reg1, reg)
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
                 self.free_register(reg1)
             elif instruction[0][0:2] == '!=':
                 reg1 = self.request_register("%ecx")
                 reg1 = self.register_mapping[reg1]
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('setp', self.eight_bit_register[reg])
                 self.emit_code('movl', '$1', reg1)
-                self.emit_code('flds', instruction[2])
-                self.emit_code('flds', instruction[3])
+                self.emit_code('flds', rege2)
+                self.emit_code('flds', rege3)
                 self.emit_code('fucomip', '%st(1)', '%st')
                 self.emit_code('fstp', '%st(0)')
                 self.emit_code('cmovne', reg1, reg)
                 self.emit_code('movzbl', self.eight_bit_register[reg], reg)
-                self.emit_code('movl', reg, instruction[1])
+                self.emit_code('movl', reg, rege1)
                 self.free_register(reg1)
                 
             self.free_register(reg)
@@ -651,7 +699,8 @@ class CodeGenerator:
         '''
         This function handles pushing of float arguments for printf
         '''
-        self.emit_code("flds", instruction[1])
+        reg1, reg2, reg3 = self.float_deref(instruction)
+        self.emit_code("flds", reg1)
         self.emit_code("subl", "$4", "%esp")
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
@@ -660,7 +709,8 @@ class CodeGenerator:
         '''
         This function handles pushing of float arguments for math funcs
         '''
-        self.emit_code("flds", instruction[1])
+        reg1, reg2, reg3 = self.float_deref(instruction)
+        self.emit_code("flds", reg1)
         self.emit_code("subl", "$8", "%esp")
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
@@ -669,7 +719,8 @@ class CodeGenerator:
         '''
         This function handles pushing of int arguments for math funcs
         '''
-        self.emit_code("fildl", instruction[1])
+        reg1, reg2, reg3 = self.float_deref(instruction)
+        self.emit_code("fildl", reg1)
         self.emit_code("subl", "$8", "%esp")
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
@@ -678,7 +729,8 @@ class CodeGenerator:
         '''
         This function handles pushing of int arguments for pow func
         '''
-        self.emit_code("fildl", instruction[1])
+        reg1, reg2, reg3 = self.float_deref(instruction)
+        self.emit_code("fildl", reg1)
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
 
@@ -686,7 +738,8 @@ class CodeGenerator:
         '''
         This function handles pushing of int arguments for pow func
         '''
-        self.emit_code("flds", instruction[1])
+        reg1, reg2, reg3 = self.float_deref(instruction)
+        self.emit_code("flds", reg1)
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
 
