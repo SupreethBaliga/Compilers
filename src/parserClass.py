@@ -4946,7 +4946,7 @@ class CParser():
 
 
 
-            self.TAC.emit(p[0].label, p[0].temp, p[3].temp,'')
+            self.TAC.emit(p[0].label, p[0].temp, p3.temp,'')
 
 
 
