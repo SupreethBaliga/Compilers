@@ -756,6 +756,16 @@ class CodeGenerator:
             instruction[2] = instruction[2][1:-1]
             self.free_register(instruction[2])
     
+    def op_cast(self, instruction):
+        # type[0] is dest, types[1] is src, instruction[1] is dest, instruction[2] is src
+        types = instruction[3].split(',')
+        if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int'):
+            self.emit_code('fildl', instruction[2])
+            self.emit_code('fstps', instruction[1])
+        elif (types[0]=='int' or types[0]=='unsigned_int') and types[1]=='float':
+            self.emit_code('flds', instruction[2])
+            self.emit_code('fisttpl', instruction[1])
+    
     def gen_code(self, instruction):
         if not instruction:
             return
@@ -830,6 +840,8 @@ class CodeGenerator:
             self.op_pow_func_push_int(instruction)
         elif instruction[0] == 'pow_func_push_float':
             self.op_pow_func_push_float(instruction)
+        elif instruction[0] == 'cast':
+            self.op_cast(instruction)
         else:
             self.final_code.append(' '.join(instruction))
 
