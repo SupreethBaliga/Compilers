@@ -4,6 +4,7 @@ import pygraphviz as pgv
 import sys
 import struct
 import json
+import copy
 
 # Get the token map from lexer
 from lexerClass import CLexer
@@ -4352,15 +4353,67 @@ class CParser():
             else:
                 p3.temp = p[3].temp
 
-        
+            # print(p[0].label)
+            # print(p[1].type)
+            # print(p[1].temp)
+            # print(p[3].temp)
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
-            self.TAC.emit(p[0].label, p[1].temp, p3.temp, '')
+            self.recursive_equate(p[1].type, p[0].label, p[1].temp, p[3].temp)
 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
             self.TAC.emit('goto','','','')
+
+    def recursive_equate(self, p1type, p0label, p1temp, p3temp):
+        if p0label == '=_struct' or p0label == '=_union':
+                left_offset = int(p1temp.split('(')[0])
+                right_offset = int(p3temp.split('(')[0])
+                # print(left_offset, right_offset)
+                print(p1type, p0label, p1temp, p3temp)
+                data_struc = self.ST.TT.ReturnTypeTabEntry(p1type[1], p1type[0])
+                # print(data_struc)
+                currOffset = 0
+                # print(data_struc)
+                for var in data_struc['vars'].keys():
+                    # print(data_struc['vars'][var]['type'])
+                    if '*' in data_struc['vars'][var]['type']:
+                        self.TAC.emit('=_unsigned_int', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += 4
+                    elif 'struct' in data_struc['vars'][var]['type']:
+                        new_type = copy.deepcopy(data_struc['vars'][var]['type'])
+                        new_type.reverse()
+                        self.recursive_equate(new_type, '=_struct',f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += data_struc['vars'][var]['sizeAllocInBytes']
+                    elif 'union' in data_struc['vars'][var]['type']:
+                        new_type = copy.deepcopy(data_struc['vars'][var]['type'])
+                        new_type.reverse()
+                        self.recursive_equate(new_type, '=_union',f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += data_struc['vars'][var]['sizeAllocInBytes']
+                    elif 'int' in data_struc['vars'][var]['type']:
+                        self.TAC.emit('=_int', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += 4
+                    elif 'char' in data_struc['vars'][var]['type']:
+                        self.TAC.emit('=_char', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += 4
+                    elif 'float' in data_struc['vars'][var]['type']:
+                        self.TAC.emit('=_float', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += 4
+                    elif 'bool' in data_struc['vars'][var]['type']:
+                        self.TAC.emit('=_bool', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        if p0label=='=_struct': 
+                            currOffset += 4
+                    else:
+                        print('Unknown data type for debugging')  ######### Remove this at the end please
+        else:
+            self.TAC.emit(p0label, p1temp, p3temp, '')
             
     def p_assignment_operator(self, p):
         '''
