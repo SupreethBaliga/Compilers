@@ -205,17 +205,13 @@ class CParser():
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", sizes["PTR"])
         elif 'struct' in variables :
             struct_size = 0
-            found, entry = self.ST.ReturnSymTabEntry(var_name)
-            if found and hasattr(found, 'vars'):
-                for var in found['vars']:
-                    struct_size += found['vars'][var]['sizeAllocInBytes']
+            found = self.ST.TT.ReturnTypeTabEntry(variables[1], "struct")
+            struct_size = found["sizeAllocInBytes"]
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size)
         elif 'union' in variables:
             struct_size = 0
-            found, entry = self.ST.ReturnSymTabEntry(var_name)
-            if found and hasattr(found, 'vars'):
-                for var in found['vars']:
-                    struct_size = max(found['vars'][var]['sizeAllocInBytes'], struct_size)
+            found = self.ST.TT.ReturnTypeTabEntry(variables[1], "union")
+            struct_size = found["sizeAllocInBytes"]
             self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size)
         elif 'long' in variables:
             if 'int' in variables:
@@ -1625,7 +1621,19 @@ class CParser():
                         else:
                             self.TAC.emit('pow_func_push_int', arg[0])
                     else:  
-                        self.TAC.emit('param', arg[0],'','')
+                        new_p2_list = []
+                        for elem in arg[1]:
+                            new_p2_list = new_p2_list + elem.split(' ')
+                        req_type = 'void'
+                        if '*' in new_p2_list:
+                            req_type = 'PTR'
+                        else:
+                            req_type = ' '.join(new_p2_list)
+                        if req_type in sizes:
+                            self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
+                        else:
+                            self.ST.error = 1
+                            print(f'Invalid type given in line number {p.lineno(1)}')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 if found["type"] == ['void']:
@@ -6667,6 +6675,16 @@ class CParser():
         self.ST.offset = 8
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
+                if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
+                    found, entry = self.ST.ReturnSymTabEntry(var_name)
+                    if found:
+                        for var in found['vars']:
+                            found['vars'][var]['temp'] = f'{found["vars"][var]["offset"] + self.ST.offset}(%ebp)'
+                elif 'union' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
+                    found, entry = self.ST.ReturnSymTabEntry(var_name)
+                    if found:
+                        for var in found['vars']:
+                            found['vars'][var]['temp'] = f'{self.ST.offset}(%ebp)'
                 found, entry = self.ST.ReturnSymTabEntry(var_name)
                 self.ST.offset += self.ST.TopScope[var_name]["sizeAllocInBytes"]
                 self.ST.ModifySymbol(var_name, "offset", -(self.ST.offset), p.lineno(0))
