@@ -5382,6 +5382,12 @@ class CParser():
         elif (len(p) == 6):
                 # This has last rule
                 p[0] = Node('DDFuncCall',[p[1],p[4]])
+                for variable in p[4].variables:
+                    if variable == p[1].label:
+                        self.ST.error = 1
+                        self.isError = 1
+                        print(f'Cannot have function parameter with same name as function at line {p.lineno(2)}')
+                        return
                 p[0].variables = p[4].variables
                 p[0].variables[p[1].label] = ["Function Name"]
 
