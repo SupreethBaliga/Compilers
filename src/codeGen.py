@@ -381,14 +381,70 @@ class CodeGenerator:
         # Return can have atmost 2 arguments
         # first is retq and the second is return value that needs to go to 
         # %eax
-        if(len(instruction) == 2):
-            register = self.request_register("%eax")
-            instruction[1] = self.deref(instruction[1])
-            self.emit_code("movl",instruction[1],register)
-            self.free_register(register,True)
+        if(instruction[0] == "retq"):
+            if(len(instruction) == 2):
+                register = self.request_register("%eax")
+                instruction[1] = self.deref(instruction[1])
+                self.emit_code("movl",instruction[1],register)
+                self.free_register(register,True)
+                if instruction[1][0] == '(':
+                    instruction[1] = instruction[1][1:-1]
+                    self.free_register(instruction[1])
+        else:
+            # This is return for retq_struct
+            register = self.request_register()
+            register = self.register_mapping[register]
+            self.emit_code("movl","8(%ebp)",register)
+            # instruction[2] is the size
+            # currently works only in offset of 4
+            # instruction[1] has the return variable address
+            nVariables = int(instruction[2])
+            tempInstruction = copy.deepcopy(instruction[1])
+            reg1 = None
             if instruction[1][0] == '(':
-                instruction[1] = instruction[1][1:-1]
-                self.free_register(instruction[1])
+                reg1 = self.request_register()
+                self.emit_code("movl",instruction[1][1:-1],reg1)
+                # self.emit_code("movl",reg1,f'({reg1})')
+                val = 0
+                reg1 = self.register_mapping[reg1]
+                for i in range(int(nVariables/4)):
+                    address = val + i*4
+                    if address == 0:
+                        address = f'({reg1})'
+                    else:
+                        address = str(address) + f'({reg1})'
+                    src = address
+                    dst = "(" + str(register) + ")"
+                    if i != 0 :
+                        dst = str(int(i*4)) + dst
+                    reg2 = self.register_mapping[self.request_register()]
+                    self.move_var(src,reg2)
+                    self.move_var(reg2,dst)
+                    self.free_register(reg2)
+
+                self.free_register(reg1)
+            else:
+                val = int(tempInstruction.split('(')[0])
+                for i in range(int(nVariables/4)):
+                    address = val + i*4
+                    if address == 0:
+                        address = "(%ebp)"
+                    else:
+                        address = str(address) + "(%ebp)"
+                    src = address
+                    dst = "(" + str(register) + ")"
+                    if i != 0 :
+                        dst = str(int(i*4)) + dst
+                    reg2 = self.register_mapping[self.request_register()]
+                    self.move_var(src,reg2)
+                    self.move_var(reg2,dst)
+                    self.free_register(reg2)
+            
+            self.free_register(register)
+            
+
+
+
         self.op_sub(["-_int","%esp","%ebp","$20"])
         
         self.final_code.append("pop %edi")
@@ -401,12 +457,31 @@ class CodeGenerator:
         self.final_code.append("ret ")
 
     def op_param(self,instruction):
-        instruction[1] = self.deref(instruction[1])
-        self.final_code.append("push " + instruction[1])
-        if instruction[1][0] == '(':
-            instruction[1] = instruction[1][1:-1]
-            self.free_register(instruction[1])
-    
+        if(len(instruction) == 2):
+            instruction[1] = self.deref(instruction[1])
+            self.final_code.append("push " + instruction[1])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
+        else:
+            nVariables = int(instruction[2][1:])
+            tempInstruction = copy.deepcopy(instruction[1])
+            val = int(tempInstruction.split('(')[0])
+            tempCodeList = []
+            
+            for i in range(int(nVariables/4)):
+                address = val + i*4
+                if address == 0:
+                    address = "(%ebp)"
+                else:
+                    address = str(address) + "(%ebp)"
+                src = address
+                tempCodeList.append("push " + src)
+            # This is the case for struct
+            for line in reversed(tempCodeList):
+                self.final_code.append(line)
+
+
     def op_function_call(self,instruction):
         # Function call valid right now only for 4 bytes argument
         # Function calls can have 4 arguments
@@ -443,6 +518,21 @@ class CodeGenerator:
             # isntruction[0] = call
             # instruction[1] = function name
             # instruction[2] = number of arguments
+
+    def op_function_call_struct(self,instruction):
+        
+        # Function calls can have 4 arguments
+        # isntruction[0] = call
+        # instruction[1] = variable where return value is stored
+        # instruction[2] = function name
+        # instruction[3] = number of arguments
+        
+        register = self.request_register()
+        self.emit_code("leal", instruction[1],register)
+        self.emit_code("push ",register)
+        self.free_register(register)
+        self.emit_code("call ", instruction[2])
+        self.op_add(["+_int","%esp","%esp","$" + str((int(instruction[3]) + 1)*4)])
 
     def op_neg(self, instruction):
         '''
@@ -805,7 +895,9 @@ class CodeGenerator:
             self.op_param(instruction)
         elif(instruction[0] == "callq"):
             self.op_function_call(instruction)
-        elif(instruction[0] == "retq"):
+        elif(instruction[0] == "callq_struct"):
+            self.op_function_call_struct(instruction)
+        elif(instruction[0] == "retq" or instruction[0] == "retq_struct"):
             self.op_return(instruction)
             self.final_code.append('')
         elif(instruction[0][0] == "/"):

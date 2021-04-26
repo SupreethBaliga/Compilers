@@ -1030,7 +1030,9 @@ class CParser():
                     p[0].temp = found['temp']
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
-                if found["type"] == ['void']:
+                if (("struct" in found["type"]) and ("*" not in found["type"])):
+                    self.TAC.emit('callq_struct', p[0].temp, p[1].label , '0')
+                elif found["type"] == ['void']:
                     self.TAC.emit('callq', '', p[1].label, '0')
                 else:
                     self.TAC.emit('callq', p[0].temp, p[1].label , '0')
@@ -1637,7 +1639,9 @@ class CParser():
                             print(f'Invalid type given in line number {p.lineno(1)}')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
-                if found["type"] == ['void']:
+                if (("struct" in found["type"]) and ("*" not in found["type"])):
+                    self.TAC.emit('callq_struct', p[0].temp, p[1].label, len(p[3].arglist))
+                elif found["type"] == ['void']:
                     self.TAC.emit('callq', '', p[1].label, len(p[3].arglist))
                 else:
                     self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
@@ -4359,7 +4363,7 @@ class CParser():
             # print(p[3].temp)
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
-            self.recursive_equate(p[1].type, p[0].label, p[1].temp, p[3].temp)
+            self.recursive_equate(p[1].type, p[0].label, p[1].temp, p3.temp)
 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -4370,14 +4374,9 @@ class CParser():
         if p0label == '=_struct' or p0label == '=_union':
                 left_offset = int(p1temp.split('(')[0])
                 right_offset = int(p3temp.split('(')[0])
-                # print(left_offset, right_offset)
-                print(p1type, p0label, p1temp, p3temp)
                 data_struc = self.ST.TT.ReturnTypeTabEntry(p1type[1], p1type[0])
-                # print(data_struc)
                 currOffset = 0
-                # print(data_struc)
                 for var in data_struc['vars'].keys():
-                    # print(data_struc['vars'][var]['type'])
                     if '*' in data_struc['vars'][var]['type']:
                         self.TAC.emit('=_unsigned_int', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
                         if p0label=='=_struct': 
@@ -4626,15 +4625,15 @@ class CParser():
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(1))
 
-                if 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
-                    found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-                    struct_size = found['sizeAllocInBytes']
-                    # for var in found['vars']:
-                    #     if 'struct' in p[0].variables[var_name]:
-                    #         struct_size += found['vars'][var]['sizeAllocInBytes']
-                    #     else:
-                    #         struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
-                    sizes[' '.join(reversed(found['type'][-2:]))] = struct_size
+                # if 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
+                #     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
+                #     struct_size = found['sizeAllocInBytes']
+                #     # for var in found['vars']:
+                #     #     if 'struct' in p[0].variables[var_name]:
+                #     #         struct_size += found['vars'][var]['sizeAllocInBytes']
+                #     #     else:
+                #     #         struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
+                #     sizes[' '.join(reversed(found['type'][-2:]))] = struct_size
                     
             
             
@@ -5006,8 +5005,9 @@ class CParser():
 
 
 
+            self.recursive_equate(p[1].type, p[0].label, p[0].temp, p3.temp)
 
-            self.TAC.emit(p[0].label, p[0].temp, p3.temp,'')
+            # self.TAC.emit(p[0].label, p[0].temp, p3.temp,'')
 
 
 
@@ -6348,8 +6348,11 @@ class CParser():
 
                 else:
                     p2.temp = p[2].temp
-                 
-                self.TAC.emit('retq', p[2].temp,'','')
+                if (('struct' in p[0].type) and ('*' not in p[0].type)):
+                    temp_type = ' '.join(p[0].type)
+                    self.TAC.emit('retq_struct', p[2].temp,sizes[temp_type],'')
+                else:
+                    self.TAC.emit('retq', p[2].temp,'','')
 
     def p_start(self, p):
         '''
@@ -6731,7 +6734,10 @@ class CParser():
             else:
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[key][1:])
 
+        found,entry = self.ST.ReturnSymTabEntry(function_name)
         self.ST.offset = 8
+        if (("struct" in found["type"]) and ("*" not in found["type"])):
+            self.ST.offset = 12
         for var_name in p[0].variables.keys():
             if not var_name == function_name:
                 if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:

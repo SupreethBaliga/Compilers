@@ -89,7 +89,7 @@ class TAC():
                     deleted += 1
                 else:
                     self.final_code.append(code)
-            elif 'retq' in code[0].split() and 'retq' in temp_code[idx-1][0].split():
+            elif 'retq' in code[0].split() and ('retq' in temp_code[idx-1][0].split() or 'retq_struct' in temp_code[idx-1][0].split()):
                 deleted += 1
             else:
                 self.final_code.append(code)
