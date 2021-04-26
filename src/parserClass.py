@@ -4347,7 +4347,7 @@ class CParser():
         
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
-            self.TAC.emit(p[0].label, p[1].temp, p[3].temp, '')
+            self.TAC.emit(p[0].label, p[1].temp, p3.temp, '')
 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
