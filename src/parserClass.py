@@ -433,7 +433,7 @@ class CParser():
             
             p[0] = Node(str(p[1]['lexeme']))
             type_list = entry['type']
-            if type_list is None:
+            if type_list is None or set(type_list) == {'*'}:
                 type_list = []
             if entry['check'] == 'VAR' or entry['check'] == 'PARAM':
                 p[0].isvar = 1
@@ -820,7 +820,7 @@ class CParser():
                             isarr += 1
                     
                     type_list = old_type_list
-                    if type_list is None:
+                    if type_list is None or set(type_list) == {'*'}:
                         type_list = []
                     p[0].type = []
                     if 'long' in type_list and 'int' in type_list:
@@ -1069,7 +1069,7 @@ class CParser():
                     
                     type_list = old_type_list
 
-                    if type_list is None:
+                    if type_list is None or set(type_list) == {'*'}:
                         type_list = []
 
                     p[0].type = []
@@ -4718,6 +4718,9 @@ class CParser():
                 if entry['check'] == 'VAR':
                     p[1].isvar = 1
 
+                if set(type_list) == {'*'}:
+                    type_list = []
+                                                 
                 if 'unsigned' in type_list or 'signed' in type_list:
                     if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
                         type_list.append('int')
