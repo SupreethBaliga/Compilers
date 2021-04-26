@@ -196,10 +196,14 @@ class CodeGenerator:
         '''
         if instruction[0][2:] =='int':
             self.check_type(instruction)
+            instruction[1] = self.deref(instruction[1])
             self.emit_code("addl",instruction[2],instruction[3])
             self.emit_code("movl",instruction[3],instruction[1])
             self.free_register(instruction[2])
             self.free_register(instruction[3])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         elif instruction[0][2:] =='float':
             reg1, reg2, reg3 = self.float_deref(instruction)
             self.emit_code("flds", reg2)
@@ -213,10 +217,14 @@ class CodeGenerator:
         '''
         if instruction[0][2:] =='int':
             self.check_type(instruction)
+            instruction[1] = self.deref(instruction[1])
             self.emit_code("subl",instruction[3],instruction[2])
             self.emit_code("movl",instruction[2],instruction[1])
             self.free_register(instruction[2])
             self.free_register(instruction[3])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         elif instruction[0][2:] =='float':
             reg1, reg2, reg3 = self.float_deref(instruction)
             self.emit_code("flds", reg2)
@@ -459,7 +467,13 @@ class CodeGenerator:
     def op_param(self,instruction):
         if(len(instruction) == 2):
             instruction[1] = self.deref(instruction[1])
-            self.final_code.append("push " + instruction[1])
+            if instruction[1][0] != '(':
+                reg = self.request_register()
+                self.emit_code("movl", instruction[1], reg)
+                self.emit_code("push", reg)
+                self.free_register(reg)
+            else:
+                self.final_code.append("push " + instruction[1])
             if instruction[1][0] == '(':
                 instruction[1] = instruction[1][1:-1]
                 self.free_register(instruction[1])

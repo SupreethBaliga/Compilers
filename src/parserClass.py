@@ -3986,14 +3986,14 @@ class CParser():
     def p_conditional_expression(self, p):
         '''
         conditional_expression : logical_or_expression
-                            | logical_or_expression '?' globalmarker1 expression ':' globalmarker1 conditional_expression
+                            | logical_or_expression '?' globalmarker1 expression ':' globalmarker1 conditional_expression globalmarker1
         '''
         if self.isError :
             return
         # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-        elif (len(p) == 8):
+        elif (len(p) == 9):
             if p[1] is None or p[1].type is None or p[1].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform conditional operation at line {p.lineno(2)}')
@@ -4196,10 +4196,34 @@ class CParser():
                 else:
                     p7.temp = p[7].temp
 
-
-
+                p[0].temp = self.TAC.newtemp()
+                self.ST.InsertSymbol(p[0].temp, 0)
+                self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+                self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+                self.updateSizeInSymTab(p[0].type, p[0].temp)
+                if self.ST.isGlobal(p[0].temp):
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+                else :
+                    self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+                    var_size = found['sizeAllocInBytes']
+                    if found["varclass"] == "Local":
+                        self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                        if found["offset"] >0:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        else:
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    p[0].temp = found['temp']
+                
+                self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
+                self.TAC.emit('goto', self.TAC.nextstat + 4, '', '')
+                self.TAC.emit(f'=_{p[0].type[0]}', p[0].temp, p[4].temp)
+                self.TAC.emit('goto', self.TAC.nextstat + 3, '', '')
+                self.TAC.emit(f'=_{p[0].type[0]}', p[0].temp, p[7].temp)
                 self.TAC.backpatch(p[1].truelist,p[3].quad)
                 self.TAC.backpatch(p[1].falselist,p[6].quad)
+                self.TAC.backpatch(p[4].truelist,p[8].quad)
+                self.TAC.backpatch(p[4].falselist,p[8].quad)
                 p[0].truelist = p[4].truelist + p[7].truelist
                 p[0].falselist = p[4].falselist + p[7].falselist
                 return
