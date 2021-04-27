@@ -744,14 +744,10 @@ class CParser():
                 else:
                     if p[0].dimensionList is None:
                         p[0].dimensionList = []
-                    try:
+                    if len(p[0].dimensionList) == 0 and len(p[1].type[i][1:-1]) == 0:
+                        p[0].dimensionList.append(0)
+                    else:
                         p[0].dimensionList.append(int(p[1].type[i][1:-1]))
-                    except:
-                        # What to do??
-                        # Here the array sub is not an int constant but a variable
-                        p[0].dimensionList.append(p[1].type[i][1:-1])
-
-
             if p[0].dimensionList is not None:
                 p[0].dimensionList.reverse()        
                 p[0].dimensionList.append('isFirstAccess')
@@ -1726,23 +1722,6 @@ class CParser():
 
                 ############################ DOO TACCC
 
-                p[0].dimensionList = p[1].dimensionList
-                isFirstAccess = False
-
-
-                if p[0].dimensionList == None:
-                    # What to do??
-                    # Case of array sub for pointers
-                    # int *a;
-                    # a[0];
-
-                    pass
-
-
-                elif len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
-                    isFirstAccess = True
-                    p[0].dimensionList.pop()
-                
                 p[0].varname = p[1].varname
                 p[0].temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p[0].temp, 0)
@@ -1763,38 +1742,95 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
-                if isFirstAccess:
-                    self.TAC.emit('=_int', p[0].temp, p[3].temp , '') 
-                else:
-                    curDimension = p[0].dimensionList[-1]
-                    self.TAC.emit('*_int', p[0].temp, p[1].temp , f'${curDimension}')
-                    self.TAC.emit('+_int', p[0].temp, p[0].temp, p[3].temp)
 
-                
-                p[0].dimensionList.pop()
+                p[0].dimensionList = p[1].dimensionList
+                isFirstAccess = False
 
-                if len(p[0].dimensionList) == 0:
-                    if(p[0].type[0][-1] == '*'):
-                        self.TAC.emit('*_int', p[0].temp, p[0].temp, '$8')
+                if p[0].dimensionList is None:
+
+                    arrtemp = self.TAC.newtemp()
+                    self.ST.InsertSymbol(arrtemp, 0)
+                    self.ST.ModifySymbol(arrtemp, "type", ["int"])
+                    self.ST.ModifySymbol(arrtemp, "check", "TEMP")
+                    self.updateSizeInSymTab(["int"], arrtemp)
+                    if self.ST.isGlobal(arrtemp):
+                        self.ST.ModifySymbol(arrtemp, "varclass", "Global")
+                    else :
+                        self.ST.ModifySymbol(arrtemp, "varclass", "Local")
+                        found, entry = self.ST.ReturnSymTabEntry(arrtemp)
+                        var_size = found['sizeAllocInBytes']
+                        if found["varclass"] == "Local":
+                            # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                            if found["offset"] >0:
+                                self.ST.ModifySymbol(arrtemp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                            else:
+                                self.ST.ModifySymbol(arrtemp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                        arrtemp = found['temp']
+
+                    var = 0
+                    if '*' in (' '.join(p[0].type)).split(' '):
+                        var = 4
                     else:
-                        if 'struct' == p[0].type[0] or 'union' == p[0].type[0]:
-                            strtype =  p[0].type[0] + ' ' + p[0].type[1] 
-                            self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[ strtype ]}')
-                        else:
-                            self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
+                        var = sizes[' '.join(p[0].type)]
                     
+                    self.TAC.emit('*_int', arrtemp , p[3].temp , f'${var}') # TO BE CHANGED
+
+                    # else:
+                    #     self.ST.error = 1
+                    #     return 
+
                     var = p[1].addr.split('(')[0]
                     if var[0] != '-':
                         var = '+' + var
-                    self.TAC.emit('+_int', p[0].temp, f'%ebp{var}', p[0].temp)
+                    self.TAC.emit('+_int', p[0].temp , f'%ebp{var}', arrtemp)
+                    self.TAC.emit('UNARY*', p[0].temp , p[0].temp , '')
+
+
                     p[0].temp = f'({p[0].temp})'
 
                     p[0].truelist.append(self.TAC.nextstat)
                     p[0].falselist.append(self.TAC.nextstat+1)
                     self.TAC.emit('ifnz goto','',p[0].temp,'')
                     self.TAC.emit('goto','','','')
-                
-                p[0].addr = p[1].addr
+                    p[0].addr = p[1].addr
+
+                else:
+                    if len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
+                        isFirstAccess = True
+                        p[0].dimensionList.pop()
+
+                    if isFirstAccess:
+                        self.TAC.emit('=_int', p[0].temp, p[3].temp , '') 
+                    else:
+                        curDimension = p[0].dimensionList[-1]
+                        self.TAC.emit('*_int', p[0].temp, p[1].temp , f'${curDimension}')
+                        self.TAC.emit('+_int', p[0].temp, p[0].temp, p[3].temp)
+
+                    
+                    p[0].dimensionList.pop()
+
+                    if len(p[0].dimensionList) == 0:
+                        if(p[0].type[0][-1] == '*'):
+                            self.TAC.emit('*_int', p[0].temp, p[0].temp, '$8')
+                        else:
+                            if 'struct' == p[0].type[0] or 'union' == p[0].type[0]:
+                                strtype =  p[0].type[0] + ' ' + p[0].type[1] 
+                                self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[ strtype ]}')
+                            else:
+                                self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
+                        
+                        var = p[1].addr.split('(')[0]
+                        if var[0] != '-':
+                            var = '+' + var
+                        self.TAC.emit('+_int', p[0].temp, f'%ebp{var}', p[0].temp)
+                        p[0].temp = f'({p[0].temp})'
+
+                        p[0].truelist.append(self.TAC.nextstat)
+                        p[0].falselist.append(self.TAC.nextstat+1)
+                        self.TAC.emit('ifnz goto','',p[0].temp,'')
+                        self.TAC.emit('goto','','','')
+
+                        p[0].addr = p[1].addr              
 
     def p_argument_expression_list(self,p):
         '''
@@ -4299,7 +4335,7 @@ class CParser():
             p[0] = p[2]
             if ((p[1] is not None) and (p[1].node is not None)):
                 if ((p[3] is not None) and (p[3].node is not None)):
-
+                    
                     if p[1].type in [None, []] or p[3].type in [None, []]:
                         self.ST.error = 1;
                         print(f'Cannot perform assignment at line {p[2].lineno}')
