@@ -1711,7 +1711,10 @@ class CParser():
                                 p[0].type.append(single_type)
 
                         p[0].type[0] = p[0].type[0][0:-2]
+
                         if p[0].type[0][-1] != '*':
+                            p[0].isvar = 1
+                        elif 'arr' not in p[0].type:
                             p[0].isvar = 1
                         for i in range(len(p[1].type)):
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
