@@ -1730,7 +1730,6 @@ class CParser():
                 p[0].dimensionList = p[1].dimensionList
                 isFirstAccess = False
 
-                print(p[1].dimensionList)
 
                 if p[0].dimensionList == None:
                     # What to do??
