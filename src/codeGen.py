@@ -194,7 +194,12 @@ class CodeGenerator:
         This function is currently only implemented
         for integer addition and float
         '''
-        if instruction[0][2:] =='int':
+        if instruction[0][2:] =='float':
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fadds", reg3)
+            self.emit_code("fstps", reg1)
+        else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
             self.emit_code("addl",instruction[2],instruction[3])
@@ -204,18 +209,18 @@ class CodeGenerator:
             if instruction[1][0] == '(':
                 instruction[1] = instruction[1][1:-1]
                 self.free_register(instruction[1])
-        elif instruction[0][2:] =='float':
-            reg1, reg2, reg3 = self.float_deref(instruction)
-            self.emit_code("flds", reg2)
-            self.emit_code("fadds", reg3)
-            self.emit_code("fstps", reg1)
                 
     def op_sub(self,instruction):
         '''
         This function is currently only implemented
         for integer and float
         '''
-        if instruction[0][2:] =='int':
+        if instruction[0][2:] =='float':
+            reg1, reg2, reg3 = self.float_deref(instruction)
+            self.emit_code("flds", reg2)
+            self.emit_code("fsubs", reg3)
+            self.emit_code("fstps", reg1)
+        else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
             self.emit_code("subl",instruction[3],instruction[2])
@@ -225,12 +230,7 @@ class CodeGenerator:
             if instruction[1][0] == '(':
                 instruction[1] = instruction[1][1:-1]
                 self.free_register(instruction[1])
-        elif instruction[0][2:] =='float':
-            reg1, reg2, reg3 = self.float_deref(instruction)
-            self.emit_code("flds", reg2)
-            self.emit_code("fsubs", reg3)
-            self.emit_code("fstps", reg1)
-
+        
     def op_eq(self,instruction):
         '''
         This function is currently only implemented
@@ -240,7 +240,21 @@ class CodeGenerator:
             reg1, reg2, reg3 = self.float_deref(instruction)
             self.emit_code("flds", reg2)
             self.emit_code("fstps", reg1)
+        elif instruction[0][2:] == 'char':
+            self.check_type(instruction)
+            instruction[1] = self.deref(instruction[1])
+            regEax = self.request_register("%eax")
+
+            self.emit_code("movl", instruction[2], "%eax")
+            self.emit_code("movzbl", "%al", instruction[2])
+
+            self.emit_code("movl",instruction[2],instruction[1])
             
+            self.free_register(instruction[2])
+            self.free_register("%eax")
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
@@ -479,21 +493,24 @@ class CodeGenerator:
                 self.free_register(instruction[1])
         else:
             nVariables = int(instruction[2][1:])
-            tempInstruction = copy.deepcopy(instruction[1])
-            val = int(tempInstruction.split('(')[0])
-            tempCodeList = []
-            
-            for i in range(int(nVariables/4)):
-                address = val + i*4
-                if address == 0:
-                    address = "(%ebp)"
-                else:
-                    address = str(address) + "(%ebp)"
-                src = address
-                tempCodeList.append("push " + src)
-            # This is the case for struct
-            for line in reversed(tempCodeList):
-                self.final_code.append(line)
+            if nVariables == 1:
+                self.op_push_char(instruction)
+            else:
+                tempInstruction = copy.deepcopy(instruction[1])
+                val = int(tempInstruction.split('(')[0])
+                tempCodeList = []
+                
+                for i in range(int(nVariables/4)):
+                    address = val + i*4
+                    if address == 0:
+                        address = "(%ebp)"
+                    else:
+                        address = str(address) + "(%ebp)"
+                    src = address
+                    tempCodeList.append("push " + src)
+                # This is the case for struct
+                for line in reversed(tempCodeList):
+                    self.final_code.append(line)
 
 
     def op_function_call(self,instruction):
@@ -645,6 +662,32 @@ class CodeGenerator:
             self.free_register(instruction[2])
             self.free_register(instruction[3])
             self.free_register(reg)
+        elif instruction[0][2:6]=='char' or instruction[0][3:7]=='char':
+            self.check_type(instruction)
+            self.emit_code("cmpl",instruction[3],instruction[2])
+            
+            reg = self.request_register("%edx")
+            reg = self.register_mapping[reg]
+            eight_reg = self.eight_bit_register[reg]
+
+            if instruction[0][0:2] == "<=":
+                self.emit_code("setle", eight_reg)
+            elif instruction[0][0:2] == ">=":
+                self.emit_code("setge", eight_reg)
+            elif instruction[0][0:2] == "==":
+                self.emit_code("sete", eight_reg)
+            elif instruction[0][0:2] == "!=":
+                self.emit_code("setne", eight_reg)
+            elif instruction[0][0] == "<":
+                self.emit_code("setl", eight_reg)
+            elif instruction[0][0] == ">":
+                self.emit_code("setg", eight_reg)
+            self.emit_code("movzbl", eight_reg, instruction[3])
+            self.emit_code("movl", instruction[3], instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            self.free_register(reg)
+    
         elif instruction[0][3:]=='float' or instruction[0][2:]=='float':
             reg = self.request_register("%edx")
             reg = self.register_mapping[reg]
@@ -847,6 +890,17 @@ class CodeGenerator:
         self.emit_code("leal", "-8(%esp)", "%esp")
         self.emit_code("fstpl", "(%esp)")
 
+    def op_push_char(self, instruction):
+        reg1 = self.request_register("%eax")
+        reg2 = self.request_register()
+        # instruction[1] = self.deref(instruction[1])
+        self.emit_code("movl", instruction[1], reg1)
+        self.emit_code("movzbl", "%al", reg2)
+        self.emit_code("movl", reg2, instruction[1])
+        self.emit_code("push", instruction[1])
+        self.free_register(reg1)
+        self.free_register(reg2)
+
     def op_amp(self, instruction):
         '''
         This function handles the & operator
@@ -938,6 +992,8 @@ class CodeGenerator:
             self.op_load_float(instruction)
         elif instruction[0] == 'printf_push_float':
             self.op_printf_push_float(instruction)
+        elif instruction[0] == 'push_char':
+            self.op_push_char(instruction)
         elif instruction[0] == 'math_func_push_float':
             self.op_math_func_push_float(instruction)
         elif instruction[0] == 'math_func_push_int':

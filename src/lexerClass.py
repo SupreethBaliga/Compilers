@@ -165,8 +165,9 @@ class CLexer(object):
     # Character Constants 
     char_const = r'(\'(\\.|[^\\\'])+\')'
     @TOKEN(char_const)
-    def t_CHAR_CONSTANT(self, t):
+    def t_CHAR1_CONSTANT(self, t):
         t.type = 'CHAR_CONSTANT'
+        t.value = ord(t.value[1])
         return t
 
     # Floating constants

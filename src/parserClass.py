@@ -413,6 +413,8 @@ class CParser():
                             continue
                         if var == '#scope':
                             continue
+                        if var == '#scopeNum':
+                            continue
                         if entry['#scope'][0][var]['check'] == 'PARAM':
                             p[0].params.append(entry['#scope'][0][var])
 
@@ -633,9 +635,9 @@ class CParser():
             if found["varclass"] == "Local":
                 # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                 if found["offset"] >0:
-                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 else:
-                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
             p[0].temp = found['temp']
         self.TAC.emit('=_int', p[0].temp, f'${p[1]}')
 
@@ -664,9 +666,9 @@ class CParser():
             if found["varclass"] == "Local":
                 # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                 if found["offset"] >0:
-                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 else:
-                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
             p[0].temp = found['temp']
         self.TAC.emit('load_float', f'.LF{idx}', p[0].temp, '')
 
@@ -680,7 +682,25 @@ class CParser():
         p[0].type = ['char']
         if self.ST.error:
             return
-        p[0].temp = f'${p[1]}'
+        p[0].temp = self.TAC.newtemp()
+        self.ST.InsertSymbol(p[0].temp, 0)
+        self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
+        self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
+        self.updateSizeInSymTab(p[0].type, p[0].temp)
+        if self.ST.isGlobal(p[0].temp):
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Global")
+        else :
+            self.ST.ModifySymbol(p[0].temp, "varclass", "Local")
+            found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+            var_size = found['sizeAllocInBytes']
+            if found["varclass"] == "Local":
+                # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                if found["offset"] >0:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                else:
+                    self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+            p[0].temp = found['temp']
+        self.TAC.emit('=_char', p[0].temp, f'${p[1]}')
 
     def p_StringConst(self,p):
         '''
@@ -712,11 +732,11 @@ class CParser():
         # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
         if (len(p) == 2):
             p[0] = p[1]
-            p[0].addr = p[1].temp
 
             if p[1] == None or p[1].type == None:
                 self.ST.error = 1
                 return
+            p[0].addr = p[1].temp
 
             for i in range(len(p[1].type) - 1, 0, -1):
                 if p[1].type[i][0] != '[':
@@ -775,9 +795,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
                 self.TAC.emit('=_int', p[0].temp, p[1].temp, '')
                 if str(p[2]) == '++':
@@ -1024,9 +1044,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
@@ -1221,9 +1241,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
                 
                 
@@ -1542,9 +1562,9 @@ class CParser():
                                 if found["varclass"] == "Local":
                                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                                     if found["offset"] >0:
-                                        self.ST.ModifySymbol(p3temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                        self.ST.ModifySymbol(p3temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                                     else:
-                                        self.ST.ModifySymbol(p3temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                        self.ST.ModifySymbol(p3temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                                 p3temp = found['temp']  
 
 
@@ -1586,9 +1606,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 # print(p[3].arglist)
@@ -1607,6 +1627,8 @@ class CParser():
                         else:
                             if 'float' in arg[1]:
                                 self.TAC.emit('printf_push_float', arg[0])
+                            elif 'char' in arg[1]:
+                                self.TAC.emit('push_char', arg[0])
                             else:
                                 self.TAC.emit('param', arg[0],'','')
                     elif p[1].label in math_funcs_list_single:
@@ -1710,9 +1732,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 if isFirstAccess:
@@ -1832,9 +1854,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
                 self.TAC.emit('=_int', p[0].temp, p[2].temp, '')
                 if str(p[1]) == '++':
@@ -1868,9 +1890,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 p[0].varname = p[2].varname
@@ -2036,9 +2058,9 @@ class CParser():
                         if found["varclass"] == "Local":
                             # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                             if found["offset"] >0:
-                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                             else:
-                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         p2.temp = found['temp']  
                     
 
@@ -2084,9 +2106,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
                 self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
@@ -2127,9 +2149,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             if p[3].type is None or p[3].type == []:
@@ -2410,9 +2432,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
 
@@ -2564,9 +2586,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
             
                 fromtype = p[1].type
@@ -2598,9 +2620,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -2630,9 +2652,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -2746,9 +2768,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -2781,9 +2803,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -2813,9 +2835,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -2912,9 +2934,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -2947,9 +2969,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -2979,9 +3001,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3109,9 +3131,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -3144,9 +3166,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -3176,9 +3198,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3305,9 +3327,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -3340,9 +3362,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -3372,9 +3394,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3466,9 +3488,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -3500,9 +3522,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
                 
                 fromtype = p[3].type
@@ -3531,9 +3553,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3628,9 +3650,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -3663,9 +3685,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -3695,9 +3717,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3792,9 +3814,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p1.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p1.temp = found['temp']  
 
                 fromtype = p[1].type
@@ -3827,9 +3849,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
                 
                 fromtype = p[3].type
@@ -3859,9 +3881,9 @@ class CParser():
                 if found["varclass"] == "Local":
                     # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                     if found["offset"] >0:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     else:
-                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                        self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 p[0].temp = found['temp']
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
@@ -3910,9 +3932,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 # self.TAC.emit('ifnz goto', self.TAC.nextstat + 4, p[1].temp, '')
@@ -3966,9 +3988,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
                 # self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
@@ -4139,9 +4161,9 @@ class CParser():
                         if found["varclass"] == "Local":
                             # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                             if found["offset"] >0:
-                                self.ST.ModifySymbol(p4.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p4.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                             else:
-                                self.ST.ModifySymbol(p4.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p4.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         p4.temp = found['temp']  
 
                     fromtype = p[4].type
@@ -4179,9 +4201,9 @@ class CParser():
                         if found["varclass"] == "Local":
                             # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                             if found["offset"] >0:
-                                self.ST.ModifySymbol(p7.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p7.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                             else:
-                                self.ST.ModifySymbol(p7.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p7.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         p7.temp = found['temp']  
 
                     fromtype = p[7].type
@@ -4210,9 +4232,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
                 
                 self.TAC.emit('ifnz goto', self.TAC.nextstat + 3, p[1].temp, '')
@@ -4364,9 +4386,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
                 
                 fromtype = p[3].type
@@ -4985,16 +5007,15 @@ class CParser():
                     for var in found['vars']:
                         found['vars'][var]['temp'] = f'-{self.ST.offset}(%ebp)'
             found, entry = self.ST.ReturnSymTabEntry(var_name)
-            var_size = found['sizeAllocInBytes']
+            # var_size = ((found['sizeAllocInBytes'] + 3) // 4) * 4
             # print(found)
             if found["varclass"] == "Local":
                 # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                 if found["offset"] >0:
-                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                 else:
-                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
             p[0].temp = found['temp']
-
         if len(p) == 4:
             #tac
             if self.ST.error:
@@ -5015,9 +5036,9 @@ class CParser():
                     if found["varclass"] == "Local":
                         # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                         if found["offset"] >0:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         else:
-                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                            self.ST.ModifySymbol(p3.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p3.temp = found['temp']  
 
                 fromtype = p[3].type
@@ -5924,9 +5945,9 @@ class CParser():
                         if found["varclass"] == "Local":
                             # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                             if found["offset"] >0:
-                                self.ST.ModifySymbol(temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                             else:
-                                self.ST.ModifySymbol(temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         temp = found['temp']
 
                     self.TAC.emit('==', temp, p[3].temp, item[0])
@@ -6360,9 +6381,9 @@ class CParser():
                         if found["varclass"] == "Local":
                             # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                             if found["offset"] >0:
-                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                             else:
-                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                                self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                         p2.temp = found['temp']  
 
 
@@ -6780,12 +6801,13 @@ class CParser():
                         for var in found['vars']:
                             found['vars'][var]['temp'] = f'{self.ST.offset}(%ebp)'
                 found, entry = self.ST.ReturnSymTabEntry(var_name)
-                self.ST.offset += self.ST.TopScope[var_name]["sizeAllocInBytes"]
+                alignedSz = ((self.ST.TopScope[var_name]["sizeAllocInBytes"] + 3)//4)*4
+                self.ST.offset += alignedSz
                 self.ST.ModifySymbol(var_name, "offset", -(self.ST.offset), p.lineno(0))
                 if found["offset"] >0:
-                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(var_name, 'temp', f'-{found["offset"] + alignedSz}(%ebp)')
                 else:
-                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"]}(%ebp)')
+                    self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - alignedSz}(%ebp)')
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         self.ST.offset = 20
