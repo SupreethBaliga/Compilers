@@ -27,6 +27,7 @@ class SymbolTable() :
         self.offset = 0
         self.offsetList = []
         self.flag = 0 # 1 means adding struct name, 0 means going inside symbol table,2 means adding var inside struct
+        
     
     def InsertSymbol(self, iden, line_num, type_name=None):
         
@@ -74,10 +75,18 @@ class SymbolTable() :
         else:
             return found, []
 
-    def PushScope(self):
+    def PushScope(self, TAC):
 
         self.offsetList.append(self.offset)
-        # self.offset = 0
+
+        #new work
+        esp_ptr = -20
+        for item in self.TopScope.keys():
+            if item!= '#scope' and item!='#StructOrUnion' and item!='#scopeNum' and 'temp' in self.TopScope[item].keys() and self.TopScope[item]['temp'][0]=='-':
+                esp_ptr = min(esp_ptr, int(self.TopScope[item]['temp'].split('(')[0])) 
+        self.lastScopeTemp = esp_ptr
+        ####
+
         if len(self.Table) == 0:
             self.Table.append(self.TopScope)
             TopScopeName = list(self.TopScope.items())[-1][0]
@@ -99,16 +108,43 @@ class SymbolTable() :
             self.TopScope = parScopeList[-1]
         
         self.TT.PushScope()
+        ###
+        TAC.scope_counter += 1
+        TAC.scope_list[TAC.scope_counter] = []
+        self.TopScope['#scopeNum'] = TAC.scope_counter
+        TAC.scope_list[self.TopScope['#scopeNum']].append(TAC.nextstat)
+        TAC.emit('PushScope','','','')
+        ###
         self.error = self.error or self.TT.error
         return
 
-    def StoreResults(self):
+    def StoreResults(self, TAC):
         self.error = self.error or self.TT.error
         self.TopScope['#StructOrUnion'] = dict(self.TT.TopScope)
-        self.PushScope()
+        self.PushScope(TAC)
+        TAC.final_code.pop()
         return
 
-    def PopScope(self):
+    def PopScope(self, TAC):
+        # new work
+        # print(json.dumps(self.TopScope,indent=2))
+        esp_ptr = self.lastScopeTemp
+        if self.TopScope:
+            for item in self.TopScope.keys():
+                if item!= '#scope' and item!='#StructOrUnion' and item!='#scopeNum' and 'temp' in self.TopScope[item].keys():
+                    esp_ptr = min(esp_ptr, int(self.TopScope[item]['temp'].split('(')[0]))
+        ## patching lines for current scope
+            for lines in TAC.scope_list[self.TopScope['#scopeNum']]:
+                TAC.final_code[lines] = ['UNARY&', '%esp', f'{esp_ptr}(%ebp)', '']
+
+        ## adding dummy line for previous scope
+            if len(self.Table)>1:
+                prev_scope_num = self.Table[-1]['#scopeNum']
+                TAC.scope_list[prev_scope_num].append(TAC.nextstat)
+                TAC.emit('PushScope','','','')
+            # elif len(self.Table)==1:
+            #     print(json.dumps(self.Table,indent=2))
+        ##
         self.TopScope['#StructOrUnion'] = dict(self.TT.TopScope)
         self.TT.PopScope()
         self.error = self.error or self.TT.error
@@ -141,24 +177,29 @@ class SymbolTable() :
 
         print("Global Symbol Table : ")
         for key, value in self.Table[0].items():
-            if key != "#StructOrUnion":
+            if key != "#StructOrUnion" and key!= '#scopeNum':
                 print(key)
                 for key2, value2 in value.items():
                     if key2 != "#scope":
                         print(f'"{key2}" : {value2}')
                 print("\n")
+            else:
+                print(key, value)
 
         for key, value in self.Table[0].items():
-            if "#scope" in value:
-                tmp = copy.deepcopy(value["#scope"][0])
-                del tmp['#StructOrUnion']
-                if "#scope" in tmp:
-                    self.DelStructOrUnion(tmp)
-
-                if len(tmp) > 0:
-                    print(f'Local Symbol Table for "{key}":')
-                    print(json.dumps(tmp, indent=2))
-                    print("\n")
+            if key !='#scopeNum':
+                if "#scope" in value:
+                    tmp = copy.deepcopy(value["#scope"][0])
+                    del tmp['#StructOrUnion']
+                    if "#scope" in tmp:
+                        self.DelStructOrUnion(tmp)
+    
+                    if len(tmp) > 0:
+                        print(f'Local Symbol Table for "{key}":')
+                        print(json.dumps(tmp, indent=2))
+                        print("\n")
+            else:
+                print(key, value)
 
     def ModifySymbol(self, iden, field, val, statement_line=None):
         if self.flag == 0:

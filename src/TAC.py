@@ -13,6 +13,8 @@ class TAC():
         self.nextstat = 0
         self.strList = []
         self.floatvals = []
+        self.scope_list = {}
+        self.scope_counter = 0
 
     def newtemp(self):
         self.temp_count += 1
@@ -98,6 +100,13 @@ class TAC():
             code = self.final_code[idx]
             if 'goto' in code[0].split():
                 self.final_code[idx][1] = final_lines[self.final_code[idx][1]]
+        
+        for idx in range(0, len(self.final_code)):
+            code = self.final_code[idx]
+            if len(code[0])>0 and code[0][0] != '.' and code[0][-1] ==':':
+                prev_code = self.final_code[idx-1]
+                self.final_code[idx-1] = code
+                self.final_code[idx] = prev_code
         
     def findStringIdx(self, target_str):
         for i in range(0, len(self.strList)):
