@@ -738,7 +738,6 @@ class CParser():
                 return
             p[0].addr = p[1].temp
 
-            print(p[1].type)
             for i in range(len(p[1].type) - 1, 0, -1):
                 if p[1].type[i][0] != '[':
                     break
