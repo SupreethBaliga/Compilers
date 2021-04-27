@@ -131,7 +131,7 @@ class SymbolTable() :
         esp_ptr = self.lastScopeTemp
         if self.TopScope:
             for item in self.TopScope.keys():
-                if item!= '#scope' and item!='#StructOrUnion' and item!='#scopeNum' and 'temp' in self.TopScope[item].keys():
+                if item!= '#scope' and item!='#StructOrUnion' and item!='#scopeNum' and 'temp' in self.TopScope[item].keys() and self.TopScope[item]['temp'][0]=='-':
                     esp_ptr = min(esp_ptr, int(self.TopScope[item]['temp'].split('(')[0]))
         ## patching lines for current scope
             for lines in TAC.scope_list[self.TopScope['#scopeNum']]:
@@ -264,7 +264,7 @@ class SymbolTable() :
                 self.error = True
                 return None,None
         
-    def isGlobal(self, iden):
+    def isGlobal(self, iden =None):
         if len(self.Table) == 0:
             return True
         else:

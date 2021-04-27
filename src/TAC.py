@@ -15,6 +15,9 @@ class TAC():
         self.floatvals = []
         self.scope_list = {}
         self.scope_counter = 0
+        self.globalSymbols = []
+        self.staticSymbols = []
+        self.staticCounter = 1
 
     def newtemp(self):
         self.temp_count += 1
@@ -103,7 +106,7 @@ class TAC():
         
         for idx in range(0, len(self.final_code)):
             code = self.final_code[idx]
-            if len(code[0])>0 and code[0][0] != '.' and code[0][-1] ==':':
+            if len(code[0])>0 and code[0][0] != '.' and code[0][-1] ==':' and ('.' not in code[0]):
                 prev_code = self.final_code[idx-1]
                 self.final_code[idx-1] = code
                 self.final_code[idx] = prev_code
@@ -120,3 +123,17 @@ class TAC():
         for i in range(0,len(self.floatvals)):
             self.emit(f'.LF{i}:','','','')
             self.emit('.long', self.floatvals[i])
+        self.add_global()
+
+    def add_global(self):
+        for val in self.globalSymbols:
+            self.emit(f'.comm','',str(val[0]) + ','+str(val[1]),'')
+        self.emit('.data','','','')
+        for val in self.staticSymbols:
+            if val[1]:
+                # this is initialization
+                self.emit(f'{val[0]}:','','','')
+                self.emit(f'.long',val[1],)
+            else:
+                self.emit(f'.comm','',str(val[0]) + ','+str(val[2]),'')
+

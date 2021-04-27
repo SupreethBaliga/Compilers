@@ -4638,19 +4638,29 @@ class CParser():
                 if '*' in p[0].variables[var_name]:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(1))
                 elif 'struct' in p[0].variables[var_name] :
-                    struct_size = 0
-                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
-                    if found:
-                        struct_size = found['sizeAllocInBytes']
-                    self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    if not self.ST.isGlobal('dummy'):
+                        struct_size = 0
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                        if found:
+                            struct_size = found['sizeAllocInBytes']
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    else:
+                        print('Struct objects not allowed to be declared globally...')
+                        self.ST.error = 1
+                        return
                 elif 'union' in p[0].variables[var_name]:
-                    struct_size = 0
-                    found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
-                    if found:
-                        struct_size = found['sizeAllocInBytes']
-                        for var in found['vars']:
-                            found['vars'][var]['offset'] = 0
-                    self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    if not self.ST.isGlobal('dummy'):
+                        struct_size = 0
+                        found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
+                        if found:
+                            struct_size = found['sizeAllocInBytes']
+                            for var in found['vars']:
+                                found['vars'][var]['offset'] = 0
+                        self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
+                    else:
+                        print('Union objects not allowed to be declared globally...')
+                        self.ST.error = 1
+                        return
                 elif 'long' in p[0].variables[var_name]:
                     if 'int' in p[0].variables[var_name]:
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["long int"], p.lineno(1))
@@ -4998,12 +5008,12 @@ class CParser():
         for var_name in p[0].variables:
             if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
                 found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-                if found:
+                if found and found["varclass"] == "Local":
                     for var in found['vars']:
                        found['vars'][var]['temp'] = f'-{-found["vars"][var]["offset"] + self.ST.offset}(%ebp)'
             elif 'union' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
                 found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-                if found:
+                if found and found["varclass"] == "Local":
                     for var in found['vars']:
                         found['vars'][var]['temp'] = f'-{self.ST.offset}(%ebp)'
             found, entry = self.ST.ReturnSymTabEntry(var_name)
@@ -5053,13 +5063,35 @@ class CParser():
             else:
                 p3.temp = p[3].temp
 
-
-
-            self.recursive_equate(p[1].type, p[0].label, p[0].temp, p3.temp)
+            if self.ST.isGlobal():
+                print("Cannot initialize global variables while declaring")
+                self.ST.error = 1
+                return
+            elif "static" in p[1].type:
+                if p[3].label.isnumeric():
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
+                    found["temp"] = found["temp"] + "." + str(self.TAC.staticCounter)
+                    self.TAC.staticCounter += 1
+                    self.TAC.staticSymbols.append([found["temp"],p[3].label,None])
+                else:
+                    print("Wrong Initialization of Static Variable")
+                    self.ST.error = 1
+                    return  
+            else:
+                self.recursive_equate(p[1].type, p[0].label, p[0].temp, p3.temp)
 
             # self.TAC.emit(p[0].label, p[0].temp, p3.temp,'')
-
-
+        if (len(p) == 2):
+            # print(p[0].variables)
+            for var_name in p[0].variables:
+                if self.ST.isGlobal():
+                    found, entry = self.ST.ReturnSymTabEntry(var_name)
+                    self.TAC.globalSymbols.append([p[1].temp,found["sizeAllocInBytes"]])
+                elif "static" in p[0].variables[var_name]:
+                    found, entry = self.ST.ReturnSymTabEntry(var_name)
+                    found["temp"] = found["temp"] + "." + str(self.TAC.staticCounter)
+                    self.TAC.staticCounter += 1
+                    self.TAC.staticSymbols.append([found["temp"],None,found["sizeAllocInBytes"]]) 
 
         # <---------------XXXXX------------------>
 

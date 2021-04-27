@@ -957,7 +957,7 @@ class CodeGenerator:
             self.op_shl(instruction)
         elif(instruction[0][0:2] == ">>"):
             self.op_shr(instruction)
-        elif((len(instruction)  == 1) and (instruction[0][-1] == ':') and (instruction[0][0] != '.')):
+        elif((len(instruction)  == 1) and (instruction[0][-1] == ':') and (instruction[0][0] != '.') and ('.' not in instruction[0])):
             self.op_function_start(instruction)
         elif(instruction[0] == "param"):
             self.op_param(instruction)
