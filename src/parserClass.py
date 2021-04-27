@@ -504,6 +504,19 @@ class CParser():
                     if single_type != 'double':
                         p[0].type.append(single_type)
 
+
+            if 'struct' in type_list:
+                p[0].type.append('struct')
+                for single_type in type_list:
+                    if single_type != 'struct':
+                            p[0].type.append(single_type)     
+
+            if 'union' in type_list:
+                p[0].type.append('union')
+                for single_type in type_list:
+                    if single_type != 'union':
+                            p[0].type.append(single_type)     
+
             if isarr > 0:
                 temp_type = []
                 temp_type.append(p[0].type[0])
@@ -518,18 +531,6 @@ class CParser():
                 for i in range(len(type_list)):
                     if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                         p[0].type.append(type_list[len(type_list)-i-1])
-
-            if 'struct' in type_list:
-                p[0].type.append('struct')
-                for single_type in type_list:
-                    if single_type != 'struct':
-                            p[0].type.append(single_type)     
-
-            if 'union' in type_list:
-                p[0].type.append('union')
-                for single_type in type_list:
-                    if single_type != 'union':
-                            p[0].type.append(single_type)     
 
             if 'void' in type_list:
                 p[0].type.append('void')
@@ -557,7 +558,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
                 return
-
         else:
             p[0] = Node('error')
         # Three address code
@@ -738,13 +738,20 @@ class CParser():
                 return
             p[0].addr = p[1].temp
 
+            print(p[1].type)
             for i in range(len(p[1].type) - 1, 0, -1):
                 if p[1].type[i][0] != '[':
                     break
                 else:
                     if p[0].dimensionList is None:
                         p[0].dimensionList = []
-                    p[0].dimensionList.append(int(p[1].type[i][1:-1]))
+                    try:
+                        p[0].dimensionList.append(int(p[1].type[i][1:-1]))
+                    except:
+                        # What to do??
+                        # Here the array sub is not an int constant but a variable
+                        p[0].dimensionList.append(p[1].type[i][1:-1])
+
 
             if p[0].dimensionList is not None:
                 p[0].dimensionList.reverse()        
@@ -903,6 +910,19 @@ class CParser():
                             if single_type != 'double':
                                 p[0].type.append(single_type)
 
+                    if 'struct' in type_list:
+                        p[0].type.append('struct')
+                        for single_type in type_list:
+                            if single_type != 'struct':
+                                    p[0].type.append(single_type)     
+
+                    if 'union' in type_list:
+                        p[0].type.append('union')
+                        for single_type in type_list:
+                            if single_type != 'union':
+                                    p[0].type.append(single_type)    
+
+
                     if isarr > 0:
                         temp_type = []
                         temp_type.append(p[0].type[0])
@@ -917,17 +937,7 @@ class CParser():
                         for i in range(len(type_list)):
                             if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                 p[0].type.append(type_list[len(type_list)-i-1])
-                    if 'struct' in type_list:
-                        p[0].type.append('struct')
-                        for single_type in type_list:
-                            if single_type != 'struct':
-                                    p[0].type.append(single_type)     
 
-                    if 'union' in type_list:
-                        p[0].type.append('union')
-                        for single_type in type_list:
-                            if single_type != 'union':
-                                    p[0].type.append(single_type)    
 
                     if 'void' in type_list:
                         p[0].type.append('void')
@@ -979,7 +989,7 @@ class CParser():
                 #tac
                 if self.ST.error:
                     return
-                
+
                 p[0].varname = p[1].varname
                 found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0], p.lineno(1))
                 if found != False :
@@ -1155,6 +1165,17 @@ class CParser():
                             if single_type != 'double':
                                 p[0].type.append(single_type)
 
+                    if 'struct' in type_list:
+                        p[0].type.append('struct')
+                        for single_type in type_list:
+                            if single_type != 'struct':
+                                    p[0].type.append(single_type)     
+                    if 'union' in type_list:
+                        p[0].type.append('union')
+                        for single_type in type_list:
+                            if single_type != 'union':
+                                    p[0].type.append(single_type)  
+
                     if isarr > 0:
                         temp_type = []
                         temp_type.append(p[0].type[0])
@@ -1170,16 +1191,7 @@ class CParser():
                             if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                 p[0].type.append(type_list[len(type_list)-i-1])
 
-                    if 'struct' in type_list:
-                        p[0].type.append('struct')
-                        for single_type in type_list:
-                            if single_type != 'struct':
-                                    p[0].type.append(single_type)     
-                    if 'union' in type_list:
-                        p[0].type.append('union')
-                        for single_type in type_list:
-                            if single_type != 'union':
-                                    p[0].type.append(single_type)  
+
 
                     if 'void' in type_list:
                         p[0].type.append('void')
@@ -1436,6 +1448,18 @@ class CParser():
                                 if single_type != 'double':
                                     paramtype.append(single_type)
 
+                        if 'struct' in type_list:
+                            paramtype.append('struct')
+                            for single_type in type_list:
+                                if single_type != 'struct':
+                                        paramtype.append(single_type)     
+
+                        if 'union' in type_list:
+                            paramtype.append('union')
+                            for single_type in type_list:
+                                if single_type != 'union':
+                                        paramtype.append(single_type)     
+
                         if isarr > 0:
                             temp_type = []
                             temp_type.append(paramtype[0])
@@ -1451,17 +1475,7 @@ class CParser():
                                 if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                     paramtype.append(type_list[len(type_list)-i-1])
 
-                        if 'struct' in type_list:
-                            paramtype.append('struct')
-                            for single_type in type_list:
-                                if single_type != 'struct':
-                                        paramtype.append(single_type)     
 
-                        if 'union' in type_list:
-                            paramtype.append('union')
-                            for single_type in type_list:
-                                if single_type != 'union':
-                                        paramtype.append(single_type)     
 
                         if 'void' in type_list:
                             paramtype.append('void')
@@ -1708,12 +1722,26 @@ class CParser():
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
                                 p[0].type.append(p[1].type[i])
 
+                        if 'struct' in p[0].type or 'union' in p[0].type:
+                            p[0].vars = p[1].vars
+
                 ############################ DOO TACCC
 
                 p[0].dimensionList = p[1].dimensionList
                 isFirstAccess = False
 
-                if len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
+                print(p[1].dimensionList)
+
+                if p[0].dimensionList == None:
+                    # What to do??
+                    # Case of array sub for pointers
+                    # int *a;
+                    # a[0];
+
+                    pass
+
+
+                elif len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
                     isFirstAccess = True
                     p[0].dimensionList.pop()
                 
@@ -1751,7 +1779,11 @@ class CParser():
                     if(p[0].type[0][-1] == '*'):
                         self.TAC.emit('*_int', p[0].temp, p[0].temp, '$8')
                     else:
-                        self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
+                        if 'struct' == p[0].type[0] or 'union' == p[0].type[0]:
+                            strtype =  p[0].type[0] + ' ' + p[0].type[1] 
+                            self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[ strtype ]}')
+                        else:
+                            self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
                     
                     var = p[1].addr.split('(')[0]
                     if var[0] != '-':
@@ -2341,6 +2373,18 @@ class CParser():
                     if single_type != 'double':
                         p[0].type.append(single_type)
 
+            if 'struct' in type_list:
+                p[0].type.append('struct')
+                for single_type in type_list:
+                    if single_type != 'struct':
+                            p[0].type.append(single_type)     
+
+            if 'union' in type_list:
+                p[0].type.append('union')
+                for single_type in type_list:
+                    if single_type != 'union':
+                            p[0].type.append(single_type)     
+
             if isarr > 0:
                 temp_type = []
                 temp_type.append(p[0].type[0])
@@ -2356,17 +2400,7 @@ class CParser():
                     if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                         p[0].type.append(type_list[len(type_list)-i-1])
 
-            if 'struct' in type_list:
-                p[0].type.append('struct')
-                for single_type in type_list:
-                    if single_type != 'struct':
-                            p[0].type.append(single_type)     
 
-            if 'union' in type_list:
-                p[0].type.append('union')
-                for single_type in type_list:
-                    if single_type != 'union':
-                            p[0].type.append(single_type)     
 
             if 'void' in type_list:
                 p[0].type.append('void')
@@ -4586,7 +4620,7 @@ class CParser():
         elif (len(p) == 4):
             p[0] = Node('=')
             p[0].variables = p[1].variables
-        
+            
         # Code to add types to variable
         p[0].extraValues = p[-1].extraValues
         for val in p[0].extraValues:
@@ -4596,6 +4630,7 @@ class CParser():
         #     print("The key is: " + key)
         #     print('  ', p[0].variables[key]) 
         for var_name in p[0].variables:
+    
             #Updating type
             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
                 found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
@@ -4840,6 +4875,18 @@ class CParser():
                         if single_type != 'double':
                             p[1].type.append(single_type)
 
+                if 'struct' in type_list:
+                    p[1].type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[1].type.append(single_type)     
+
+                if 'union' in type_list:
+                    p[1].type.append('union')
+                    for single_type in type_list:
+                        if single_type != 'union':
+                                p[1].type.append(single_type)     
+
                 if isarr > 0:
                     temp_type = []
                     temp_type.append(p[1].type[0])
@@ -4855,17 +4902,7 @@ class CParser():
                         if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                             p[1].type.append(type_list[len(type_list)-i-1])
 
-                if 'struct' in type_list:
-                    p[1].type.append('struct')
-                    for single_type in type_list:
-                        if single_type != 'struct':
-                                p[1].type.append(single_type)     
 
-                if 'union' in type_list:
-                    p[1].type.append('union')
-                    for single_type in type_list:
-                        if single_type != 'union':
-                                p[1].type.append(single_type)     
 
                 if 'void' in type_list:
                     p[1].type.append('void')
@@ -6325,6 +6362,18 @@ class CParser():
                         if single_type != 'double':
                             p[0].type.append(single_type)
 
+                if 'struct' in type_list:
+                    p[0].type.append('struct')
+                    for single_type in type_list:
+                        if single_type != 'struct':
+                                p[0].type.append(single_type)     
+
+                if 'union' in type_list:
+                    p[0].type.append('union')
+                    for single_type in type_list:
+                        if single_type != 'union':
+                                p[0].type.append(single_type)     
+
                 if isarr > 0:
                     temp_type = []
                     temp_type.append(p[0].type[0])
@@ -6340,17 +6389,7 @@ class CParser():
                         if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                             p[0].type.append(type_list[len(type_list)-i-1])
 
-                if 'struct' in type_list:
-                    p[0].type.append('struct')
-                    for single_type in type_list:
-                        if single_type != 'struct':
-                                p[0].type.append(single_type)     
 
-                if 'union' in type_list:
-                    p[0].type.append('union')
-                    for single_type in type_list:
-                        if single_type != 'union':
-                                p[0].type.append(single_type)     
 
                 if 'void' in type_list:
                     p[0].type.append('void')
