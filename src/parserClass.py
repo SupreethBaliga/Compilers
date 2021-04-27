@@ -4586,7 +4586,7 @@ class CParser():
         elif (len(p) == 4):
             p[0] = Node('=')
             p[0].variables = p[1].variables
-            
+        
         # Code to add types to variable
         p[0].extraValues = p[-1].extraValues
         for val in p[0].extraValues:
@@ -4596,7 +4596,6 @@ class CParser():
         #     print("The key is: " + key)
         #     print('  ', p[0].variables[key]) 
         for var_name in p[0].variables:
-    
             #Updating type
             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
                 found = self.ST.TT.ReturnTypeTabEntry(p[0].variables[var_name][-2], p[0].variables[var_name][-1], p.lineno(1))
@@ -6912,11 +6911,7 @@ result = parser.parser.parse(data, lexer=clex.lexer)
 
 fileNameCore = str(sys.argv[1]).split('/')[-1].split('.')[0]
 outputFile = 'dot/' + fileNameCore + '.dot'
-outputFileSymbolTable = open('ST/' + fileNameCore + '.txt',"w")
-orig_stdout = sys.stdout
-sys.stdout = outputFileSymbolTable
-parser.ST.PrintTable()
-sys.stdout = orig_stdout
+
 if parser.isError == 1:
     print(f'Error found. Aborting parsing of {sys.argv[1]}....')
     sys.exit(1)

@@ -534,12 +534,14 @@ class CodeGenerator:
                 self.emit_code('addl', '$16', '%esp')
             else:   
                 self.emit_code("movl", "%eax", instruction[1])
+                # if instruction[2] =='malloc':
+                #     self.emit_code("addl", '$16', '%esp')
                 # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
         else:
             # original
             # self.final_code.append("call " + instruction[1])
             # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
-            
+
             self.emit_code("call ", instruction[1])
             # Due to the problems occurring in printf
             # if instruction[1] not in math_func_list or instruction[1] == "printf" or instruction[1] == "scanf":
@@ -917,12 +919,23 @@ class CodeGenerator:
     def op_cast(self, instruction):
         # type[0] is dest, types[1] is src, instruction[1] is dest, instruction[2] is src
         types = instruction[3].split(',')
-        if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int'):
+        # if '*' in types[0].split('_'):
+        #     types[0] = 'unsigned_int'
+        # if '*' in types[1].split('_'):
+        #     types[1] = 'unsigned_int'
+
+        if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int' or types[1]=='char'):
             self.emit_code('fildl', instruction[2])
             self.emit_code('fstps', instruction[1])
-        elif (types[0]=='int' or types[0]=='unsigned_int') and types[1]=='float':
+        elif (types[0]=='int' or types[0]=='unsigned_int' or types[0]=='char') and types[1]=='float':
             self.emit_code('flds', instruction[2])
             self.emit_code('fisttpl', instruction[1])
+        else:
+            reg = self.request_register()
+            self.emit_code('movl', instruction[2], reg)
+            self.emit_code('movl', reg, instruction[1])
+            self.free_register(reg)
+
     
     def gen_code(self, instruction):
         if not instruction:
