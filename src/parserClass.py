@@ -1833,7 +1833,7 @@ class CParser():
                         self.TAC.emit('ifnz goto','',p[0].temp,'')
                         self.TAC.emit('goto','','','')
 
-                        p[0].addr = p[1].addr              
+                    p[0].addr = p[1].addr              
 
     def p_argument_expression_list(self,p):
         '''
