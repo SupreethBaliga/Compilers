@@ -125,7 +125,7 @@ class SymbolTable() :
         TAC.final_code.pop()
         return
 
-    def PopScope(self, TAC):
+    def PopScope(self, TAC, flag = None):
         # new work
         # print(json.dumps(self.TopScope,indent=2))
         esp_ptr = self.lastScopeTemp
@@ -138,7 +138,7 @@ class SymbolTable() :
                 TAC.final_code[lines] = ['UNARY&', '%esp', f'{esp_ptr}(%ebp)', '']
 
         ## adding dummy line for previous scope
-            if len(self.Table)>1:
+            if len(self.Table)>1 and flag is None:
                 prev_scope_num = self.Table[-1]['#scopeNum']
                 TAC.scope_list[prev_scope_num].append(TAC.nextstat)
                 TAC.emit('PushScope','','','')

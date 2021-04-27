@@ -4596,7 +4596,6 @@ class CParser():
         #     print("The key is: " + key)
         #     print('  ', p[0].variables[key]) 
         for var_name in p[0].variables:
-            # print(p[0].variables)  
     
             #Updating type
             if p[0].variables[var_name] and p[0].variables[var_name][-1] in ['struct', 'union']:
@@ -6188,7 +6187,7 @@ class CParser():
             return
 #         if self.ST.offset - self.ST.offsetList[-1] != 0:
 #             self.TAC.emit('+_int', '%esp', '%esp', f'${self.ST.offset - self.ST.offsetList[-1]}')
-        self.ST.PopScope(self.TAC)
+        self.ST.PopScope(self.TAC, 1)
 
     def p_jump_statement(self, p):
         '''
