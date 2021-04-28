@@ -1776,16 +1776,16 @@ class CParser():
                     else:
                         var = sizes[' '.join(p[0].type)]
                     
-                    self.TAC.emit('*_int', arrtemp , p[3].temp , f'${var}') # TO BE CHANGED
+                    self.TAC.emit('*_int', arrtemp , p[3].temp , f'${var}')
 
-                    # else:
-                    #     self.ST.error = 1
-                    #     return 
+                    if p[1].addr is not None:
+                        var = p[1].addr.split('(')[0]
+                        if var[0] != '-':
+                            var = '+' + var
+                        self.TAC.emit('+_int', p[0].temp , f'%ebp{var}', arrtemp)
+                    else:
+                        self.TAC.emit('+_int', p[0].temp, p[1].temp, arrtemp)
 
-                    var = p[1].addr.split('(')[0]
-                    if var[0] != '-':
-                        var = '+' + var
-                    self.TAC.emit('+_int', p[0].temp , f'%ebp{var}', arrtemp)
                     self.TAC.emit('UNARY*', p[0].temp , p[0].temp , '')
 
 
@@ -1795,7 +1795,7 @@ class CParser():
                     p[0].falselist.append(self.TAC.nextstat+1)
                     self.TAC.emit('ifnz goto','',p[0].temp,'')
                     self.TAC.emit('goto','','','')
-                    p[0].addr = p[1].addr
+                    p[0].addr = None
 
                 else:
                     if len(p[0].dimensionList) > 0 and p[0].dimensionList[-1] == 'isFirstAccess':
