@@ -549,16 +549,16 @@ class CParser():
                             temp_type.append(p[0].type[i])
                 p[0].type = temp_type
 
-            if 'struct' in p[0].type or 'union' in p[0].type:
+            if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
                 p[0].vars = entry['vars']
 
-            elif 'struct *' in p[0].type or 'union *' in p[0].type:
-                p[0].vars = entry['vars']
+            # elif 'struct *' in p[0].type or 'union *' in p[0].type:
+            #     p[0].vars = entry['vars']
             # Remove when we started to give error at declaration of double/triple pointer to struct itself
-            elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
-                self.ST.error = 1
-                print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
-                return
+            # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
+            #     self.ST.error = 1
+            #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
+            #     return
         else:
             p[0] = Node('error')
         # Three address code
@@ -956,7 +956,7 @@ class CParser():
                         p[0].type = temp_type
                     
 
-                    if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
+                    if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
 
                         strtype = ''
                         if 'struct' in  p[0].type[0]:
@@ -976,9 +976,9 @@ class CParser():
 
 
 
-                    elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
-                        self.ST.error = 1
-                        print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(2)}') 
+                    # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
+                    #     self.ST.error = 1
+                    #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(2)}') 
 
 
                     # Useful if we implement nested struct/union
@@ -1210,7 +1210,7 @@ class CParser():
                         p[0].type = temp_type
                     
 
-                    if 'struct' in p[0].type or 'struct *' in p[0].type or 'union' in p[0].type or 'union *' in p[0].type:
+                    if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
 
                         # self.ST.error = 1
                         # print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
@@ -1225,10 +1225,10 @@ class CParser():
                         p[0].vars = typet['vars']
 
 
-                    elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
-                        self.ST.error = 1
-                        print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}')
-                        return
+                    # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
+                    #     self.ST.error = 1
+                    #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}')
+                    #     return
 
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
@@ -1439,10 +1439,10 @@ class CParser():
 
 
                         # Remove when we started to give error at declaration of double/triple pointer to struct itself
-                        if ('struct' in paramtype[0] or 'union' in paramtype[0]) and '* *' in paramtype[0] :
-                            self.ST.error = 1
-                            print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
-                            return
+                        # if ('struct' in paramtype[0] or 'union' in paramtype[0]) and '* *' in paramtype[0] :
+                        #     self.ST.error = 1
+                        #     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
+                        #     return
 
                         if ('struct' in paramtype or 'union' in paramtype) and ('struct' not in p[3].params[ctr] and 'union' not in p[3].params[ctr]):
                             self.ST.error = 1;
@@ -1457,6 +1457,12 @@ class CParser():
                         if 'struct' in paramtype and 'struct' in p[3].params[ctr] and paramtype[1] != p[3].params[ctr][1]:
                             self.ST.error = 1;
                             print(f'Incompatible struct types to call function at line {p.lineno(2)}')
+                            return
+                        
+                        if 'union' in paramtype and 'union' in p[3].params[ctr] and paramtype[1] != p[3].params[ctr][1]:
+                            self.ST.error = 1;
+                            print(f'Incompatible union types to call function at line {p.lineno(2)}')
+                            return
                         
                         
                         if paramtype[0] in aat and p[3].params[ctr][0] not in aat and p[3].params[ctr][0][-1] != '*':
@@ -4906,15 +4912,15 @@ class CParser():
                     print(f'Cannot perform assignment at line {p.lineno(2)}')
                     return
 
-                if 'struct' in p[1].type or 'union' in p[1].type:
+                if 'struct' in p[1].type[0] or 'union' in p[1].type[0]:
                     p[1].vars = entry['vars']
 
-                elif 'struct *' in p[1].type or 'union *' in p[1].type:
-                    p[1].vars = entry['vars']
+                # elif 'struct *' in p[1].type or 'union *' in p[1].type:
+                #     p[1].vars = entry['vars']
                 # Remove when we started to give error at declaration of double/triple pointer to struct itself
-                elif 'struct' in p[1].type[0] or 'union' in p[1].type[0] :
-                    self.ST.error = 1
-                    print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
+                # elif 'struct' in p[1].type[0] or 'union' in p[1].type[0] :
+                #     self.ST.error = 1
+                #     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
 
                 elif 'struct' in p[1].type and 'struct' not in p[3].type:
                     self.ST.error = 1;
