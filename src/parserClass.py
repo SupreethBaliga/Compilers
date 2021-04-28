@@ -5300,12 +5300,12 @@ class CParser():
                 data_type_count += 1
             if data_type_count > 1:    
                 self.ST.error = 1
-                print('Two or more conflicting data types specified for function at line', p.lineno(3)) 
+                print('Two or more conflicting data types specified for variable at line', p.lineno(3)) 
 
             if 'long' in p[1].type:
                 if 'char' in p[1].type or 'bool' in  p[1].type or 'float' in  p[1].type or 'void' in  p[1].type:
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for function at line', p.lineno(3))
+                    print('Two or more conflicting data types specified for variable at line', p.lineno(3))
 
         # Remove if support added for nested structures
         # if len(p[1].type)>0 and ('struct' in p[1].type[0] or 'union' in p[1].type[0]):
