@@ -5940,9 +5940,9 @@ class CParser():
 
     def p_selection_statement(self, p):
         '''
-        selection_statement : IF '(' expression ')' globalmarker1 compound_statement globalN1
-                            | IF '(' expression ')' globalmarker1 compound_statement globalN1 ELSE globalmarker1 compound_statement
-                            | SWITCH '(' expression ')' markerSwitch compound_statement
+        selection_statement : IF '(' expression ')' globalmarker1 statement globalN1
+                            | IF '(' expression ')' globalmarker1 statement globalN1 ELSE globalmarker1 statement
+                            | SWITCH '(' expression ')' markerSwitch statement
         '''
         if self.isError :
             return
@@ -6058,10 +6058,10 @@ class CParser():
 
     def p_iteration_statement_1(self, p):
         '''
-        iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 compound_statement
-                            | DO globalmarker1 compound_statement WHILE '(' globalmarker1 expression ')' ';'
-                            | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 compound_statement
-                            | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 compound_statement
+        iteration_statement : WHILE globalmarker1 '(' expression ')' globalmarker1 statement
+                            | DO globalmarker1 statement WHILE '(' globalmarker1 expression ')' ';'
+                            | FOR '(' expression_statement globalmarker1 expression_statement ')' globalmarker1 statement
+                            | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement
         '''
         # Grammar rules separated to differentiate between length 11 cases
         # Grammar Changes done for all 3
@@ -6131,8 +6131,8 @@ class CParser():
 
     def p_iteration_statement_2(self, p):
         '''
-        iteration_statement : FOR '(' markerForPush declaration globalmarker1 expression_statement ')' globalmarker1 compound_statement markerForPop
-                            | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 compound_statement markerForPop
+        iteration_statement : FOR '(' markerForPush declaration globalmarker1 expression_statement ')' globalmarker1 statement markerForPop
+                            | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement markerForPop
         '''
         # Grammar rule separated to differentiate between length 11 cases
         # Grammar Changes done 
