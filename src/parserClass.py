@@ -747,7 +747,10 @@ class CParser():
                     if len(p[0].dimensionList) == 0 and len(p[1].type[i][1:-1]) == 0:
                         p[0].dimensionList.append(0)
                     else:
-                        p[0].dimensionList.append(int(p[1].type[i][1:-1]))
+                        try:
+                            p[0].dimensionList.append(int(p[1].type[i][1:-1]))
+                        except:
+                            p[0].dimensionList.append(p[1].type[i][1:-1])
             if p[0].dimensionList is not None:
                 p[0].dimensionList.reverse()        
                 p[0].dimensionList.append('isFirstAccess')
@@ -1303,19 +1306,20 @@ class CParser():
                         temp_type_list = []
                         temp2_type_list = []
                         nums_arr = []
-
+                        ctrpar = -1
                         for single_type in entry['type']:
+                            ctrpar += 1
                             if single_type != '*':
                                 temp_type_list.append(single_type)
                                 if single_type[0] != '[' or single_type[-1] != ']':
                                     temp2_type_list.append(single_type)
 
                             if single_type[0] == '[' and single_type[-1] == ']':
-                                if single_type[1:-1] == '':
+                                if single_type[1:-1] == '' and ctrpar != 0:
                                     self.ST.error = 1
                                     print('Cannot have empty indices for array declarations at line', entry['line'])
                                     return
-                                elif int(single_type[1:-1]) <= 0:
+                                elif single_type[1:-1] != '' and int(single_type[1:-1]) <= 0:
                                     self.ST.error = 1
                                     print('Cannot have non-positive integers for array declarations at line', entry['line'])
                                     return
@@ -1494,7 +1498,6 @@ class CParser():
 
 
                         # print(paramtype)
-
 
 
                         if p[3] is None or paramtype is None or p[3].params[ctr] is None or paramtype == [] or p[3].params[ctr] == []:
@@ -2804,15 +2807,19 @@ class CParser():
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[1].type
+                p1 = p[1]
+                p3 = p[3]
             
-            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and p[0].label=='+':
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='+':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
                 p[0].type = p[3].type
-            
-            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and p[0].label=='-':
+                p1 = p[1]
+                p3 = p[3]
+                
+            elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='-':
                 self.ST.error = 1
                 print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
