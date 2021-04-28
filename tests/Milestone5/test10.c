@@ -1,3 +1,7 @@
+/*
+Test 10: Bubblesort (array + nested loop)
+*/
+
 int main(){
     int a[50]; 
     int n ;

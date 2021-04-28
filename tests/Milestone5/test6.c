@@ -1,3 +1,7 @@
+/*
+Test 6: Ackermann (Recursion)
+*/
+
 int ack(int m , int n){
     if(m == 0){
         return n + 1;
@@ -13,7 +17,7 @@ int ack(int m , int n){
 
 int main(){
     printf("Testcase for recursion : Ackerman function\n", 0);
-    int m = 1 , n = 2;
+    int m=2, n=9;
     printf("ack(m , n) = %d\n" , ack(m , n));
     return 0;
 }

@@ -1,3 +1,7 @@
+/*
+Test 11: Matrix Multiplication (Multi-dimensional arrays)
+*/
+
 int main(){
     int n;
     int a[10][10] , b[10][10]; 
@@ -28,7 +32,7 @@ int main(){
         for(int j = 0 ; j < n ; ++j){
             printf("%d " , res[i][j]);
         }
-        printf("\n");
+        printf("\n",0);
     }
 
     return 0;

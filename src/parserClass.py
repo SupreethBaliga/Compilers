@@ -6952,7 +6952,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - alignedSz}(%ebp)')
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
-        self.ST.offset = 20
+        self.ST.offset = 0
         #  <----------------------XXXX------------------>
         if self.ST.error:
             return

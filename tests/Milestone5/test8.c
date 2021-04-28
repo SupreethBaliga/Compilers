@@ -1,3 +1,7 @@
+/*
+Test 8: Binary search in an array (array + recursion)
+*/
+
 int binSearch(int arr[50], int elem, int l , int r){
     if( l > r ){
         return -1;

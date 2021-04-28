@@ -1,3 +1,7 @@
+/*
+Test 7: Quicksort (array + recursion)
+*/
+
 /* From : https://www.geeksforgeeks.org/quick-sort/ */
 
 void swap(int* a, int* b) 

@@ -393,11 +393,11 @@ class CodeGenerator:
         self.final_code.append(instruction[0])
         self.final_code.append("push %ebp")
         self.final_code.append("mov %esp, %ebp")
-        self.final_code.append("push %ebx")
-        self.final_code.append("push %ecx")
-        self.final_code.append("push %edx")
-        self.final_code.append("push %esi")
-        self.final_code.append("push %edi")
+        # self.final_code.append("push %ebx")
+        # self.final_code.append("push %ecx")
+        # self.final_code.append("push %edx")
+        # self.final_code.append("push %esi")
+        # self.final_code.append("push %edi")
     
     def op_return(self,instruction):
         # Return can have atmost 2 arguments
@@ -469,11 +469,11 @@ class CodeGenerator:
 
         self.op_sub(["-_int","%esp","%ebp","$20"])
         
-        self.final_code.append("pop %edi")
-        self.final_code.append("pop %esi")
-        self.final_code.append("pop %edx")
-        self.final_code.append("pop %ecx")
-        self.final_code.append("pop %ebx")
+        # self.final_code.append("pop %edi")
+        # self.final_code.append("pop %esi")
+        # self.final_code.append("pop %edx")
+        # self.final_code.append("pop %ecx")
+        # self.final_code.append("pop %ebx")
         self.final_code.append("mov %ebp, %esp")
         self.final_code.append("pop %ebp")
         self.final_code.append("ret ")
@@ -548,7 +548,7 @@ class CodeGenerator:
                 self.emit_code("movl", "%eax", instruction[1])
                 # if instruction[2] =='malloc':
                 #     self.emit_code("addl", '$16', '%esp')
-                # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
         else:
             # original
             # self.final_code.append("call " + instruction[1])
@@ -557,7 +557,7 @@ class CodeGenerator:
             self.emit_code("call ", instruction[1])
             # Due to the problems occurring in printf
             # if instruction[1] not in math_func_list or instruction[1] == "printf" or instruction[1] == "scanf":
-            #     self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
+                # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[2])*4)])
             # else:
             #     self.emit_code('addl', '$16', '%esp')
             # isntruction[0] = call

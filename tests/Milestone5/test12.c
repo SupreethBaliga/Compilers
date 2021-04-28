@@ -1,3 +1,7 @@
+/*
+Test 12: Linear search in a linked list (Dynamic Memory)
+*/
+
 struct Node{
     int val;
     struct Node* nxt;
@@ -39,11 +43,11 @@ int main(){
     head = insertAtStart(head, 3);
     printList(head);
 
-    struct Node* p = LinSearch(head, 2);
+    struct Node* p = LinSearch(head, 3);
     if(p){
         printf("Found element %d\n" , p->val);
     }else{
-        printf("Element not found");
+        printf("Element not found",0);
     }
     return 0;
 }
