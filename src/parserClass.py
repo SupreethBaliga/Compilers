@@ -4906,7 +4906,6 @@ class CParser():
                         else:
                             temp_type.append(p[1].type[i])
                     p[1].type = temp_type
-                
                 if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                     self.ST.error = 1
                     print(f'Cannot perform assignment at line {p.lineno(2)}')
@@ -4914,7 +4913,9 @@ class CParser():
 
                 if 'struct' in p[1].type[0] or 'union' in p[1].type[0]:
                     p[1].vars = entry['vars']
-
+                    if 'arr' in p[1].type and 'init list' not in p[3].type:
+                        self.ST.error = 1
+                        print(f'Invalid array initialization at line {p.lineno(2)}')
                 # elif 'struct *' in p[1].type or 'union *' in p[1].type:
                 #     p[1].vars = entry['vars']
                 # Remove when we started to give error at declaration of double/triple pointer to struct itself
