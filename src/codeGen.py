@@ -498,6 +498,11 @@ class CodeGenerator:
                 self.emit_code("push", reg)
                 self.free_register(reg)
                 return
+            elif (instruction[1].count('(') > 1):
+                instruction[1] = self.deref(instruction[1])
+                self.final_code.append("push " + instruction[1])
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
             else:   
                 nVariables = int(instruction[2][1:])
                 if nVariables == 1:
@@ -770,6 +775,31 @@ class CodeGenerator:
                 self.emit_code('movl', reg, rege1)
                 self.free_register(reg1)
                 
+            self.free_register(reg)
+        else:
+            self.check_type(instruction)
+            self.emit_code("cmpl",instruction[3],instruction[2])
+            
+            reg = self.request_register("%edx")
+            reg = self.register_mapping[reg]
+            eight_reg = self.eight_bit_register[reg]
+
+            if instruction[0][0:2] == "<=":
+                self.emit_code("setle", eight_reg)
+            elif instruction[0][0:2] == ">=":
+                self.emit_code("setge", eight_reg)
+            elif instruction[0][0:2] == "==":
+                self.emit_code("sete", eight_reg)
+            elif instruction[0][0:2] == "!=":
+                self.emit_code("setne", eight_reg)
+            elif instruction[0][0] == "<":
+                self.emit_code("setl", eight_reg)
+            elif instruction[0][0] == ">":
+                self.emit_code("setg", eight_reg)
+            self.emit_code("movzbl", eight_reg, instruction[3])
+            self.emit_code("movl", instruction[3], instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
             self.free_register(reg)
 
     # def op_logical(self, instruction):
