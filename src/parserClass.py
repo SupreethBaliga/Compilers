@@ -178,7 +178,8 @@ sizes = {
     'bool': 1,
     'void': 0,
     'int unsigned': 4,
-    'unsigned int': 4
+    'unsigned int': 4,
+    'str': 4 # 'str' is same as int unsigned
 }
 class CParser():
     tokens = CLexer.tokens
@@ -1670,7 +1671,7 @@ class CParser():
                             self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
                         else:
                             self.ST.error = 1
-                            print(f'Invalid type given in line number {p.lineno(1)}')
+                            print(f'Invalid type given in line number {p.lineno(4)}')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 if (("struct" in found["type"]) and ("*" not in found["type"])):
@@ -4777,7 +4778,6 @@ class CParser():
             # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
 
             found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-
             temp_type_list = []
             temp2_type_list = []
             nums_arr = []
