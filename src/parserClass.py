@@ -781,9 +781,13 @@ class CParser():
                 self.ST.error = 1
                 print(f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
 
-            elif p[1].isvar == 0:
+            elif p[1].isvar == 0 and p[1].type[0][-1] != '*':
                 self.ST.error = 1
                 print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+
+            elif p[1].type[0][-1] == '*' and 'arr' in p[1].type:
+                self.ST.error = 1
+                print(f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')         
 
             else:
                 p[0] = Node('POST' + str(p[2]),[p[1]])
@@ -1846,9 +1850,12 @@ class CParser():
                 elif p[2].isTerminal == False and p[2].isvar==False:
                     self.ST.error = 1
                     print(f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
-                elif p[2].isvar == 0:
+                elif p[2].isvar == 0 and p[2].type[0][-1] != '*':
                     self.ST.error = 1
-                    print(f'Cannot use increment/decrement operator on constant at line {p.lineno(1)}')
+                    print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+                elif p[2].type[0][-1] == '*' and 'arr' in p[2].type:
+                    self.ST.error = 1
+                    print(f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')  
                 else:
                     p[0] = Node('PRE' + str(p[1]),[p[2]])
                     if p[2].type is None:
