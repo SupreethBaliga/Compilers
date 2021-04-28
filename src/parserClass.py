@@ -4078,7 +4078,7 @@ class CParser():
                 print(f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
-            elif 'struct' in p[4].type and 'struct' not in p[5].type:
+            elif 'struct' in p[4].type and 'struct' not in p[7].type:
                 self.ST.error = 1
                 print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
