@@ -40,16 +40,43 @@ source venvcompiler/bin/activate
 ```c
 for ( int i = 0; i<5; i++)
 ```
+* Available data types:  `int, char and float`
 * The target language is `X86_32 bit` and the syntax used for this assembly is AT&T Syntax. We have used gcc linker to incorporate printf, scanf and some math functions like pow,sin,cos etc.
 * scanf and printf both require 2 arguments, the first argument is the string and the second argument is the appropriate variable(or its address in case of scanf). If you only want to print a string then also provide 2 arguments where the second argument can by any valid variable or constant. For example, the following line will print "Hello World":
 ```c
 printf("Hello World",0);
 ```
-* While declaring, arrays need to be of fixed sizes. The following is not allowed:
+* While declaring, arrays need to be of a fixed sizes. Expressions involving constants are not allowed. The following is not allowed:
 ```c
 int a[n];
+int a[2+ 3];
 ```
+This is allowed:
+```c
+int a[5];
+```
+* Global variables can be declared but not initialized globally. They need to be initialized in a scope
+```c
+int a = 5; 
+/*This is not allowed, the variable 
+needs to be initialized in a scope */
+```
+* Only non negative integer static variables can be declared ( We know this is limiting the power of static but it was either this or remove static so we decided to go with this provision)
+* Function declarations are not allowed. Only function definitions are allowed:
+```c
+int f(int a, int b); /* This is not allowed*/
 
+int f(int a, int b){
+    /* do something*/
+}
+/* This is allowed*/
+```
+* Global variables of type struct/union are not allowed
+* Array initializations in the same line as that of declaration is not allowed
+```c
+int a[3] = {1,2,3}; /* This is not allowed*/
+```
+* We are not using gcc for pre processing hence, any `#define` will not work. So, in place of `NULL` use `(void*)0`
 
 ## Group Members :boy:
 
