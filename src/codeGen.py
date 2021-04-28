@@ -492,25 +492,32 @@ class CodeGenerator:
                 instruction[1] = instruction[1][1:-1]
                 self.free_register(instruction[1])
         else:
-            nVariables = int(instruction[2][1:])
-            if nVariables == 1:
-                self.op_push_char(instruction)
-            else:
-                tempInstruction = copy.deepcopy(instruction[1])
-                val = int(tempInstruction.split('(')[0])
-                tempCodeList = []
-                
-                for i in range(int(nVariables/4)):
-                    address = val + i*4
-                    if address == 0:
-                        address = "(%ebp)"
-                    else:
-                        address = str(address) + "(%ebp)"
-                    src = address
-                    tempCodeList.append("push " + src)
-                # This is the case for struct
-                for line in reversed(tempCodeList):
-                    self.final_code.append(line)
+            if '(' not in instruction[1]:
+                reg = self.request_register()
+                self.emit_code("movl", instruction[1], reg)
+                self.emit_code("push", reg)
+                self.free_register(reg)
+                return
+            else:   
+                nVariables = int(instruction[2][1:])
+                if nVariables == 1:
+                    self.op_push_char(instruction)
+                else:
+                    tempInstruction = copy.deepcopy(instruction[1])
+                    val = int(tempInstruction.split('(')[0])
+                    tempCodeList = []
+                    
+                    for i in range(int(nVariables/4)):
+                        address = val + i*4
+                        if address == 0:
+                            address = "(%ebp)"
+                        else:
+                            address = str(address) + "(%ebp)"
+                        src = address
+                        tempCodeList.append("push " + src)
+                    # This is the case for struct
+                    for line in reversed(tempCodeList):
+                        self.final_code.append(line)
 
 
     def op_function_call(self,instruction):
