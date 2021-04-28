@@ -1267,7 +1267,6 @@ class CParser():
                 # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
-
                 self.TAC.emit('+_int', p[0].temp, p[1].temp, f"${found['vars'][p[3].label]['offset']}")
                 # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
                 p[0].temp = f'({p[0].temp})'
@@ -2739,7 +2738,10 @@ class CParser():
                 p[0].type = p[1].type
                 p1 = p[1]
                 p3 = p[3]
-            
+                try:
+                    p[0].vars = p[1].vars
+                except:
+                    pass       
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='+':
                 p[0] = Node(str(p[2]),[p[1],p[3]])
                 p[0].label = p[0].label + '_' + p[1].type[0]
@@ -2748,7 +2750,10 @@ class CParser():
                 p[0].type = p[3].type
                 p1 = p[1]
                 p3 = p[3]
-                
+                try:
+                    p[0].vars = p[1].vars
+                except:
+                    pass
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='-':
                 self.ST.error = 1
                 print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
@@ -2756,7 +2761,7 @@ class CParser():
             else :
                 self.ST.error = 1
                 print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
-            
+
             #Three address code
             if self.ST.error:
                 return
@@ -5271,15 +5276,15 @@ class CParser():
 
         if len(temp_type_list) != len(set(temp_type_list)):
             self.ST.error = 1
-            print('Structure variable cannot have duplicating type of declarations at line', p.lineno(3))
+            print('Structure/Union variable cannot have duplicating type of declarations at line', p.lineno(3))
             return
 
         if 'long' in p[1].type and 'short' in p[1].type:
             self.ST.error = 1
-            print('Function type cannot be both long and short at line', p.lineno(3))
+            print('Structure/Union variable cannot be both long and short at line', p.lineno(3))
         elif 'unsigned' in p[1].type and 'signed' in p[1].type:
             self.ST.error = 1
-            print('Function type cannot be both signed and unsigned at line', p.lineno(3))
+            print('Structure/Union variable cannot be both signed and unsigned at line', p.lineno(3))
         else:
             data_type_count = 0
             if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type:
