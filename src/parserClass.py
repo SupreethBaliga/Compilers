@@ -3949,6 +3949,9 @@ class CParser():
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
+            elif 'struct' in p[1].type or 'union' in p[1].type or 'struct' in p[1].type or 'union' in p[1].type:
+                self.ST.error = 1
+                print(f'Need scalars to perform logical operation at line {p.lineno(2)}')
 
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
@@ -4006,6 +4009,9 @@ class CParser():
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
+            elif 'struct' in p[1].type or 'union' in p[1].type or 'struct' in p[1].type or 'union' in p[1].type:
+                self.ST.error = 1
+                print(f'Need scalars to perform logical operation at line {p.lineno(2)}')
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
