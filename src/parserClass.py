@@ -737,7 +737,6 @@ class CParser():
             if p[1] == None or p[1].type == None:
                 self.ST.error = 1
                 return
-            p[0].addr = p[1].temp
 
             for i in range(len(p[1].type) - 1, 0, -1):
                 if p[1].type[i][0] != '[':
@@ -755,6 +754,15 @@ class CParser():
             if p[0].dimensionList is not None:
                 p[0].dimensionList.reverse()        
                 p[0].dimensionList.append('isFirstAccess')
+                var = p[0].temp.split('(')[0]
+                if var == '' or var is None:
+                    return
+                if var[0] != '-':
+                    var = '+' + var
+                p[0].addr = f'%ebp{var}'
+                if var[0] == '-':
+                    p[0].temp = p[0].addr
+                    
 
         elif (len(p) == 3):
             if p[1] == None or p[1].type == None or p[1].type == []:
@@ -1741,6 +1749,9 @@ class CParser():
                     if isFirstAccess:
                         self.TAC.emit('=_int', p[0].temp, p[3].temp , '') 
                     else:
+                        if len(p[0].dimensionList) == 0:
+                            self.ST.error = 1
+                            return
                         curDimension = p[0].dimensionList[-1]
                         self.TAC.emit('*_int', p[0].temp, p[1].temp , f'${curDimension}')
                         self.TAC.emit('+_int', p[0].temp, p[0].temp, p[3].temp)
@@ -1757,19 +1768,23 @@ class CParser():
                                 self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[ strtype ]}')
                             else:
                                 self.TAC.emit('*_int', p[0].temp, p[0].temp, f'${sizes[p[0].type[0]]}')
-                        
-                        var = p[1].addr.split('(')[0]
-                        if var[0] != '-':
-                            var = '+' + var
-                        self.TAC.emit('+_int', p[0].temp, f'%ebp{var}', p[0].temp)
+
+                        if p[1].addr is None or p[1].addr == '':
+                            self.ST.error = 1
+                            return
+                        var = p[1].addr[4]
+                        p1_addr = p[1].addr
+                        if var == '+':
+                            p1_addr = f'{p[1].addr[5:]}(%ebp)'
+                        self.TAC.emit('+_int', p[0].temp, p1_addr, p[0].temp)
                         p[0].temp = f'({p[0].temp})'
 
                         p[0].truelist.append(self.TAC.nextstat)
                         p[0].falselist.append(self.TAC.nextstat+1)
                         self.TAC.emit('ifnz goto','',p[0].temp,'')
-                        self.TAC.emit('goto','','','')
+                        self.TAC.emit('goto','','','') 
 
-                    p[0].addr = p[1].addr              
+                p[0].addr = p[1].addr         
 
     def p_argument_expression_list(self,p):
         '''
@@ -6879,12 +6894,12 @@ class CParser():
                 if p[0].variables[var_name]:
                     #handling arrays
                     multiplier = 1
-                    for type_name in p[0].variables[var_name]:
-                        if type_name[0]=='[' and type_name[-1]==']':
-                            if type_name[1:-1] != '':
-                                multiplier *= int(type_name[1:-1])
-                        else:
-                            break
+                    # for type_name in p[0].variables[var_name]:
+                    #     if type_name[0]=='[' and type_name[-1]==']':
+                    #         if type_name[1:-1] != '':
+                    #             multiplier *= int(type_name[1:-1])
+                    #     else:
+                    #         break
 
                     if '*' in p[0].variables[var_name]:
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["PTR"], p.lineno(0))

@@ -481,6 +481,13 @@ class CodeGenerator:
     def op_param(self,instruction):
         if(len(instruction) == 2):
             instruction[1] = self.deref(instruction[1])
+            if instruction[1][0] == "%" and len(instruction[1]) > 4:
+                offset = int(instruction[1][4:])
+                reg1 = self.request_register()
+                self.emit_code("leal", f'{offset}(%ebp)', reg1)
+                self.emit_code("push", reg1)
+                self.free_register(reg1)
+                return
             if instruction[1][0] != '(':
                 reg = self.request_register()
                 self.emit_code("movl", instruction[1], reg)
@@ -492,6 +499,13 @@ class CodeGenerator:
                 instruction[1] = instruction[1][1:-1]
                 self.free_register(instruction[1])
         else:
+            if instruction[1][0] == "%" and len(instruction[1]) > 4:
+                offset = int(instruction[1][4:])
+                reg1 = self.request_register()
+                self.emit_code("leal", f'{offset}(%ebp)', reg1)
+                self.emit_code("push", reg1)
+                self.free_register(reg1)
+                return
             if '(' not in instruction[1]:
                 reg = self.request_register()
                 self.emit_code("movl", instruction[1], reg)
