@@ -2112,6 +2112,7 @@ class CParser():
                 self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
 
                 if p[1].label == 'UNARY*':
+                    # print(p[2].varname)
                     found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
                     var_size = found['sizeAllocInBytes']
                     self.ST.ModifySymbol(p[0].temp, "sizeAllocInBytes", var_size)
@@ -4928,7 +4929,7 @@ class CParser():
 
                 if 'struct' in p[1].type[0] or 'union' in p[1].type[0]:
                     p[1].vars = entry['vars']
-                    if 'arr' in p[1].type and 'init list' not in p[3].type:
+                    if 'arr' in p[1].type and 'init_list' not in p[3].type:
                         self.ST.error = 1
                         print(f'Invalid array initialization at line {p.lineno(2)}')
                 # elif 'struct *' in p[1].type or 'union *' in p[1].type:
@@ -4938,7 +4939,7 @@ class CParser():
                 #     self.ST.error = 1
                 #     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
 
-                elif 'struct' in p[1].type and 'struct' not in p[3].type:
+                if 'struct' in p[1].type and 'struct' not in p[3].type:
                     self.ST.error = 1;
                     print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p.lineno(2)}')
 
