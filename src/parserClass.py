@@ -1304,75 +1304,6 @@ class CParser():
 
                         entry = param
 
-                        temp_type_list = []
-                        temp2_type_list = []
-                        nums_arr = []
-                        ctrpar = -1
-                        for single_type in entry['type']:
-                            ctrpar += 1
-                            if single_type != '*':
-                                temp_type_list.append(single_type)
-                                if single_type[0] != '[' or single_type[-1] != ']':
-                                    temp2_type_list.append(single_type)
-
-                            if single_type[0] == '[' and single_type[-1] == ']':
-                                if single_type[1:-1] == '' and ctrpar != 0:
-                                    self.ST.error = 1
-                                    print('Cannot have empty indices for array declarations at line', entry['line'])
-                                    return
-                                elif single_type[1:-1] != '' and int(single_type[1:-1]) <= 0:
-                                    self.ST.error = 1
-                                    print('Cannot have non-positive integers for array declarations at line', entry['line'])
-                                    return
-
-                        if len(temp2_type_list) != len(set(temp2_type_list)):
-                            self.ST.error = 1
-                            print('variables cannot have duplicating type of declarations at line', entry['line'])
-                            return
-
-                        if 'long' in entry['type'] and 'short' in entry['type']:
-                            self.ST.error = 1
-                            print('variable cannot be both long and short at line', entry['line'])
-                            return
-                        elif 'unsigned' in entry['type'] and 'signed' in entry['type']:
-                            self.ST.error = 1
-                            print('variable cannot be both signed and unsigned at line', entry['line'])
-                            return
-                        elif 'void' in entry['type'] and '*' not in entry['type']:
-                            self.ST.error = 1
-                            print('Cannot have a void type variable at line ', entry['line'])
-                            return
-                        else:
-                            data_type_count = 0
-                            if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type'] or 'char' in entry['type']:
-                                data_type_count += 1
-                            if 'bool' in  entry['type']:
-                                data_type_count += 1
-                            if 'float' in entry['type']:
-                                data_type_count += 1
-                            if 'double' in entry['type']:
-                                data_type_count += 1
-                            if 'void' in entry['type']:
-                                data_type_count += 1
-                            if 'struct' in entry['type']:
-                                data_type_count += 1
-                            if 'union' in entry['type']:
-                                data_type_count += 1
-                            if data_type_count > 1:    
-                                self.ST.error = 1
-                                print('Two or more conflicting data types specified for variable at line', entry['line']) 
-                                return
-                            if 'long' in entry['type']:
-                                if 'char' in entry['type'] or 'bool' in  entry['type'] or 'float' in  entry['type'] or 'void' in  entry['type']:
-                                    self.ST.error = 1
-                                    print('Two or more conflicting data types specified for variable at line', entry['line'])
-                                    return
-                            
-
-
-
-
-
 
                         isarr = 0
                         for i in range(len(entry['type'])):
@@ -1593,11 +1524,7 @@ class CParser():
                             self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_') + currtyprstr) 
 
 
-
-
                     p[0].type = p[1].ret_type
-
-
 
 
 
@@ -6700,6 +6627,9 @@ class CParser():
             else:
                 p[0] = Node('FUNC',[p[2],p[3]])
                 line = 4
+
+        
+
         # elif len(p) == 9:
         #     p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
         #     line = 4
@@ -6791,6 +6721,83 @@ class CParser():
         else:
             self.TAC.emit('retq','$0','','')
         self.TAC.emit('','','','')
+
+
+        for var in entry['#scope'][0]:
+            if var == '#StructOrUnion':
+                continue
+            if var == '#scope':
+                continue
+            if var == '#scopeNum':
+                continue
+            if var[0] == '!':
+                continue
+            param = entry['#scope'][0][var]
+
+            temp_type_list = []
+            temp2_type_list = []
+            nums_arr = []
+            ctrpar = -1
+            for single_type in param['type']:
+                ctrpar += 1
+                if single_type != '*':
+                    temp_type_list.append(single_type)
+                    if single_type[0] != '[' or single_type[-1] != ']':
+                        temp2_type_list.append(single_type)
+
+                if single_type[0] == '[' and single_type[-1] == ']':
+                    if single_type[1:-1] == '' and ctrpar != 0:
+                        self.ST.error = 1
+                        print('Cannot have empty indices for array declarations at line', param['line'])
+                        return
+                    elif single_type[1:-1] != '' and int(single_type[1:-1]) <= 0:
+                        self.ST.error = 1
+                        print('Cannot have non-positive integers for array declarations at line', param['line'])
+                        return
+
+            if len(temp2_type_list) != len(set(temp2_type_list)):
+                self.ST.error = 1
+                print('variables cannot have duplicating type of declarations at line', param['line'])
+                return
+
+            if 'long' in param['type'] and 'short' in param['type']:
+                self.ST.error = 1
+                print('variable cannot be both long and short at line', param['line'])
+                return
+            elif 'unsigned' in param['type'] and 'signed' in param['type']:
+                self.ST.error = 1
+                print('variable cannot be both signed and unsigned at line', param['line'])
+                return
+            elif 'void' in param['type'] and '*' not in param['type']:
+                self.ST.error = 1
+                print('Cannot have a void type variable at line ', param['line'])
+                return
+            else:
+                data_type_count = 0
+                if 'int' in param['type'] or 'short' in param['type']  or 'unsigned' in param['type'] or 'signed' in param['type'] or 'char' in param['type']:
+                    data_type_count += 1
+                if 'bool' in  param['type']:
+                    data_type_count += 1
+                if 'float' in param['type']:
+                    data_type_count += 1
+                if 'double' in param['type']:
+                    data_type_count += 1
+                if 'void' in param['type']:
+                    data_type_count += 1
+                if 'struct' in param['type']:
+                    data_type_count += 1
+                if 'union' in param['type']:
+                    data_type_count += 1
+                if data_type_count > 1:    
+                    self.ST.error = 1
+                    print('Two or more conflicting data types specified for variable at line', param['line']) 
+                    return
+                if 'long' in param['type']:
+                    if 'char' in param['type'] or 'bool' in  param['type'] or 'float' in  param['type'] or 'void' in  param['type']:
+                        self.ST.error = 1
+                        print('Two or more conflicting data types specified for variable at line', param['line'])
+                        return
+                        
 
     def p_markerFunc2(self, p):
         '''
