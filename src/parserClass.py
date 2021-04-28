@@ -2241,8 +2241,10 @@ class CParser():
                 if p[2].type is None:
                     p[2].type = []
 
-                if 'int' in p[2].type or 'short' in p[2].type  or 'unsigned' in p[2].type or 'signed' in p[2].type or 'char' in p[2].type:
+                if 'int' in p[2].type or 'short' in p[2].type  or 'unsigned' in p[2].type or 'signed' in p[2].type:
                     data_type_count += 1
+                if 'char' in  p[2].type:
+                    data_type_count += 1               
                 if 'bool' in  p[2].type:
                     data_type_count += 1
                 if 'float' in p[2].type:
@@ -4744,7 +4746,9 @@ class CParser():
                 return
             else:
                 data_type_count = 0
-                if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type'] or 'char' in entry['type']:
+                if 'int' in entry['type'] or 'short' in entry['type']  or 'unsigned' in entry['type'] or 'signed' in entry['type']:
+                    data_type_count += 1
+                if 'char' in  entry['type']:
                     data_type_count += 1
                 if 'bool' in  entry['type']:
                     data_type_count += 1
@@ -5278,7 +5282,9 @@ class CParser():
             print('Function type cannot be both signed and unsigned at line', p.lineno(3))
         else:
             data_type_count = 0
-            if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type or 'char' in p[1].type:
+            if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type:
+                data_type_count += 1
+            if 'char' in  p[1].type:
                 data_type_count += 1
             if 'bool' in  p[1].type:
                 data_type_count += 1
@@ -6662,7 +6668,9 @@ class CParser():
             print('Function type cannot be both signed and unsigned at line', p.lineno(line))
         else:
             data_type_count = 0
-            if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type or 'char' in p[1].type:
+            if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type:
+                data_type_count += 1
+            if 'char' in  p[1].type:
                 data_type_count += 1
             if 'bool' in  p[1].type:
                 data_type_count += 1
@@ -6774,7 +6782,9 @@ class CParser():
                 return
             else:
                 data_type_count = 0
-                if 'int' in param['type'] or 'short' in param['type']  or 'unsigned' in param['type'] or 'signed' in param['type'] or 'char' in param['type']:
+                if 'int' in param['type'] or 'short' in param['type']  or 'unsigned' in param['type'] or 'signed' in param['type']:
+                    data_type_count += 1
+                if 'char' in param['type']:
                     data_type_count += 1
                 if 'bool' in  param['type']:
                     data_type_count += 1
