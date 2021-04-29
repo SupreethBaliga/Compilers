@@ -106,10 +106,18 @@ class TAC():
         
         for idx in range(0, len(self.final_code)):
             code = self.final_code[idx]
-            if len(code[0])>0 and code[0][0] != '.' and code[0][-1] ==':' and ('.' not in code[0]):
-                prev_code = self.final_code[idx-1]
-                self.final_code[idx-1] = code
-                self.final_code[idx] = prev_code
+            if idx!=0 and len(code[0])>0 and code[0][0] != '.' and code[0][-1] ==':' and '.' not in code[0]:
+                for j in reversed(range(idx)):
+                    prev_code = self.final_code[j]
+                    if len(prev_code[0]) <=0:
+                        break
+                    elif prev_code[0]=='UNARY&':
+                        self.final_code[j] = code
+                        self.final_code[j+1] = prev_code
+                        break
+                    else:
+                        self.final_code[j] = code
+                        self.final_code[j+1] = prev_code
         
     def findStringIdx(self, target_str):
         for i in range(0, len(self.strList)):

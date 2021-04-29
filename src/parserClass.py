@@ -4466,6 +4466,9 @@ class CParser():
 
     def recursive_equate(self, p1type, p0label, p1temp, p3temp):
         if p0label == '=_struct' or p0label == '=_union':
+                # (-44(%ebp)) -> temp
+                # +_int -48(%ebp) -44(%ebp) $4
+                # (-48(%ebp))
                 left_offset = int(p1temp.split('(')[0])
                 right_offset = int(p3temp.split('(')[0])
                 data_struc = self.ST.TT.ReturnTypeTabEntry(p1type[1], p1type[0])
@@ -6619,6 +6622,12 @@ class CParser():
         self.ST.ModifySymbol("malloc", "check", "FUNC")
         self.ST.ModifySymbol("malloc", "type", ['void', '*'])
         self.ST.ModifySymbol("malloc", "PARAM_NUMS", 1)
+
+        # free with 1 arguments
+        self.ST.InsertSymbol("free", -1)
+        self.ST.ModifySymbol("free", "check", "FUNC")
+        self.ST.ModifySymbol("free", "type", ['void'])
+        self.ST.ModifySymbol("free", "PARAM_NUMS", 1)
 
     def p_translation_unit(self, p):
         '''
