@@ -57,6 +57,7 @@ class Node:
         self.param_nums = None
         self.params = None
         self.numdef = 0
+        self.arrlvl = 0
         # This field is only for Marker nodes used in TAC
         self.quad = None
         self.dimensionList = None
@@ -294,6 +295,7 @@ class CParser():
                 for i in range(len(entry['type'])):
                     if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
                         isarr += 1
+                        p[0].arrlvl += 1
 
 
                 if 'unsigned' in type_list or 'signed' in type_list:
@@ -1660,6 +1662,8 @@ class CParser():
                                 p[0].type.append(single_type)
 
                         p[0].type[0] = p[0].type[0][0:-2]
+
+                        p[0].arrlvl = p[1].arrlvl - 1
 
                         if p[0].type[0][-1] != '*':
                             p[0].isvar = 1
@@ -4321,10 +4325,10 @@ class CParser():
                         self.ST.error = 1;
                         print(f'Cannot perform assignment at line {p[2].lineno}')
 
-                    elif p[1].type[0][-1] == '*' and 'arr' in p[1].type:
+                    elif p[1].type[0][-1] == '*' and 'arr' in p[1].type and p[1].arrlvl > 0:
                         self.ST.error = 1
                         print(f'Cannot perform assignment to array type at line {p[2].lineno}')
-                    
+
                     elif p[1].isvar == 0 and 'struct' not  in p[1].type[0] and 'union' not in p[1].type[0]:
                         self.ST.error = 1
                         print(f'Left hand side has to be a variable at line {p[2].lineno}')
@@ -5607,7 +5611,6 @@ class CParser():
                 p[0] = Node('DDArrSub',[p[1]])
                 p[0].variables = p[1].variables
                 p[0].addTypeInDict("[]")
-                
                 try:
                     p[0].arrs = p[1].arrs
                 except:
@@ -5633,6 +5636,7 @@ class CParser():
                 type1 = "[" + str(p[3].label) + "]"
                 p[0].variables = p[1].variables
                 p[0].addTypeInDict(type1)
+
         elif (len(p) == 6):
                 # This has last rule
                 p[0] = Node('DDFuncCall',[p[1],p[4]])
