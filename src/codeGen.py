@@ -582,7 +582,7 @@ class CodeGenerator:
                 self.emit_code("movl", "%eax", instruction[1])
                 # if instruction[2] =='malloc':
                 #     self.emit_code("addl", '$16', '%esp')
-                self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
+                # self.op_add(["+_int","%esp","%esp","$" + str(int(instruction[3])*4)])
         else:
             # original
             # self.final_code.append("call " + instruction[1])

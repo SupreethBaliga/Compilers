@@ -4469,41 +4469,95 @@ class CParser():
                 # (-44(%ebp)) -> temp
                 # +_int -48(%ebp) -44(%ebp) $4
                 # (-48(%ebp))
-                left_offset = int(p1temp.split('(')[0])
-                right_offset = int(p3temp.split('(')[0])
                 data_struc = self.ST.TT.ReturnTypeTabEntry(p1type[1], p1type[0])
                 currOffset = 0
+                left_offset = 0
+                right_offset = 0
+                left_new_temp = ''
+                right_new_temp = ''
+
                 for var in data_struc['vars'].keys():
+                    
+                    if p1temp[0] == '(':
+                        left_new_temp = self.TAC.newtemp()
+                        self.ST.InsertSymbol(left_new_temp, 0)
+                        self.ST.ModifySymbol(left_new_temp, "type", ['int', 'unsigned'])
+                        self.ST.ModifySymbol(left_new_temp, "check", "TEMP")
+                        self.updateSizeInSymTab(['int', 'unsigned'], left_new_temp)
+                        if self.ST.isGlobal(left_new_temp):
+                            self.ST.ModifySymbol(left_new_temp, "varclass", "Global")
+                        else :
+                            self.ST.ModifySymbol(left_new_temp, "varclass", "Local")
+                            found, entry = self.ST.ReturnSymTabEntry(left_new_temp)
+                            var_size = found['sizeAllocInBytes']
+                            if found["varclass"] == "Local":
+                                # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                                if found["offset"] >0:
+                                    self.ST.ModifySymbol(left_new_temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                                else:
+                                    self.ST.ModifySymbol(left_new_temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                            left_new_temp = found['temp'] 
+                        self.TAC.emit('+_int', left_new_temp, p1temp[1:-1], f'${currOffset}')
+                        left_new_temp = f'({left_new_temp})'
+                    else:
+                        left_offset = int(p1temp.split('(')[0])
+                        left_new_temp = f'{left_offset+currOffset}(%ebp)'
+                    
+                    if p3temp[0] == '(':
+                        right_new_temp = self.TAC.newtemp()
+                        self.ST.InsertSymbol(right_new_temp, 0)
+                        self.ST.ModifySymbol(right_new_temp, "type", ['int', 'unsigned'])
+                        self.ST.ModifySymbol(right_new_temp, "check", "TEMP")
+                        self.updateSizeInSymTab(['int', 'unsigned'], right_new_temp)
+                        if self.ST.isGlobal(right_new_temp):
+                            self.ST.ModifySymbol(right_new_temp, "varclass", "Global")
+                        else :
+                            self.ST.ModifySymbol(right_new_temp, "varclass", "Local")
+                            found, entry = self.ST.ReturnSymTabEntry(right_new_temp)
+                            var_size = found['sizeAllocInBytes']
+                            if found["varclass"] == "Local":
+                                # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
+                                if found["offset"] >0:
+                                    self.ST.ModifySymbol(right_new_temp, 'temp', f'-{found["offset"] + ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                                else:
+                                    self.ST.ModifySymbol(right_new_temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
+                            right_new_temp = found['temp'] 
+                        self.TAC.emit('+_int', right_new_temp, p3temp[1:-1], f'${currOffset}')
+                        right_new_temp = f'({right_new_temp})'
+                    else:
+                        right_offset = int(p3temp.split('(')[0])
+                        right_new_temp = f'{right_offset+currOffset}(%ebp)'
+
                     if '*' in data_struc['vars'][var]['type']:
-                        self.TAC.emit('=_unsigned_int', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.TAC.emit('=_unsigned_int', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += 4
                     elif 'struct' in data_struc['vars'][var]['type']:
                         new_type = copy.deepcopy(data_struc['vars'][var]['type'])
                         new_type.reverse()
-                        self.recursive_equate(new_type, '=_struct',f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.recursive_equate(new_type, '=_struct',left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += data_struc['vars'][var]['sizeAllocInBytes']
                     elif 'union' in data_struc['vars'][var]['type']:
                         new_type = copy.deepcopy(data_struc['vars'][var]['type'])
                         new_type.reverse()
-                        self.recursive_equate(new_type, '=_union',f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.recursive_equate(new_type, '=_union',left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += data_struc['vars'][var]['sizeAllocInBytes']
                     elif 'int' in data_struc['vars'][var]['type']:
-                        self.TAC.emit('=_int', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.TAC.emit('=_int', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += 4
                     elif 'char' in data_struc['vars'][var]['type']:
-                        self.TAC.emit('=_char', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.TAC.emit('=_char', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += 4
                     elif 'float' in data_struc['vars'][var]['type']:
-                        self.TAC.emit('=_float', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.TAC.emit('=_float', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += 4
                     elif 'bool' in data_struc['vars'][var]['type']:
-                        self.TAC.emit('=_bool', f'{left_offset+currOffset}(%ebp)', f'{right_offset+currOffset}(%ebp)')
+                        self.TAC.emit('=_bool', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
                             currOffset += 4
                     else:
