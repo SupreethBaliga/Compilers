@@ -287,6 +287,21 @@ class CodeGenerator:
             self.emit_code("flds", reg2)
             self.emit_code("fdivs", reg3)
             self.emit_code("fstps", reg1)
+        else: #keep same as int
+            edx = self.request_register('%edx')
+            eax = self.request_register('%eax')
+            # number is edx : eax
+            if not edx or not eax:
+                return
+            self.check_type(instruction)
+            self.emit_code("movl", instruction[2], "%eax")
+            self.emit_code("cltd")
+            self.emit_code("idivl", instruction[3])
+            self.emit_code("movl", "%eax", instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            self.free_register('%edx',True)
+            self.free_register('%eax',True)
 
     def op_mod(self, instruction):
         '''
@@ -324,6 +339,12 @@ class CodeGenerator:
             self.emit_code("flds", reg2)
             self.emit_code("fmuls", reg3)
             self.emit_code("fstps", reg1)
+        else: #kept same as int for now
+            self.check_type(instruction)
+            self.emit_code("imull",instruction[2],instruction[3])
+            self.emit_code("movl",instruction[3],instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
 
     def op_and(self,instruction):
         '''
@@ -538,7 +559,6 @@ class CodeGenerator:
                     for line in reversed(tempCodeList):
                         self.final_code.append(line)
 
-
     def op_function_call(self,instruction):
         # Function call valid right now only for 4 bytes argument
         # Function calls can have 4 arguments
@@ -609,6 +629,11 @@ class CodeGenerator:
             self.emit_code("flds", reg2)
             self.emit_code("fchs", '')
             self.emit_code("fstps", reg1) 
+        else: #kept same as int
+            self.check_type(instruction)
+            self.emit_code("negl",instruction[2])
+            self.emit_code("movl",instruction[2],instruction[1])
+            self.free_register(instruction[2])
         
     def op_not(self, instruction):
         '''
