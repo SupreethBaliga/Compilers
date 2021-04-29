@@ -1539,6 +1539,8 @@ class CParser():
                             currtyprstr =',' +  ' '.join(currtype).replace(' ','_')
 
                             self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_') + currtyprstr) 
+                            p[3].arglist[ctr] = [p3temp , p3totype]
+
 
 
                     p[0].type = p[1].ret_type
@@ -1568,8 +1570,7 @@ class CParser():
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - ((found["sizeAllocInBytes"] + 3)//4)*4}(%ebp)')
                     p[0].temp = found['temp']
 
-                # print(p[3].arglist)
-                # print()
+
                 math_funcs_list_single = ["sqrt", "ceil", "floor", "fabs", "log", "log10", "exp", "cos" ,"sin", "acos", "asin", "tan", "atan"]
                 math_funcs_list_double = ["pow", 'fmod']
                 for arg in reversed(p[3].arglist):
