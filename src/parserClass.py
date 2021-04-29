@@ -1668,7 +1668,7 @@ class CParser():
                             if p[1].type[i][0] == '[' and p[1].type[i][-1] == ']':
                                 p[0].type.append(p[1].type[i])
 
-                        if 'struct' in p[0].type or 'union' in p[0].type:
+                        if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
                             p[0].vars = p[1].vars
 
                 ############################ DOO TACCC
