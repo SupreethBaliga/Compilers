@@ -168,7 +168,7 @@ adt = ['bool', 'char', 'short', 'int', 'long int',
     'str', 'void']
 sizes = {
     'int': 4,
-    'char': 1,
+    'char': 4,
     'short': 2,
     'long int': 8,
     'long': 8,
@@ -1587,8 +1587,8 @@ class CParser():
                         else:
                             if 'float' in arg[1]:
                                 self.TAC.emit('printf_push_float', arg[0])
-                            elif 'char' in arg[1]:
-                                self.TAC.emit('push_char', arg[0])
+                            # elif 'char' in arg[1]:
+                            #     self.TAC.emit('push_char', arg[0])
                             else:
                                 self.TAC.emit('param', arg[0],'','')
                     elif p[1].label in math_funcs_list_single:

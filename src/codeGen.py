@@ -240,21 +240,21 @@ class CodeGenerator:
             reg1, reg2, reg3 = self.float_deref(instruction)
             self.emit_code("flds", reg2)
             self.emit_code("fstps", reg1)
-        elif instruction[0][2:] == 'char':
-            self.check_type(instruction)
-            instruction[1] = self.deref(instruction[1])
-            regEax = self.request_register("%eax")
+        # elif instruction[0][2:] == 'char':
+        #     self.check_type(instruction)
+        #     instruction[1] = self.deref(instruction[1])
+        #     regEax = self.request_register("%eax")
 
-            self.emit_code("movl", instruction[2], "%eax")
-            self.emit_code("movzbl", "%al", instruction[2])
+        #     self.emit_code("movl", instruction[2], "%eax")
+        #     self.emit_code("movzbl", "%al", instruction[2])
 
-            self.emit_code("movl",instruction[2],instruction[1])
+        #     self.emit_code("movl",instruction[2],instruction[1])
             
-            self.free_register(instruction[2])
-            self.free_register("%eax")
-            if instruction[1][0] == '(':
-                instruction[1] = instruction[1][1:-1]
-                self.free_register(instruction[1])
+        #     self.free_register(instruction[2])
+        #     self.free_register("%eax")
+        #     if instruction[1][0] == '(':
+        #         instruction[1] = instruction[1][1:-1]
+        #         self.free_register(instruction[1])
         else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
@@ -488,7 +488,7 @@ class CodeGenerator:
 
 
 
-        self.op_sub(["-_int","%esp","%ebp","$20"])
+        # self.op_sub(["-_int","%esp","%ebp","$20"])
         
         # self.final_code.append("pop %edi")
         # self.final_code.append("pop %esi")
@@ -540,24 +540,24 @@ class CodeGenerator:
                 self.free_register(instruction[1])
             else:   
                 nVariables = int(instruction[2][1:])
-                if nVariables == 1:
-                    self.op_push_char(instruction)
-                else:
-                    tempInstruction = copy.deepcopy(instruction[1])
-                    val = int(tempInstruction.split('(')[0])
-                    tempCodeList = []
-                    
-                    for i in range(int(nVariables/4)):
-                        address = val + i*4
-                        if address == 0:
-                            address = "(%ebp)"
-                        else:
-                            address = str(address) + "(%ebp)"
-                        src = address
-                        tempCodeList.append("push " + src)
-                    # This is the case for struct
-                    for line in reversed(tempCodeList):
-                        self.final_code.append(line)
+                # if nVariables == 1:
+                #     self.op_push_char(instruction)
+                # else:
+                tempInstruction = copy.deepcopy(instruction[1])
+                val = int(tempInstruction.split('(')[0])
+                tempCodeList = []
+                
+                for i in range(int(nVariables/4)):
+                    address = val + i*4
+                    if address == 0:
+                        address = "(%ebp)"
+                    else:
+                        address = str(address) + "(%ebp)"
+                    src = address
+                    tempCodeList.append("push " + src)
+                # This is the case for struct
+                for line in reversed(tempCodeList):
+                    self.final_code.append(line)
 
     def op_function_call(self,instruction):
         # Function call valid right now only for 4 bytes argument
@@ -971,7 +971,7 @@ class CodeGenerator:
     def op_push_char(self, instruction):
         reg1 = self.request_register("%eax")
         reg2 = self.request_register()
-        # instruction[1] = self.deref(instruction[1])
+        instruction[1] = self.deref(instruction[1])
         self.emit_code("movl", instruction[1], reg1)
         self.emit_code("movzbl", "%al", reg2)
         self.emit_code("movl", reg2, instruction[1])
@@ -999,6 +999,8 @@ class CodeGenerator:
         #     types[0] = 'unsigned_int'
         # if '*' in types[1].split('_'):
         #     types[1] = 'unsigned_int'
+        instruction[1] = self.deref(instruction[1])
+        instruction[2] = self.deref(instruction[2])
 
         if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int' or types[1]=='char'):
             self.emit_code('fildl', instruction[2])
@@ -1081,8 +1083,8 @@ class CodeGenerator:
             self.op_load_float(instruction)
         elif instruction[0] == 'printf_push_float':
             self.op_printf_push_float(instruction)
-        elif instruction[0] == 'push_char':
-            self.op_push_char(instruction)
+        # elif instruction[0] == 'push_char':
+        #     self.op_push_char(instruction)
         elif instruction[0] == 'math_func_push_float':
             self.op_math_func_push_float(instruction)
         elif instruction[0] == 'math_func_push_int':
