@@ -183,8 +183,8 @@ class SymbolTable() :
                     if key2 != "#scope":
                         print(f'"{key2}" : {value2}')
                 print("\n")
-            else:
-                print(key, value)
+            # else:
+            #     print(key, value)
 
         for key, value in self.Table[0].items():
             if key !='#scopeNum':

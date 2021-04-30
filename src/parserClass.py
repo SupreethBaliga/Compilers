@@ -6688,6 +6688,19 @@ class CParser():
         self.ST.ModifySymbol("free", "type", ['void'])
         self.ST.ModifySymbol("free", "PARAM_NUMS", 1)
 
+        #strlen with a single argument
+        # self.ST.InsertSymbol("strlen", -1)
+        # self.ST.ModifySymbol("strlen", "check", "FUNC")
+        # self.ST.ModifySymbol("strlen", "type", ['int'])
+        # self.ST.ModifySymbol("strlen", "PARAM_NUMS", 1)
+        
+        # #strlwr with a single argument
+        # self.ST.InsertSymbol("strlwr", -1)
+        # self.ST.ModifySymbol("strlwr", "check", "FUNC")
+        # self.ST.ModifySymbol("strlwr", "type", ['int'])
+        # self.ST.ModifySymbol("strlwr", "PARAM_NUMS", 1)
+
+
     def p_translation_unit(self, p):
         '''
         translation_unit : external_declaration
