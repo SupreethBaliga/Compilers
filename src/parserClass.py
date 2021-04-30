@@ -1608,7 +1608,8 @@ class CParser():
                     else:  
                         new_p2_list = []
                         for elem in arg[1]:
-                            new_p2_list = new_p2_list + elem.split(' ')
+                            if elem != 'arr' and elem[0] != '[' and elem[-1] != ']':
+                                new_p2_list = new_p2_list + elem.split(' ')
                         req_type = 'void'
                         if '*' in new_p2_list:
                             req_type = 'PTR'
@@ -1934,7 +1935,8 @@ class CParser():
                     return
                 new_p2_list = []
                 for elem in p[2].type:
-                    new_p2_list = new_p2_list + elem.split(' ')
+                    if elem != 'arr' and elem[0] != '[' and elem[-1] != ']':
+                        new_p2_list = new_p2_list + elem.split(' ')
                 # print(new_p2_list)
                 req_type = 'void'
                 if '*' in new_p2_list:
