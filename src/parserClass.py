@@ -1003,27 +1003,67 @@ class CParser():
                 if self.ST.error:
                     return
 
-                p[0].varname = p[1].varname
-                found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0], p.lineno(1))
-                if found != False :
-                    if p3val in found["vars"].keys():
-                        p[0].temp = found["vars"][p3val]["temp"]
+                p[0].varname = p[1].varname + [p3val]
+                found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                if found is not None :
+                    if p[0].varname[1] in found["vars"].keys():
+                        ptr_flag = 0
+                        p[0].temp = p[1].temp
+                        if p[0].temp[0] == '(':
+                            ptr_flag = 1
+                            p0_offset = 0
+                        else:
+                            p0_offset = int(p[0].temp.split('(')[0])
+                        if len(p[0].varname) == 2:
+                            tmp_offset = 0
+                            for item in found["vars"]:
+                                if item == p[0].varname[1]:
+                                    break
+                                tmp_offset += found["vars"][item]["sizeAllocInBytes"]
+                            p0_offset += tmp_offset
+                            if ptr_flag == 1:
+                                self.TAC.emit("+_int", p[0].temp[1:-1], p[0].temp[1:-1], f'${p0_offset}')
+                            else:
+                                p[0].temp = f'{p0_offset}(%ebp)'
+                        else:
+                            type_to_check = found["vars"][p[0].varname[1]]["type"]
+                            idx = 2
+                            while "struct" in type_to_check:
+                                tmp_type = copy.deepcopy(type_to_check)
+                                tmp_type.remove('struct')
+                                if '*' in tmp_type:
+                                    tmp_type.remove('*')
+                                found2 = self.ST.TT.ReturnTypeTabEntry(tmp_type[0] , 'struct')
+                                if idx == len(p[0].varname) - 1:
+                                    tmp_offset = 0
+                                    for item in found2["vars"]:
+                                        if item == p[0].varname[idx]:
+                                            break
+                                        tmp_offset += found2["vars"][item]["sizeAllocInBytes"]
+                                    p0_offset += tmp_offset
+                                    if ptr_flag == 1:
+                                        self.TAC.emit("+_int", p[0].temp[1:-1], p[0].temp[1:-1], f'${p0_offset}')
+                                    else:
+                                        p[0].temp = f'{p0_offset}(%ebp)'
+                                    break
+                                type_to_check = found2["vars"][p[0].varname[idx]]['type']
+                                idx += 1
                 
-                if p[1].label == 'UNARY*':
-                    p[0].temp = p[1].temp[1:-1]
+                # if p[1].label == 'UNARY*':
+                #     p[0].temp = p[1].temp[1:-1]
                     
 
-                    # # Uncomment if you need entry from type table instead. But note that type table does not have offset
-                    # strtype = ''
-                    # if 'struct' in  p[1].type[0]:
-                    #     strtype = 'struct'
-                    # elif 'union' in p[1].type[0]:
-                    #     strtype = 'union'
-                    # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
-                    found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
+                #     # # Uncomment if you need entry from type table instead. But note that type table does not have offset
+                #     # strtype = ''
+                #     # if 'struct' in  p[1].type[0]:
+                #     #     strtype = 'struct'
+                #     # elif 'union' in p[1].type[0]:
+                #     #     strtype = 'union'
+                #     # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
+                #     found, entry = self.ST.ReturnSymTabEntry(p[1].varname[0])
 
-                    self.TAC.emit('+_int', p[0].temp, p[0].temp, f"${found['vars'][p[3].label]['offset']}")
-                    p[0].temp = f'({p[0].temp})'
+                #     self.TAC.emit('+_int', p[0].temp, p[0].temp, f"${found['vars'][p[3].label]['offset']}")
+                    # p[0].temp = f'({p[0].temp})'
 
                 # self.TAC.emit('.', p[0].temp, p[1].temp, p[3].label)
                 p[0].truelist.append(self.TAC.nextstat)
@@ -1251,7 +1291,7 @@ class CParser():
                 if self.ST.error:
                     return
 
-                p[0].varname = p[1].varname
+                p[0].varname = p[1].varname + [p3val]
                 p[0].temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p[0].temp, 0)
                 self.ST.ModifySymbol(p[0].temp, "type", ["int", "long"])
@@ -1280,9 +1320,39 @@ class CParser():
                 #     strtype = 'union'
                 # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
 
-                found, entry = self.ST.ReturnSymTabEntry(p[1].label)
-                self.TAC.emit('+_int', p[0].temp, p[1].temp, f"${found['vars'][p[3].label]['offset']}")
-                # self.TAC.emit('=long', p[0].temp, f'({p[0].temp})', '')
+                found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                if found is not False :
+                    if p[0].varname[1] in found["vars"].keys():
+                        p0_offset = 0
+                        if len(p[0].varname) == 2:
+                            tmp_offset = 0
+                            for item in found["vars"]:
+                                if item == p[0].varname[1]:
+                                    break
+                                tmp_offset += found["vars"][item]["sizeAllocInBytes"]
+                            p0_offset += tmp_offset
+                            self.TAC.emit("+_int", p[0].temp, p[1].temp, f'${p0_offset}')
+                        else:
+                            type_to_check = found["vars"][p[0].varname[1]]["type"]
+                            idx = 2
+                            while "struct" in type_to_check:
+                                tmp_type = copy.deepcopy(type_to_check)
+                                tmp_type.remove('struct')
+                                if '*' in tmp_type:
+                                    tmp_type.remove('*')
+                                found2 = self.ST.TT.ReturnTypeTabEntry(tmp_type[0] , 'struct')
+                                if idx == len(p[0].varname) - 1:
+                                    tmp_offset = 0
+                                    for item in found2["vars"]:
+                                        if item == p[0].varname[idx]:
+                                            break
+                                        tmp_offset += found2["vars"][item]["sizeAllocInBytes"]
+                                    p0_offset += tmp_offset
+                                    self.TAC.emit("+_int", p[0].temp, p[1].temp, f'${p0_offset}')
+                                    break
+                                type_to_check = found2["vars"][p[0].varname[idx]]['type']
+                                idx += 1
+                
                 p[0].temp = f'({p[0].temp})'
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
@@ -1771,7 +1841,7 @@ class CParser():
 
                     if len(p[0].dimensionList) == 0:
                         if(p[0].type[0][-1] == '*'):
-                            self.TAC.emit('*_int', p[0].temp, p[0].temp, '$8')
+                            self.TAC.emit('*_int', p[0].temp, p[0].temp, '$4')
                         else:
                             if 'struct' == p[0].type[0] or 'union' == p[0].type[0]:
                                 strtype =  p[0].type[0] + ' ' + p[0].type[1] 
@@ -1788,7 +1858,7 @@ class CParser():
                             p1_addr = f'{p[1].addr[5:]}(%ebp)'
                         self.TAC.emit('+_int', p[0].temp, p1_addr, p[0].temp)
                         p[0].temp = f'({p[0].temp})'
-
+                        
                         p[0].truelist.append(self.TAC.nextstat)
                         p[0].falselist.append(self.TAC.nextstat+1)
                         self.TAC.emit('ifnz goto','',p[0].temp,'')

@@ -17,7 +17,7 @@ struct node* new_node(int val) {
 void insert(int from, int to, struct node *adj[10]) {
     for(int i=0;i<10;i++) {
         if (adj[i]->vertex == from) {
-            struct node* curr = new_node();
+            struct node* curr = new_node(to);
             struct node* temp = adj[i]->next;
             adj[i]->next = curr;
             curr->next = temp;
@@ -30,7 +30,7 @@ void insert(int from, int to, struct node *adj[10]) {
 void print_list(struct node *adj[10]) {
     for(int i=0;i<10;i++) {
         printf("Edges from %d:", i);
-        struct node* curr = adj[i];
+        struct node* curr = adj[i]->next;
         while(curr != (void*)0) {
             printf("%d ", curr->vertex);
             curr = curr->next;

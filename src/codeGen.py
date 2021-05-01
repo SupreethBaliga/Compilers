@@ -534,10 +534,24 @@ class CodeGenerator:
                 self.free_register(reg)
                 return
             elif (instruction[1].count('(') > 1):
-                instruction[1] = self.deref(instruction[1])
-                self.final_code.append("push " + instruction[1])
-                instruction[1] = instruction[1][1:-1]
-                self.free_register(instruction[1])
+                if instruction[2] == '$4':
+                    instruction[1] = self.deref(instruction[1])
+                    self.final_code.append("push " + instruction[1])
+                    instruction[1] = instruction[1][1:-1]
+                    self.free_register(instruction[1])
+                else:
+                    reg = self.request_register()
+                    reg = self.register_mapping[reg]
+                    self.emit_code("movl", instruction[1][1:-1], reg)
+                    nVariables = int(instruction[2][1:])
+                    # if nVariables == 1:
+                    #     self.op_push_char(instruction)
+                    # else:
+                    num = nVariables//4
+                    self.emit_code("addl", f'${(num-1)*4}', reg)
+                    for i in range(num):
+                        self.emit_code("push", f'({reg})')
+                        self.emit_code("subl", "$4", reg)
             else:   
                 nVariables = int(instruction[2][1:])
                 # if nVariables == 1:
