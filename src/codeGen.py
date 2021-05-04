@@ -142,13 +142,20 @@ class CodeGenerator:
         return self.label_list[int(line)]
     
     def deref(self, dest):
-        if dest[0] != '(':
+        if dest[0] == '(':
+            dest = dest[1:-1]
+            register = self.request_register()
+            self.emit_code("movl", dest, register)
+            register = self.register_mapping[register]
+            return f'({register})'
+        elif dest[0] =='%' and len(dest) > 4:
+            new_dest = f'{int(dest[4:])}({dest[0:4]})'
+            register = self.request_register()
+            self.emit_code("leal", new_dest, register)
+            register = self.register_mapping[register]
+            return f'{register}'
+        else:   
             return dest
-        dest = dest[1:-1]
-        register = self.request_register()
-        self.emit_code("movl", dest, register)
-        register = self.register_mapping[register]
-        return f'({register})'
 
     def float_deref(self, instruction, rege1 = None, rege2 = None, rege3 = None):
         flag1, flag2, flag3 = 0, 0, 0
