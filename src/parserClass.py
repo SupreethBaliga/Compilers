@@ -6760,18 +6760,41 @@ class CParser():
         self.ST.ModifySymbol("free", "type", ['void'])
         self.ST.ModifySymbol("free", "PARAM_NUMS", 1)
 
-        #strlen with a single argument
-        # self.ST.InsertSymbol("strlen", -1)
-        # self.ST.ModifySymbol("strlen", "check", "FUNC")
-        # self.ST.ModifySymbol("strlen", "type", ['int'])
-        # self.ST.ModifySymbol("strlen", "PARAM_NUMS", 1)
+        # strlen with a single argument
+        self.ST.InsertSymbol("strlen", -1)
+        self.ST.ModifySymbol("strlen", "check", "FUNC")
+        self.ST.ModifySymbol("strlen", "type", ['int'])
+        self.ST.ModifySymbol("strlen", "PARAM_NUMS", 1)
         
-        # #strlwr with a single argument
-        # self.ST.InsertSymbol("strlwr", -1)
-        # self.ST.ModifySymbol("strlwr", "check", "FUNC")
-        # self.ST.ModifySymbol("strlwr", "type", ['int'])
-        # self.ST.ModifySymbol("strlwr", "PARAM_NUMS", 1)
+        #strlwr with a single argument
+        self.ST.InsertSymbol("strlwr", -1)
+        self.ST.ModifySymbol("strlwr", "check", "FUNC")
+        self.ST.ModifySymbol("strlwr", "type", ['char', '*'])
+        self.ST.ModifySymbol("strlwr", "PARAM_NUMS", 1)
 
+        #strupr with a single argument
+        self.ST.InsertSymbol("strupr", -1)
+        self.ST.ModifySymbol("strupr", "check", "FUNC")
+        self.ST.ModifySymbol("strupr", "type", ['char', '*'])
+        self.ST.ModifySymbol("strupr", "PARAM_NUMS", 1)
+
+        #strcpy with a single argument
+        self.ST.InsertSymbol("strcpy", -1)
+        self.ST.ModifySymbol("strcpy", "check", "FUNC")
+        self.ST.ModifySymbol("strcpy", "type", ['void'])
+        self.ST.ModifySymbol("strcpy", "PARAM_NUMS", 2)
+
+        #strcat with a single argument
+        self.ST.InsertSymbol("strcat", -1)
+        self.ST.ModifySymbol("strcat", "check", "FUNC")
+        self.ST.ModifySymbol("strcat", "type", ['char', '*'])
+        self.ST.ModifySymbol("strcat", "PARAM_NUMS", 2)
+
+        #strcmp with a single argument
+        self.ST.InsertSymbol("strcmp", -1)
+        self.ST.ModifySymbol("strcmp", "check", "FUNC")
+        self.ST.ModifySymbol("strcmp", "type", ['int'])
+        self.ST.ModifySymbol("strcmp", "PARAM_NUMS", 2)
 
     def p_translation_unit(self, p):
         '''

@@ -18,16 +18,17 @@ char* strupr(char * s) {
     if (!s) {
         return 0;
     }
-    while(!t != '\0') {
+    while(*t != '\0') {
         if(*t >= 'a' && *t <= 'z') {
             *t = *t - ('a' - 'A');
         }
         t++;
     }
+    
     return s;
 }
 
-void strcpy2(char *dest, char *source) 
+void strcpy(char *dest, char *source) 
 {
     int i = 0;
     while ((dest[i] = source[i]) != '\0')

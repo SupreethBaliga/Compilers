@@ -61,13 +61,18 @@ class CodeGenerator:
                 self.register_stack.remove(reg_idx)
                 return reg_idx
             return None
-
+        
+        # self.emit_code('yay', str(self.register_stack))
         register = self.register_stack.pop()
+        # self.emit_code('yay', str(self.register_stack))
+        # self.emit_code('yay', register)
+        # self.emit_code('yay', '#' + str(register))
         return register
 
     def free_register(self, reg_idx, start=None):
         if(reg_idx == None):
             return
+
         if isinstance(reg_idx, int):
             register = self.register_mapping[reg_idx]
         else:
@@ -78,6 +83,8 @@ class CodeGenerator:
 
         if not isinstance(reg_idx, int):
             reg_idx = self.reverse_mapping[reg_idx]
+        if reg_idx in self.register_stack:
+            return
         if start is not None:
             self.register_stack.insert(0, reg_idx)
         else:
@@ -122,6 +129,8 @@ class CodeGenerator:
                 reg2_idx = self.request_register("%ebx")
             else:
                 reg2_idx = self.request_register(req_reg2)
+                # self.emit_code("hello",reg1_idx, reg2_idx)
+                # self.emit_code("hello",'#'+str(reg1_idx), '#'+str(reg2_idx))
             if not reg2_idx:
                 return False
             if src2[0] == "(":
@@ -223,9 +232,10 @@ class CodeGenerator:
             self.emit_code("movl",instruction[3],instruction[1])
             self.free_register(instruction[2])
             self.free_register(instruction[3])
-            if instruction[1][0] == '(':
-                instruction[1] = instruction[1][1:-1]
+            if instruction[1][0]=='%':
                 self.free_register(instruction[1])
+            elif instruction[1][0]=='(' and instruction[1][1] =='%':
+                self.free_register(instruction[1][1:-1])
                 
     def op_sub(self,instruction):
         '''

@@ -167,7 +167,12 @@ class CLexer(object):
     @TOKEN(char_const)
     def t_CHAR1_CONSTANT(self, t):
         t.type = 'CHAR_CONSTANT'
-        t.value = ord(t.value[1])
+        if len(t.value) == 3:
+            t.value = ord(t.value[1])
+        else:
+            if t.value[1:-1] == str('\\0'):
+                t.value = 0
+            # addmore here
         return t
 
     # Floating constants
