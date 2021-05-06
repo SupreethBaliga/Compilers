@@ -75,9 +75,10 @@ class CodeGenerator:
         if (register not in self.register_list):
             # Do not free register if it is %ebp and %esp
             return
-
         if not isinstance(reg_idx, int):
             reg_idx = self.reverse_mapping[reg_idx]
+        if reg_idx in self.register_stack:
+            return
         if start is not None:
             self.register_stack.insert(0, reg_idx)
         else:
