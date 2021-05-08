@@ -83,13 +83,15 @@ class CodeGenerator:
 
         if not isinstance(reg_idx, int):
             reg_idx = self.reverse_mapping[reg_idx]
+
         if reg_idx in self.register_stack:
             return
+        
         if start is not None:
             self.register_stack.insert(0, reg_idx)
         else:
             self.register_stack.append(reg_idx)
-    
+        
     def move_var(self,src,dst):
         # Move in case more than one pair of ()
         if src == dst:
@@ -97,7 +99,7 @@ class CodeGenerator:
         # dst = self.register_mapping[dst]
         self.emit_code("movl",src,dst)
     
-    def check_type(self,instruction, req_reg1=None, req_reg2=None, eight_bit1=False, eight_bit2=False):
+    def check_type(self,instruction, req_reg1=None, req_reg2=None, eight_bit1=False, eight_bit2=False, one_byte = None):
         '''
         This function moves all the values into appropriate registers
         '''
@@ -119,9 +121,15 @@ class CodeGenerator:
             self.emit_code("leal", f'{offset}(%ebp)', reg1_idx)
         elif src1[0] == "(":
             self.move_var(src1[1:-1],reg1_idx)
-            self.emit_code("movl", f'({self.register_mapping[reg1_idx]})', reg1_idx)
+            if one_byte is not None:
+                self.emit_code("movzbl", f'({self.register_mapping[reg1_idx]})', reg1_idx)
+            else:
+                self.emit_code("movl", f'({self.register_mapping[reg1_idx]})', reg1_idx)
         else:
-            self.move_var(src1,reg1_idx)
+            if one_byte is not None:
+                self.emit_code("movzbl", src1, reg1_idx)
+            else:
+                self.move_var(src1,reg1_idx)
         instruction[2] = reg1_idx
         if(len(instruction) > 3):
             src2 = instruction[3]
@@ -135,9 +143,15 @@ class CodeGenerator:
                 return False
             if src2[0] == "(":
                 self.move_var(src2[1:-1],reg2_idx)
-                self.emit_code("movl", f'({self.register_mapping[reg2_idx]})', reg2_idx)
+                if one_byte is not None:
+                    self.emit_code("movzbl", f'({self.register_mapping[reg2_idx]})', reg2_idx)
+                else:
+                    self.emit_code("movl", f'({self.register_mapping[reg2_idx]})', reg2_idx)
             else:
-                self.move_var(src2,reg2_idx)
+                if one_byte is not None:
+                    self.emit_code("movzbl", src2, reg2_idx)
+                else: 
+                    self.move_var(src2,reg2_idx)
             instruction[3] = reg2_idx
 
         return True  
@@ -150,16 +164,16 @@ class CodeGenerator:
             return label
         return self.label_list[int(line)]
     
-    def deref(self, dest):
+    def deref(self, dest, one_byte = None, reg = None):
         if dest[0] == '(':
             dest = dest[1:-1]
-            register = self.request_register()
+            register = self.request_register(reg)
             self.emit_code("movl", dest, register)
             register = self.register_mapping[register]
             return f'({register})'
         elif dest[0] =='%' and len(dest) > 4:
             new_dest = f'{int(dest[4:])}({dest[0:4]})'
-            register = self.request_register()
+            register = self.request_register(reg)
             self.emit_code("leal", new_dest, register)
             register = self.register_mapping[register]
             return f'{register}'
@@ -225,6 +239,16 @@ class CodeGenerator:
             self.emit_code("flds", reg2)
             self.emit_code("fadds", reg3)
             self.emit_code("fstps", reg1)
+        elif instruction[0][2:] =='char':
+            self.check_type(instruction, "%edx", "%eax", False, False, True)
+            instruction[1] = self.deref(instruction[1])
+            self.emit_code("addl",instruction[3],instruction[2])
+            self.emit_code("movb", "%dl",instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
@@ -247,6 +271,16 @@ class CodeGenerator:
             self.emit_code("flds", reg2)
             self.emit_code("fsubs", reg3)
             self.emit_code("fstps", reg1)
+        elif instruction[0][2:] =='char':
+            self.check_type(instruction, "%edx", "%eax", False, False, True)
+            instruction[1] = self.deref(instruction[1])
+            self.emit_code("subl",instruction[3],instruction[2])
+            self.emit_code("movb", "%dl",instruction[1])
+            self.free_register(instruction[2])
+            self.free_register(instruction[3])
+            if instruction[1][0] == '(':
+                instruction[1] = instruction[1][1:-1]
+                self.free_register(instruction[1])
         else:
             self.check_type(instruction)
             instruction[1] = self.deref(instruction[1])
@@ -289,20 +323,25 @@ class CodeGenerator:
                 elif instruction[1][0]=='(' and instruction[1][1] =='%':
                     self.free_register(instruction[1][1:-1])
             else:
-                instruction[1] = self.deref(instruction[1])
-                instruction[2] = self.deref(instruction[2])
+                instruction[1] = self.deref(instruction[1], None, "%edx")
+                instruction[2] = self.deref(instruction[2], None, "%ecx")
                 reg = self.request_register("%eax")
                 self.emit_code("movzbl", instruction[2], "%eax")
                 self.emit_code("movb", "%al", instruction[1])
 
+                # print(self.reverse_mapping["%eax"])
                 self.free_register("%eax")
+                # print(instruction[1], instruction[2], instruction[1][1:-1],instruction[2][1:-1])
                 if instruction[1][0]=='%':
                     self.free_register(instruction[1])
                 elif instruction[1][0]=='(' and instruction[1][1] =='%':
+                    # print(self.reverse_mapping[instruction[1][1:-1]])
                     self.free_register(instruction[1][1:-1])
+
                 if instruction[2][0]=='%':
                     self.free_register(instruction[2])
                 elif instruction[2][0]=='(' and instruction[2][1] =='%':
+                    # print(self.reverse_mapping[instruction[2][1:-1]])
                     self.free_register(instruction[2][1:-1])
         else:
             self.check_type(instruction)
@@ -557,17 +596,17 @@ class CodeGenerator:
                 self.emit_code("leal", f'{offset}(%ebp)', reg1)
                 self.emit_code("push", reg1)
                 self.free_register(reg1)
-                return
-            if instruction[1][0] != '(':
+            elif instruction[1][0] != '(':
                 reg = self.request_register()
                 self.emit_code("movl", instruction[1], reg)
                 self.emit_code("push", reg)
                 self.free_register(reg)
             else:
                 self.final_code.append("push " + instruction[1])
-            if instruction[1][0] == '(':
-                instruction[1] = instruction[1][1:-1]
+            if instruction[1][0]=='%':
                 self.free_register(instruction[1])
+            elif instruction[1][0]=='(' and instruction[1][1] =='%':
+                self.free_register(instruction[1][1:-1])
         else:
             if instruction[1][0] == "%" and len(instruction[1]) > 4:
                 offset = int(instruction[1][4:])
@@ -779,8 +818,9 @@ class CodeGenerator:
             self.free_register(instruction[3])
             self.free_register(reg)
         elif instruction[0][2:6]=='char' or instruction[0][3:7]=='char':
-            self.check_type(instruction)
-            self.emit_code("cmpl",instruction[3],instruction[2])
+            self.check_type(instruction, None, None, False, False, True)
+            # reg1 = self.request_register("")
+            self.emit_code("cmpb",instruction[3],instruction[2])
             
             reg = self.request_register("%edx")
             reg = self.register_mapping[reg]
@@ -1041,7 +1081,29 @@ class CodeGenerator:
         # self.emit_code("push", instruction[1])
         # self.free_register(reg1)
         # self.free_register(reg2)
-        instruction[1] = self.deref(instruction[1])
+        instruction[1] = self.deref(instruction[1], None, "%edx")
+        self.emit_code("movzbl", instruction[1], "%eax")
+        # self.emit_code("movsbl", "%al", "%eax")
+        # self.emit_code("pushb", "%al")
+        self.emit_code("subl", "$1", "%esp")
+        self.emit_code("movb", "%al", "0(%esp)")
+        self.free_register(reg1)
+        if instruction[1][0]=='%':
+            self.free_register(instruction[1])
+        elif instruction[1][0]=='(' and instruction[1][1] =='%':
+            self.free_register(instruction[1][1:-1])
+
+    def op_printf_push_char(self, instruction):
+        reg1 = self.request_register("%eax")
+        # reg2 = self.request_register()
+        # instruction[1] = self.deref(instruction[1])
+        # self.emit_code("movl", instruction[1], reg1)
+        # self.emit_code("movzbl", "%al", reg2)
+        # self.emit_code("movl", reg2, instruction[1])
+        # self.emit_code("push", instruction[1])
+        # self.free_register(reg1)
+        # self.free_register(reg2)
+        instruction[1] = self.deref(instruction[1],None,"%edx")
         self.emit_code("movzbl", instruction[1], "%eax")
         self.emit_code("movsbl", "%al", "%eax")
         self.emit_code("push", "%eax")
@@ -1072,15 +1134,25 @@ class CodeGenerator:
         #     types[0] = 'unsigned_int'
         # if '*' in types[1].split('_'):
         #     types[1] = 'unsigned_int'
-        instruction[1] = self.deref(instruction[1])
-        instruction[2] = self.deref(instruction[2])
+        instruction[1] = self.deref(instruction[1], None, "%ecx")
+        instruction[2] = self.deref(instruction[2], None, "%edx")
 
-        if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int' or types[1]=='char'):
+        if types[0]=='float' and (types[1]=='int' or types[1]=='unsigned_int'):
             self.emit_code('fildl', instruction[2])
             self.emit_code('fstps', instruction[1])
-        elif (types[0]=='int' or types[0]=='unsigned_int' or types[0]=='char') and types[1]=='float':
+        elif (types[0]=='int' or types[0]=='unsigned_int') and types[1]=='float':
             self.emit_code('flds', instruction[2])
             self.emit_code('fisttpl', instruction[1])
+        elif types[0]=='char' and types[1]=='int':
+            reg = self.request_register("%eax")
+            self.emit_code("movl", instruction[2], "%eax")
+            self.emit_code("movb", "%al", instruction[1])
+            self.free_register(reg)
+        elif types[0]=='int' and types[1]=='char':
+            reg = self.request_register("%eax")
+            self.emit_code("movzbl", instruction[2], "%eax")
+            self.emit_code("movl", "%eax", instruction[1])
+            self.free_register(reg)
         else:
             reg = self.request_register()
             self.emit_code('movl', instruction[2], reg)
@@ -1099,6 +1171,7 @@ class CodeGenerator:
 
     
     def gen_code(self, instruction):
+        # print("begin",self.register_stack)
         if not instruction:
             return
         # Currently these instructions only work for int
@@ -1176,10 +1249,13 @@ class CodeGenerator:
             self.op_pow_func_push_int(instruction)
         elif instruction[0] == 'pow_func_push_float':
             self.op_pow_func_push_float(instruction)
+        elif instruction[0] == 'printf_push_char':
+            self.op_printf_push_char(instruction)
         elif instruction[0] == 'cast':
             self.op_cast(instruction)
         else:
             self.final_code.append(' '.join(instruction))
+        # print("end",self.register_stack)
 
 def main(file,code):
     codegen = CodeGenerator()
