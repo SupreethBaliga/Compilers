@@ -23,16 +23,6 @@ def new_node():
 def remove_node(graphNode):
     G.remove_node(graphNode)
 
-########### Classes Required ###########
-
-# To-DO list
-# Pointers    ->  Srivastava
-# Arrays      ->  Srivastava
-# Switch Case ->  Srivastava
-# TypeCasting TAC -> Sanchit
-# Functions(later)
-
-
 # This class denotes the Node of our Functional AST
 class Node:
     def __init__(self,label,children=None,node=None,attributes=None,createAST = True, type=None, isvar = False):
@@ -80,8 +70,6 @@ class Node:
         if (self.createAST == True) :
             self.makeGraph()
     
-        # self.tacListAdd()
-        
         self.variables = dict()
         # The key of the dictionary  will be variable name and the value will be a tuple consisting of type
         self.extraValues = []
@@ -129,19 +117,6 @@ class Node:
 
             G.add_subgraph(listNode,rank='same')
     
-    # Wrong and Useless function
-    # def tacListAdd(self):
-    #     newchildren = []
-    #     for child in self.children:
-    #         if ((child is not None) and (child.node is not None)):
-    #             newchildren.append(child)
-    #     self.children = newchildren
-    #     for child in self.children:
-    #         self.truelist += child.truelist
-    #         self.falselist += child.falselist
-    #         self.nextlist += child.nextlist
-    #         self.beginlist += child.beginlist
-    
     def onlyAddEdge(self,extraChildren):
         # This function only adds edge from the parent to the given
         # node and adds the given nodes to the children list
@@ -187,9 +162,6 @@ class CParser():
     tokens.remove("ERROR")
     tokens.remove("HEXA_CONSTANT")
     tokens.remove("OCTAL_CONSTANT")
-    tokens.remove("AUTO")
-    tokens.remove("REGISTER")
-    tokens.remove("GOTO")
     def __init__(self):
         self.ST = SymbolTable()
         self.TAC = TAC()
@@ -255,23 +227,7 @@ class CParser():
         if self.isError :
             return
         found, entry = self.ST.ReturnSymTabEntry(p[1]['lexeme'], p.lineno(1))
-        if found: # Change this accordingly
-
-
-            # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
-
-            # if 'STRUCT' ==  entry['check']:
-                # print(json.dumps(self.Table[0], indent=2))
-
-                # print(json.dumps(self.ST.TT.Table, indent=2),)    #self.ST.TT.Table, '\n\n\n')
-                # print(p[1]['lexeme'], entry['type'][0].lower(),  entry['check'].lower(), p.lineno(1) )
-                # foundt = self.ST.TT.ReturnTypeTabEntry(entry['type'][0], entry['check'].lower()) #tmp, struct, p.lineno()
-                # print('hi2')
-                # print(foundt)
-
-
-                # print('\n\n\n')
-
+        if found:
 
             try :
                 entry['type']
@@ -285,18 +241,13 @@ class CParser():
                 p[0].type = []
                 p[0].type.append('func')
                 p[0].ret_type = []
-
-
                 type_list = entry['type']
-
                 isarr = 0
-                # print(entry)
-                # print(entry['type'])
+ 
                 for i in range(len(entry['type'])):
                     if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
                         isarr += 1
                         p[0].arrlvl += 1
-
 
                 if 'unsigned' in type_list or 'signed' in type_list:
                     if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
@@ -405,8 +356,6 @@ class CParser():
                                 temp_type.append(p[0].ret_type[i])
                     p[0].ret_type = temp_type
 
-
-
                 p[0].param_nums = entry['PARAM_NUMS']
                 p[0].params = []
                 if '#scope' in entry.keys():
@@ -423,15 +372,11 @@ class CParser():
 
                 if self.ST.error:
                     return
-                # Need to change here
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
                 return
 
-
             isarr = 0
-            # print(entry)
-            # print(entry['type'])
             for i in range(len(entry['type'])):
                 if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
                     isarr += 1
@@ -554,18 +499,12 @@ class CParser():
             if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
                 p[0].vars = entry['vars']
 
-            # elif 'struct *' in p[0].type or 'union *' in p[0].type:
-            #     p[0].vars = entry['vars']
-            # Remove when we started to give error at declaration of double/triple pointer to struct itself
-            # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
-            #     self.ST.error = 1
-            #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}') 
-            #     return
         else:
             p[0] = Node('error')
-        # Three address code
+        
         if self.ST.error:
             return
+        
         p[0].varname.append(p[1]['lexeme'])
         p[0].temp = self.TAC.get_sym(self.ST, p[0].label)
         p[0].truelist.append(self.TAC.nextstat)
@@ -583,7 +522,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
             if self.ST.error:
@@ -607,10 +545,8 @@ class CParser():
         self.ST.InsertSymbol(p[1]['lexeme'], p[1]['additional']['line'])
         self.ST.ModifySymbol(p[1]['lexeme'], "check", "VAR")
         
-        #tac
         if self.ST.error:
             return
-        # this is mostly not needed
                 
         self.ST.ModifySymbol(p[1]['lexeme'], "temp", p[1]['lexeme'])
         
@@ -732,7 +668,6 @@ class CParser():
         ''' 
         if self.isError :
             return
-        # AST Done - see sheet for rules 2-postinc,3-postdec 5,7 and 8
         if (len(p) == 2):
             p[0] = p[1]
 
@@ -764,7 +699,6 @@ class CParser():
                 p[0].addr = f'%ebp{var}'
                 if var[0] == '-':
                     p[0].temp = p[0].addr
-                    
 
         elif (len(p) == 3):
             if p[1] == None or p[1].type == None or p[1].type == []:
@@ -833,9 +767,7 @@ class CParser():
             if p[2] == '.':
                 p3val = p[3]['lexeme']
                 p[3] = Node(str(p3val))
-
                 p[0] = Node('.',[p[1],p[3]])
-                # ----------------------------------------------------------
 
                 if p[1] == None or p[1].type == None or p[1].type == []:
                     self.ST.error = 1
@@ -935,7 +867,6 @@ class CParser():
                             if single_type != 'union':
                                     p[0].type.append(single_type)    
 
-
                     if isarr > 0:
                         temp_type = []
                         temp_type.append(p[0].type[0])
@@ -951,13 +882,11 @@ class CParser():
                             if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                 p[0].type.append(type_list[len(type_list)-i-1])
 
-
                     if 'void' in type_list:
                         p[0].type.append('void')
                         for single_type in type_list:
                             if single_type != 'void':
                                     p[0].type.append(single_type)     
-
 
                     if '*' in type_list:
                         temp_type = []
@@ -968,7 +897,6 @@ class CParser():
                             else:
                                 temp_type.append(p[0].type[i])
                         p[0].type = temp_type
-                    
 
                     if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
 
@@ -983,23 +911,9 @@ class CParser():
 
                         # self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
 
-
-                        # print(p3val, p.lineno(3))
-                        # p[0].vars = entry['vars']
-
-
-
-
-                    # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0]):
-                    #     self.ST.error = 1
-                    #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(2)}') 
-
-
-                    # Useful if we implement nested struct/union
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
 
-                #tac
                 if self.ST.error:
                     return
 
@@ -1051,7 +965,6 @@ class CParser():
                 
                 # if p[1].label == 'UNARY*':
                 #     p[0].temp = p[1].temp[1:-1]
-                    
 
                 #     # # Uncomment if you need entry from type table instead. But note that type table does not have offset
                 #     # strtype = ''
@@ -1246,14 +1159,11 @@ class CParser():
                             if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                 p[0].type.append(type_list[len(type_list)-i-1])
 
-
-
                     if 'void' in type_list:
                         p[0].type.append('void')
                         for single_type in type_list:
                             if single_type != 'void':
                                     p[0].type.append(single_type)     
-
 
                     if '*' in type_list:
                         temp_type = []
@@ -1265,11 +1175,7 @@ class CParser():
                                 temp_type.append(p[0].type[i])
                         p[0].type = temp_type
                     
-
                     if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
-
-                        # self.ST.error = 1
-                        # print(f'Nested structures/unions not allowed at line {p.lineno(2)}')
 
                         strtype = ''
                         if 'struct' in  p[0].type[0]:
@@ -1280,16 +1186,9 @@ class CParser():
                         typet = self.ST.TT.ReturnTypeTabEntry(p[0].type[1], strtype, p.lineno(3))
                         p[0].vars = typet['vars']
 
-
-                    # elif p[0].type and ('struct' in p[0].type[0] or 'union' in p[0].type[0] ):
-                    #     self.ST.error = 1
-                    #     print(f'Multilevel pointer for structures/unions not allowed at line {p.lineno(1)}')
-                    #     return
-
                     if 'struct' not in p[0].type and 'union' not in p[0].type:
                         p[0].isvar = 1
 
-                # tac
                 if self.ST.error:
                     return
 
@@ -1381,25 +1280,14 @@ class CParser():
                 else:
                     ctr = -1
                     for param in p[1].params:
-
-                        # call id, len(p[1].params)
                         ctr += 1
-
-
-
                         entry = param
-
-
                         isarr = 0
                         for i in range(len(entry['type'])):
                             if entry['type'][i][0]=='[' and entry['type'][i][-1] == ']':
                                 isarr += 1
-                        
 
                         type_list = entry['type']
-
-
-
                         if 'unsigned' in type_list or 'signed' in type_list:
                             if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
                                 type_list.append('int')
@@ -1491,14 +1379,11 @@ class CParser():
                                 if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                                     paramtype.append(type_list[len(type_list)-i-1])
 
-
-
                         if 'void' in type_list:
                             paramtype.append('void')
                             for single_type in type_list:
                                 if single_type != 'void':
                                         paramtype.append(single_type)     
-
 
                         if '*' in type_list:
                             temp_type = []
@@ -1510,25 +1395,10 @@ class CParser():
                                     temp_type.append(paramtype[i])
                             paramtype = temp_type
 
-
-
-
-
-                        # print(paramtype)
-
-
                         if p[3] is None or paramtype is None or p[3].params[ctr] is None or paramtype == [] or p[3].params[ctr] == []:
                             self.ST.error = 1
                             print(f'Cannot call function at line {p.lineno(2)}')
                             return
-
-
-
-                        # Remove when we started to give error at declaration of double/triple pointer to struct itself
-                        # if ('struct' in paramtype[0] or 'union' in paramtype[0]) and '* *' in paramtype[0] :
-                        #     self.ST.error = 1
-                        #     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
-                        #     return
 
                         if ('struct' in paramtype or 'union' in paramtype) and ('struct' not in p[3].params[ctr] and 'union' not in p[3].params[ctr]):
                             self.ST.error = 1;
@@ -1550,7 +1420,6 @@ class CParser():
                             print(f'Incompatible union types to call function at line {p.lineno(2)}')
                             return
                         
-                        
                         if paramtype[0] in aat and p[3].params[ctr][0] not in aat and p[3].params[ctr][0][-1] != '*':
                             self.ST.error = 1
                             print(f'Invalid parameter type to call function at line {p.lineno(2)}')
@@ -1569,7 +1438,6 @@ class CParser():
 
                         if self.ST.error:
                             return
-
                         
                         isin = True
                         p3totype = []
@@ -1581,8 +1449,6 @@ class CParser():
 
                         if isin == False: 
                             
-
-                            # Check and confirm
                             p3temp = self.TAC.newtemp()
                             self.ST.InsertSymbol(p3temp, 0)
                             self.ST.ModifySymbol(p3temp, "type", p3totype)
@@ -1602,9 +1468,6 @@ class CParser():
                                         self.ST.ModifySymbol(p3temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
                                 p3temp = found['temp']  
 
-
-
-                            
                             fromtype = p[3].params[ctr]
                             currtype = []
                             for single_type in fromtype:
@@ -1615,11 +1478,7 @@ class CParser():
                             self.TAC.emit('cast',p3temp, p[3].arglist[ctr][0], ' '.join(p3totype).replace(' ','_') + currtyprstr) 
                             p[3].arglist[ctr] = [p3temp , p3totype]
 
-
-
                     p[0].type = p[1].ret_type
-
-
 
                 p[0].varname = p[1].varname
                 if self.ST.error:
@@ -1648,11 +1507,6 @@ class CParser():
                 math_funcs_list_single = ["sqrt", "ceil", "floor", "fabs", "log", "log10", "exp", "cos" ,"sin", "acos", "asin", "tan", "atan"]
                 math_funcs_list_double = ["pow", 'fmod']
                 for arg in reversed(p[3].arglist):
-                    # flds  -12(%ebp)  - for printf("%f\n", a) where a is float
-                    # subl  $4, %esp
-                    # leal  -8(%esp), %esp
-                    # fstpl (%esp)
-                    # var_type = self.ST.ReturnSymTabEntry(arg)
                     if p[1].label == 'printf':
                         if arg[0][0] == '$':
                             self.TAC.emit('param', arg[0],'','')
@@ -1670,7 +1524,7 @@ class CParser():
                             self.TAC.emit('math_func_push_int', arg[0])
                         elif 'char' in arg[1]:
                             self.TAC.emit('push_char', arg[0])
-                        else: # modify this later with more data types
+                        else:
                             self.TAC.emit('math_func_push_int', arg[0])
                     elif p[1].label in math_funcs_list_double:
                         if 'float' in arg[1]:
@@ -1694,7 +1548,7 @@ class CParser():
                         else:
                             req_type = ' '.join(new_p2_list)
                             if req_type in sizes:
-                                # Change here
+                                # Change here NIKHILAG
                                 self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
                             else:
                                 self.ST.error = 1
@@ -1744,7 +1598,6 @@ class CParser():
                                 p[0].type.append(single_type)
 
                         p[0].type[0] = p[0].type[0][0:-2]
-
                         p[0].arrlvl = p[1].arrlvl - 1
 
                         if p[0].type[0][-1] != '*':
@@ -1757,8 +1610,6 @@ class CParser():
 
                         if 'struct' in p[0].type[0] or 'union' in p[0].type[0]:
                             p[0].vars = p[1].vars
-
-                ############################ DOO TACCC
 
                 p[0].varname = p[1].varname
                 p[0].temp = self.TAC.newtemp()
@@ -1846,7 +1697,6 @@ class CParser():
                         curDimension = p[0].dimensionList[-1]
                         self.TAC.emit('*_int', p[0].temp, p[1].temp , f'${curDimension}')
                         self.TAC.emit('+_int', p[0].temp, p[0].temp, p[3].temp)
-
                     
                     p[0].dimensionList.pop()
 
@@ -1884,7 +1734,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
             if p[1] is None:
@@ -1892,7 +1741,6 @@ class CParser():
             p[0].param_nums = 1
             p[0].params = []
             p[0].params.append(p[1].type) 
-            # p[0].type = ['arg list']
             if p[1].type is None:
                 p[1].type = ['Dummy']
             p[0].arglist =[[p[1].temp, p[1].type]]
@@ -1902,7 +1750,6 @@ class CParser():
             if p[1] is None or p[1].param_nums is None or p[1].arglist is None or p[1].params is None or p[3] is None or p[3].temp is None or p[3].type is None or p[3].type == []:
                 return
             p[0].param_nums = p[1].param_nums + 1
-            # p[0].type = ['arg list']
             p[0].params = p[1].params
             p[0].params.append(p[3].type)
             p[0].arglist = p[1].arglist
@@ -2018,7 +1865,6 @@ class CParser():
                 for elem in p[2].type:
                     if elem != 'arr' and elem[0] != '[' and elem[-1] != ']':
                         new_p2_list = new_p2_list + elem.split(' ')
-                # print(new_p2_list)
                 req_type = 'void'
                 if '*' in new_p2_list:
                     req_type = 'PTR'
@@ -2073,7 +1919,6 @@ class CParser():
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
 
-
                     elif p[1].label[-1] == '~':
                         if len(p[2].type)>0 and p[2].type[0] in iit:
                             p[0].type = ['int']
@@ -2108,7 +1953,6 @@ class CParser():
                             print(f'Cannot perform unary operation * at line {p[1].lineno}')
                             return              
 
-
                         elif len(p[2].type)>0 and p[2].type[0][-1] != '*' and ('*' not in p[2].type):
                             self.ST.error = 1
                             print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
@@ -2124,11 +1968,7 @@ class CParser():
                             except:
                                 pass
 
-
                     elif p[1].label[-1] == '&':
-
-                        # What to do for pointer to structs
-                        # if 'struct *' in p[2].type:
 
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
@@ -2152,10 +1992,8 @@ class CParser():
                     except:
                         p[0].onlyAddEdge([p[2]])
                     
-                #tac
                 if self.ST.error:
                     return
-
 
                 if p[2].totype is not None and p[2].totype != p[2].type:
 
@@ -2178,16 +2016,12 @@ class CParser():
                                 self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
                         p2.temp = found['temp']  
                     
-
-
-
                     fromtype = p[2].type
                     currtype = []
                     for single_type in fromtype:
                         if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
                             currtype.append(single_type)
                     cstr =',' +  ' '.join(currtype).replace(' ','_')
-
 
                     self.TAC.emit('cast',p2.temp,p[2].temp,' '.join(p[2].totype).replace(' ','_') + cstr) 
 
@@ -2207,7 +2041,6 @@ class CParser():
                 self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
 
                 if p[1].label == 'UNARY*':
-                    # print(p[2].varname)
                     found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
                     var_size = found['sizeAllocInBytes']
                     self.ST.ModifySymbol(p[0].temp, "sizeAllocInBytes", var_size)
@@ -2246,9 +2079,7 @@ class CParser():
         elif (len(p) == 5):
             p[0] = Node('SIZEOF',[p[3]])
             p[0].type = ['int']
-            # not sure
             
-            #tac
             if self.ST.error:
                 return
             # if len(p[3].temp) > 0 and p[3].temp[0] == '_':
@@ -2385,7 +2216,6 @@ class CParser():
                         self.ST.error = 1
                         print('Two or more conflicting data types specified for variable at line', p.lineno(1))
                         return
-            
 
             isarr = 0
             for i in range(len(p[2].type)):
@@ -2489,8 +2319,6 @@ class CParser():
                     if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                         p[0].type.append(type_list[len(type_list)-i-1])
 
-
-
             if 'void' in type_list:
                 p[0].type.append('void')
                 for single_type in type_list:
@@ -2506,7 +2334,6 @@ class CParser():
                     else:
                         temp_type.append(p[0].type[i])
                 p[0].type = temp_type
-
 
             if p[2].type is None or p[4].type is None or p[0].type is None:
                 self.ST.error = 1
@@ -2538,7 +2365,6 @@ class CParser():
 
             p[4].totype = p[0].type
             
-            #TAC
             if self.ST.error:
                 return
             p[0].temp = self.TAC.newtemp()
@@ -2560,14 +2386,12 @@ class CParser():
                         self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
                 p[0].temp = found['temp']
 
-
             fromtype = p[4].type
             currtype = []
             for single_type in fromtype:
                 if single_type != 'arr'  and single_type[0] != '[' and single_type[-1] != ']':
                     currtype.append(single_type)
             cstr =',' +  ' '.join(currtype).replace(' ','_')
-
 
             self.TAC.emit('cast',p[0].temp, p[4].temp, ' '.join(p[4].totype).replace(' ','_') + cstr)
             p[0].truelist.append(self.TAC.nextstat)
@@ -2607,7 +2431,6 @@ class CParser():
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type:
                     p0type.append('unsigned')
 
-
                 p0typestr = "to"
                 for single_type in p0type:
                     p0typestr += '_' + single_type
@@ -2642,8 +2465,6 @@ class CParser():
 
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
-
-
             
             elif len(p[1].type)>0  and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat:
                 p0type = []
@@ -2690,7 +2511,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
             
-            #TAC
             if self.ST.error:
                 return
 
@@ -2726,8 +2546,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -2760,7 +2578,6 @@ class CParser():
             else:
                 p3.temp = p[3].temp
                 
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2782,7 +2599,6 @@ class CParser():
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
 
-                
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -2796,7 +2612,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST DOne
         
         if (len(p) == 2):
             p[0] = p[1]
@@ -2817,7 +2632,6 @@ class CParser():
                     p0typestr += '_' + single_type
 
                 p0typestr = p0typestr.replace(' ','_')
-
 
                 isin = True
                 for single_type in p0type:
@@ -2882,7 +2696,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            #Three address code
             if self.ST.error:
                 return
 
@@ -2918,9 +2731,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -2953,7 +2763,6 @@ class CParser():
             else:
                 p3.temp = p[3].temp
                 
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -2988,7 +2797,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST DOne
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -3025,7 +2833,6 @@ class CParser():
                 else:
                     p1 = p[1]
 
-
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[3].type:
@@ -3040,7 +2847,6 @@ class CParser():
                 p[0].type = p0type
                 p[0].label = p0label
 
-
                 p[0].label = p[0].label.replace(" ", "_")
 
                 p[0].node.attr['label'] = p[0].label
@@ -3049,7 +2855,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
             
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3084,9 +2889,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3119,7 +2921,6 @@ class CParser():
             else:
                 p3.temp = p[3].temp
                 
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -3156,20 +2957,16 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
-            # print(p[1].type, p[3].type)
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
                 print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat :
                 p0type = ['int']
-                
                 p0label = str(p[2]) + '_' +  aat[max(aat.index(p[1].type[0]), aat.index(p[3].type[0]))]
-                
                 flag = 0
                 if 'unsigned' in p[1].type or 'unsigned' in p[3].type and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) > 0 and max(aat.index(p[1].type[0]), aat.index(p[3].type[0])) < 5:
                     flag = 1
@@ -3210,7 +3007,6 @@ class CParser():
                 else:
                     p3 = p[3]
 
-
                 p[0] = Node(str(p[2]), [p1, p3])
                 p[0].type = p0type
                 p[0].label = p0label
@@ -3246,7 +3042,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3281,9 +3076,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3312,11 +3104,9 @@ class CParser():
                 cstr =',' +  ' '.join(currtype).replace(' ','_')
 
                 self.TAC.emit('cast',p3.temp,p[3].temp,' '.join(p[3].totype).replace(' ','_') + cstr) 
-
             else:
                 p3.temp = p[3].temp
                 
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -3338,7 +3128,6 @@ class CParser():
 
             self.TAC.emit(p[0].label, p[0].temp, p1.temp, p3.temp)
 
-            # 
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
             self.TAC.emit('ifnz goto','',p[0].temp,'')
@@ -3352,7 +3141,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -3442,7 +3230,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3477,9 +3264,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3512,7 +3296,6 @@ class CParser():
             else:
                 p3.temp = p[3].temp
                 
-
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
             self.ST.ModifySymbol(p[0].temp, "type", p[0].type)
@@ -3546,7 +3329,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -3603,7 +3385,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3637,9 +3418,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3670,7 +3448,6 @@ class CParser():
 
             else:
                 p3.temp = p[3].temp
-                
 
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
@@ -3705,7 +3482,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -3728,8 +3504,6 @@ class CParser():
 
                 p0label = p0label.replace(" ", "_")
                 
-
-
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[1].type:
@@ -3765,7 +3539,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
     
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3800,9 +3573,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3834,7 +3604,6 @@ class CParser():
 
             else:
                 p3.temp = p[3].temp
-                
 
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
@@ -3869,7 +3638,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -3892,8 +3660,6 @@ class CParser():
 
                 p0label = p0label.replace(" ", "_")
                 
-
-
                 isin = True
                 for single_type in p0type:
                     if single_type not in p[1].type:
@@ -3929,7 +3695,6 @@ class CParser():
                 self.ST.error = 1
                 print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
-            #tac
             if self.ST.error:
                 return
             if p[1].totype is not None and p[1].totype != p[1].type:
@@ -3964,9 +3729,6 @@ class CParser():
             else:
                 p1.temp = p[1].temp
 
-
-            
-
             if p[3].totype is not None and p[3].totype != p[3].type:
                 p3.temp = self.TAC.newtemp()
                 self.ST.InsertSymbol(p3.temp, 0)
@@ -3998,7 +3760,6 @@ class CParser():
 
             else:
                 p3.temp = p[3].temp
-                
 
             p[0].temp = self.TAC.newtemp()
             self.ST.InsertSymbol(p[0].temp, 0)
@@ -4031,7 +3792,6 @@ class CParser():
         logical_and_expression : inclusive_or_expression
                             | logical_and_expression AND_OP globalmarker1 inclusive_or_expression globalmarker1
         '''
-        # Grammar changed
         if self.isError :
             return
         if (len(p) == 2):
@@ -4090,10 +3850,8 @@ class CParser():
         logical_or_expression : logical_and_expression
                             | logical_or_expression OR_OP globalmarker1 logical_and_expression globalmarker1
         '''
-        # Grammar Changed
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 6):
@@ -4219,11 +3977,9 @@ class CParser():
                 print(f'Incompatible conditional operation between pointer and {p[4].type} at line {p.lineno(2)}')
                 return
 
-            
             isError = False
             if p[4].type == p[7].type:
                 p0type = p[4].type
-                # Look Here
             
             elif len(p[4].type)>0 and p[4].type[0][-1] == '*' and len(p[7].type)>0 and p[7].type[0][-1] == '*':
                 p0type = ['void *']
@@ -4240,7 +3996,6 @@ class CParser():
             elif 'str' in p[7].type:
                 p0type = p[4].type
             
-
             elif len(p[4].type)>0 and p[4].type[0] in aat and len(p[7].type)>0 and p[7].type[0] in aat:
                 p0type = []
                 p0type.append(aat[max(aat.index(p[4].type[0]), aat.index(p[7].type[0]))])
@@ -4248,7 +4003,6 @@ class CParser():
                     p0type.append('unsigned')
             else:
                 isError = True
-
 
             if (isError == False):
                 if p0type != p[4].type:
@@ -4269,8 +4023,6 @@ class CParser():
                 else:
                     p7 = p[7]
 
-
-
                 p[0] = Node('TERNARY',[p[1],p4,p7])
                 p[0].type = p0type
 
@@ -4283,7 +4035,6 @@ class CParser():
                 for single_type in p[4].type:
                     if single_type != 'arr' and single_type[0] != '[' and single_type[-1] != ']':
                         p4type.append(single_type)
-
 
                 if p[4].totype is not None and p[4].totype != p4type:
                     p4.temp = self.TAC.newtemp()
@@ -4316,7 +4067,6 @@ class CParser():
 
                 else:
                     p4.temp = p[4].temp
-
 
                 p[7].totype = p0type
 
@@ -4446,7 +4196,6 @@ class CParser():
                     elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                         self.ST.error = 1
                         print(f'Type mismatch while assigning value at line {p[2].lineno}')
-                        # print(p[1].type, p[3].type)
 
                     elif p[1].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit and 'str' not in p[3].type:    
                         self.ST.error = 1
@@ -4456,11 +4205,8 @@ class CParser():
                         self.ST.error = 1
                         print(f'Incompatible operands to binary operator {p[2].label}, pointer and {p[3].type} at line {p[2].lineno}')
 
-
                     else:
-                        
                         p[0].type = p[1].type
-
                         isin = True
                         for single_type in p[0].type:
                             if single_type != 'arr' and (single_type[0] != '[' and single_type[-1] != ']'):
@@ -4497,15 +4243,12 @@ class CParser():
                         p[0].label = p[0].label.replace(" ", "_")
                         p[0].node.attr['label'] = p[0].label
 
-
                 else:
                     p[0].onlyAddEdge([p[1]])
-                    # Complete when p[3] may be None
 
             else:
                 if ((p[3] is not None) and (p[3].node is not None)):
                     p[0].onlyAddEdge([p[3]])
-                    # Complete when p[1] may be None
 
             if self.ST.error:
                 return
@@ -4542,10 +4285,6 @@ class CParser():
             else:
                 p3.temp = p[3].temp
 
-            # print(p[0].label)
-            # print(p[1].type)
-            # print(p[1].temp)
-            # print(p[3].temp)
             p[0].varname = p[1].varname
             p[0].temp = p[1].temp
             self.recursive_equate(p[1].type, p[0].label, p[1].temp, p3.temp)
@@ -4557,9 +4296,6 @@ class CParser():
 
     def recursive_equate(self, p1type, p0label, p1temp, p3temp):
         if p0label == '=_struct' or p0label == '=_union':
-                # (-44(%ebp)) -> temp
-                # +_int -48(%ebp) -44(%ebp) $4
-                # (-48(%ebp))
                 data_struc = self.ST.TT.ReturnTypeTabEntry(p1type[1], p1type[0])
                 currOffset = 0
                 left_offset = 0
@@ -4652,7 +4388,7 @@ class CParser():
                         if p0label=='=_struct': 
                             currOffset += 4
                     else:
-                        print('Unknown data type for debugging')  ######### Remove this at the end please
+                        print('Unknown data type for debugging') 
         else:
             self.TAC.emit(p0label, p1temp, p3temp, '')
             
@@ -4672,7 +4408,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         p[0] = Node(str(p[1]))
         p[0].lineno = p.lineno(1)
 
@@ -4683,7 +4418,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 4):
@@ -4713,7 +4447,6 @@ class CParser():
              #  This rule is used when declaring structs and union
             p[0] = Node('TypeDecl',createAST=False)
         elif (len(p) == 4):
-            # p[0] = Node('TypeDecl',[p[2]])
             p[0] = p[2]
         p[1].removeGraph()
         # Need to remove the nodes for declaration_specifiers
@@ -4729,7 +4462,6 @@ class CParser():
             return
         if (len(p) == 2):
             p[0] = p[1]
-            # print(p[0].type)
         elif (len(p) == 3):
             p[0] = p[1]
             if ((p[2] is not None) and (p[2].node is not None)):
@@ -4753,7 +4485,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #  Marker Here
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
@@ -4801,7 +4532,6 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "check", found['check'], p.lineno(1))
                     self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
             else:
-                # self.ST.ModifySymbol(var_name, "type", ,p.lineno(1))
                 self.ST.ModifySymbol(var_name, "type", p[0].variables[var_name],p.lineno(1))
         
             #updating variable class
@@ -4878,18 +4608,6 @@ class CParser():
                 else:
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(1))
 
-                # if 'struct' in p[0].variables[var_name] or 'union' in p[0].variables[var_name]:
-                #     found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
-                #     struct_size = found['sizeAllocInBytes']
-                #     # for var in found['vars']:
-                #     #     if 'struct' in p[0].variables[var_name]:
-                #     #         struct_size += found['vars'][var]['sizeAllocInBytes']
-                #     #     else:
-                #     #         struct_size = max(struct_size, found['vars'][var]['sizeAllocInBytes'])
-                #     sizes[' '.join(reversed(found['type'][-2:]))] = struct_size
-                    
-            
-            
             # updating sizes to be allocated based on the type
 
             # ['void' , 'char', 'int', 'long', 'float', 'bool', 'double', 'signed', 'unsigned']
@@ -4959,7 +4677,6 @@ class CParser():
                         self.ST.error = 1
                         print('Two or more conflicting data types specified for variable at line', entry['line'])
                         return
-                
 
             if (len(p) == 4):
                 isarr = 0
@@ -5065,14 +4782,11 @@ class CParser():
                         if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                             p[1].type.append(type_list[len(type_list)-i-1])
 
-
-
                 if 'void' in type_list:
                     p[1].type.append('void')
                     for single_type in type_list:
                         if single_type != 'void':
                                 p[1].type.append(single_type)     
-
 
                 if '*' in type_list:
                     temp_type = []
@@ -5093,12 +4807,6 @@ class CParser():
                     if 'arr' in p[1].type and 'init_list' not in p[3].type:
                         self.ST.error = 1
                         print(f'Invalid array initialization at line {p.lineno(2)}')
-                # elif 'struct *' in p[1].type or 'union *' in p[1].type:
-                #     p[1].vars = entry['vars']
-                # Remove when we started to give error at declaration of double/triple pointer to struct itself
-                # elif 'struct' in p[1].type[0] or 'union' in p[1].type[0] :
-                #     self.ST.error = 1
-                #     print(f'Multilevel pointer for structures/Unions not allowed at line {p.lineno(2)}') 
 
                 if 'struct' in p[1].type and 'struct' not in p[3].type:
                     self.ST.error = 1;
@@ -5157,7 +4865,6 @@ class CParser():
 
                 p[0].onlyAddEdge([p[1],p3]) 
 
-
                 if 'struct' in p[0].type:
                     p[0].label += '_struct'
                 elif 'union' in p[0].type:
@@ -5172,37 +4879,8 @@ class CParser():
                 p[0].label = p[0].label.replace(" ", "_")
                 p[0].node.attr['label'] = p[0].label
 
-
-                # p[0].type = p[1].type
-
-                # isin = True
-                # for single_type in p[0].type:
-                #     if single_type not in p[3].type:
-                #         isin = False
-                # if isin == False:
-                #     p[3].totype = p[0].type    
-
-                # if 'struct' in p[0].type:
-                #     p[0].label += '_struct'
-                # elif 'union' in p[0].type:
-                #     p[0].label += '_union'
-                # elif p[0].type[0][-1] == '*' and 'arr' not in p[0].type:
-                #     p[0].label += '_int__unsigned'
-                # elif p[0].type[0][-1] == '*' and 'arr' in p[0].type:
-                #     p[0].label += '_' + p[0].type[0] + '_arr'
-                # else:
-                #     p[0].label += '_' + p[0].type[0]
-                #     if 'unsigned' in p[0].type:
-                #         p[0].label += '_unsigned'
-
-                # p[0].label = p[0].label.replace(" ", "_")
-                # p[0].node.attr['label'] = p[0].label
-        
         if self.ST.error:
             return
-
-
-
 
         for var_name in p[0].variables:
             if 'struct' in p[0].variables[var_name] and '*' not in p[0].variables[var_name]:
@@ -5217,7 +4895,6 @@ class CParser():
                         found['vars'][var]['temp'] = f'-{self.ST.offset}(%ebp)'
             found, entry = self.ST.ReturnSymTabEntry(var_name)
             # var_size = ((found['sizeAllocInBytes'] + 3) // 4) * 4
-            # print(found)
             if found["varclass"] == "Local":
                 # self.TAC.emit('-_int', '%esp', '%esp', f'${var_size}')
                 if found["offset"] >0:
@@ -5226,7 +4903,6 @@ class CParser():
                     self.ST.ModifySymbol(var_name, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
             p[0].temp = found['temp']
         if len(p) == 4:
-            #tac
             if self.ST.error:
                 return
 
@@ -5281,7 +4957,6 @@ class CParser():
 
             # self.TAC.emit(p[0].label, p[0].temp, p3.temp,'')
         if (len(p) == 2):
-            # print(p[0].variables)
             for var_name in p[0].variables:
                 if self.ST.isGlobal():
                     found, entry = self.ST.ReturnSymTabEntry(var_name)
@@ -5292,13 +4967,10 @@ class CParser():
                     self.TAC.staticCounter += 1
                     self.TAC.staticSymbols.append([found["temp"],None,found["sizeAllocInBytes"]]) 
 
-        # <---------------XXXXX------------------>
-
     def p_storage_class_specifier(self, p):
         '''
         storage_class_specifier : STATIC
         '''
-        # Think of Static in TAC
         if self.isError :
             return
         p[0] = Node(str(p[1]))
@@ -5309,13 +4981,8 @@ class CParser():
         '''
         type_specifier : VOID
                     | CHAR
-                    | SHORT
                     | INT
-                    | LONG
                     | FLOAT
-                    | BOOL
-                    | DOUBLE
-                    | SIGNED
                     | UNSIGNED
                     | struct_or_union_specifier
         '''
@@ -5357,10 +5024,7 @@ class CParser():
                 if ((p[5] is not None) and (p[5].node is not None)):
                     p[0].onlyAddEdge([p[5]])
             
-            # print(p[1].type)
-            # print(p2val)
             data_struct_found = self.ST.TT.ReturnTypeTabEntry(p2val, p[1].type[0], p.lineno(1))
-            # print(data_struct_found)
             struct_size = 0
             for var in data_struct_found['vars']:
                 if 'sizeAllocInBytes' in data_struct_found['vars'][var].keys():
@@ -5378,7 +5042,6 @@ class CParser():
         
             if ((p[3] is not None) and (p[3].node is not None)):
                 p[0].onlyAddEdge([p[3]])
-
 
         elif (len(p) == 3):
             # This rule is used when declaring a struct type variable 
@@ -5420,7 +5083,6 @@ class CParser():
     def p_struct_or_union(self, p):
         '''
         struct_or_union : STRUCT
-                        | UNION
         '''
         if self.isError :
             return
@@ -5496,13 +5158,6 @@ class CParser():
                     self.ST.error = 1
                     print('Two or more conflicting data types specified for variable at line', p.lineno(3))
 
-        # Remove if support added for nested structures
-        # if len(p[1].type)>0 and ('struct' in p[1].type[0] or 'union' in p[1].type[0]):
-        #     self.ST.error = 1
-        #     print(f'Cannot have nested structures/unions at line', p.lineno(3))
-
-        # Here p[1] has the datatypes like int, float ......
-
     def p_specifier_qualifier_list(self, p):
         '''
         specifier_qualifier_list : type_specifier specifier_qualifier_list
@@ -5510,7 +5165,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
@@ -5530,7 +5184,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 5):
@@ -5550,11 +5203,8 @@ class CParser():
         '''
         struct_declarator : declarator
         '''
-        # | ':' constant_expression
-        # | declarator ':' constant_expression
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
@@ -5574,8 +5224,6 @@ class CParser():
 
         # Here the name of the variable acts as a key of the dictionary p[0].variables
         # The type of the variable is a list that is the value of the key
-        # Add after this comment, the above print statement is for checking purposes
-        
         
         for var_name in p[0].variables.keys():
             self.ST.ModifySymbol(var_name, 'type', p[0].variables[var_name], p.lineno(0))
@@ -5650,7 +5298,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
@@ -5667,7 +5314,6 @@ class CParser():
         '''
         if self.isError :
             return
-        #AST done
         if (len(p) == 2):
             p[0] = p[1]
         elif (len(p) == 3):
@@ -5684,7 +5330,6 @@ class CParser():
                         | direct_declarator '[' IntegerConst ']'
                         | direct_declarator '(' markerFuncPush parameter_type_list ')'
         '''
-                        # | direct_declarator '(' identifier_list ')'
         if self.isError :
             return
         if (len(p) == 2):
@@ -5752,7 +5397,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if (len(p) == 2):
             p[0] = Node('PTR')
             p[0].extraValues.append("*")
@@ -5781,22 +5425,10 @@ class CParser():
         '''
         parameter_type_list : parameter_list
         '''
-        # | parameter_list ',' ELLIPSIS -- dont need ellipsis
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
-        # else:
-        #     # Current design choice: parent operator : ',...'
-        #         # Single child : parameter list
-
-        #     # Alternative design choice: parent operator ','
-        #         # Left child : parameter_list
-        #         # Right child : ELLIPSIS 
-        #     p[0] = Node('ELLIPSIS',[p[1]])
-        #     p[0].variables = p[1].variables
-        #     p[0].variables["Ellipses"] = []
 
     def p_parameter_list(self, p):
         '''
@@ -5805,28 +5437,11 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
         else:
             p[0] = Node(',',[p[1],p[3]])
             p[0].variables = {**p[1].variables, **p[3].variables}
-
-    # def p_parameter_declaration_1(self, p):
-    #     '''
-    #     parameter_declaration : declaration_specifiers abstract_declarator
-    #                         | declaration_specifiers
-    #     '''
-    #     if self.isError :
-    #         return
-    #     # AST done
-    #     if len(p) == 2:
-    #         # Doubt here
-    #         p[0] = Node('ParDeclWithoutDeclarator',[p[1]])
-    #     elif len(p) == 3:
-    #         p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
-    #         p[1].removeGraph()
-    #         p[2].removeGraph()
 
     def p_parameter_declaration_2(self, p):
         '''
@@ -5834,7 +5449,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         p[0] = Node('ParDecl',[p[1],p[2]], createAST=False)
         p[0].variables = p[2].variables
         p[1].removeGraph()
@@ -5842,21 +5456,6 @@ class CParser():
         for val in p[1].extraValues:
             p[0].addTypeInDict(val)
         
-    # def p_identifier_list(self, p):
-    #     '''
-    #     identifier_list : ID
-    #                     | identifier_list ',' ID
-    #     '''
-    #     if self.isError :
-    #         return
-    #     # AST Done
-    #     if (len(p) == 2):
-    #         p[0] = Node(str(p[1]['lexeme']))
-    #     else:
-    #         p3val = p[3]['lexeme']
-    #         p[3] = Node(str(p3val))
-    #         p[0] = Node(',',[p[1],p[3]])
-
     def p_type_name(self, p):
         '''
         type_name : specifier_qualifier_list
@@ -5864,7 +5463,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
 
         if len(p) == 2:
             p[0] = Node('TypeName',[p[1]])
@@ -5888,7 +5486,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if len(p) == 2:
             p[0] = Node('AbsDecl',[p[1]])
             p[0].type = p[1].type
@@ -5914,7 +5511,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
 
         if (len(p) == 3):
             if(p[1] == '('):
@@ -5944,25 +5540,11 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if len(p) == 2:
             p[0] = p[1]
         elif len(p) == 4:
             p[0] = Node('{}',[p[2]])
             p[0].type = ['init_list']
-
-    # def p_initializer_list(self, p):
-    #     '''
-    #     initializer_list : initializer
-    #                     | initializer_list ',' initializer
-    #     '''
-    #     if self.isError :
-    #         return
-    #     # AST done
-    #     if len(p) == 2:
-    #         p[0] = p[1]
-    #     else:
-    #         p[0] = Node(',',[p[1],p[3]])
 
     def p_statement(self, p):
         '''
@@ -5975,7 +5557,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         p[0] = p[1]
 
     def p_labeled_statement_2(self, p):
@@ -6025,7 +5606,6 @@ class CParser():
         '''
         markerCase2 : 
         '''
-
         if self.isError :
             return
 
@@ -6116,7 +5696,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if (len(p) == 2):
             p[0] = p[1]
 
@@ -6127,7 +5706,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         if len(p) == 2:
             p[0] = Node('EmptyExprStmt')
         if (len(p) == 3):
@@ -6259,14 +5837,12 @@ class CParser():
                             | FOR '(' expression_statement globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement
         '''
         # Grammar rules separated to differentiate between length 11 cases
-        # Grammar Changes done for all 3
         # In for loop we will have markers of the following form:
         # for ( E1; M1 E2; M2 E3){M3 Statement}
         # In the above grammar the third rule has only 2 expressions (no update statament)
         
         if self.isError :
             return
-        # AST done
         if len(p) == 8:
             p[0] = Node('WHILE',[p[4],p[6]])
             if self.ST.error:
@@ -6330,14 +5906,12 @@ class CParser():
                             | FOR '(' markerForPush declaration globalmarker1 expression_statement globalmarker1 expression ')' globalmarker1 statement markerForPop
         '''
         # Grammar rule separated to differentiate between length 11 cases
-        # Grammar Changes done 
         # In for loop we will have markers of the following form:
         # for ( E1; M1 E2; M2 E3){M3 Statement}
         # In the above grammar first rule has only 2 expressions (no update statament)
         
         if self.isError :
             return
-        # AST done
         if len(p) == 11:
             p[0] = Node('FOR', [p[4], p[6], p[9]])
             # M1 is p[5]
@@ -6400,7 +5974,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         if (len(p) == 3):
             p[0] = Node(str(p[1]).upper())
             if self.ST.error:
@@ -6412,7 +5985,6 @@ class CParser():
                 p[0].breaklist.append(self.TAC.nextstat)
                 self.TAC.emit('goto','','','')
             elif p[1] == 'return':
-                # TAC remaining for return
                 found = list(self.ST.Table[0])
                 functype = self.ST.Table[0][found[-1]]['type']
 
@@ -6443,7 +6015,6 @@ class CParser():
                     self.ST.error = 1
                     print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
 
-
                 elif len(p[2].type)>0 and len(functype)>0 and functype[0] in aat and p[2].type[0] not in aat and p[2].type[0][-1] != '*':
                     self.ST.error = 1
                     print(f'Type mismatch while returning value at line {p.lineno(1)}')
@@ -6461,7 +6032,6 @@ class CParser():
                 for i in range(len(functype)):
                     if functype[i][0]=='[' and functype[i][-1] == ']':
                         isarr += 1
-                
 
                 if 'unsigned' in type_list or 'signed' in type_list:
                     if 'bool' not in type_list and 'char' not in type_list and 'short' not in type_list:
@@ -6555,8 +6125,6 @@ class CParser():
                         if type_list[len(type_list)-i-1][0] == '[' and type_list[len(type_list)-i-1][-1] == ']':  
                             p[0].type.append(type_list[len(type_list)-i-1])
 
-
-
                 if 'void' in type_list:
                     p[0].type.append('void')
                     for single_type in type_list:
@@ -6572,9 +6140,6 @@ class CParser():
                             else:
                                 temp_type.append(p[0].type[i])
                     p[0].type = temp_type
-
-
-
 
                 if ('struct' in p[0].type or 'union' in p[0].type) and p[0].type != p[2].type:
                     self.ST.error = 1
@@ -6620,7 +6185,6 @@ class CParser():
                             else:
                                 self.ST.ModifySymbol(p2.temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
                         p2.temp = found['temp']  
-
 
                     fromtype = p[2].type
                     currtype = []
@@ -6817,7 +6381,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST done
         p[0] = self.AST_ROOT
 
         if (len(p) == 2):
@@ -6834,7 +6397,6 @@ class CParser():
         '''
         if self.isError :
             return
-        # AST Done
         p[0] = p[1]
 
     def p_function_definition(self, p):
@@ -6842,14 +6404,10 @@ class CParser():
         function_definition : declaration_specifiers function_declarator '{' markerFunc2 '}' markerFuncPop
                             | declaration_specifiers function_declarator '{' markerFunc2 block_item_list '}' markerFuncPop
         '''
-        #not needed
-        # declaration_specifiers function_declarator declaration_list '{' markerFunc1 '}' markerFuncPop
-        # | declaration_specifiers function_declarator declaration_list '{' markerFunc1 block_item_list '}' markerFuncPop
         if self.isError :
             return
         line = 0
         if (len(p) == 7):
-            # Add AST Node for EMPTY SCOPE? (check other places too)
             p[0] = Node('FUNC',[p[2]])
             line = 3
 
@@ -6865,19 +6423,8 @@ class CParser():
                 p[0] = Node('FUNC',[p[2],p[3]])
                 line = 4
 
-        
-
-        # elif len(p) == 9:
-        #     p[0] = Node('FUNC',[p[2],p[3],Node('SCOPE', [p[6]])])
-        #     line = 4
-
-        #     # Added here to provide goto to the last statement in the function
-        #     self.TAC.backpatch(p[6].nextlist,p[8].quad)
-        #     self.TAC.backpatch(p[6].breaklist,p[8].quad)
-
         p[1].removeGraph()
 
-        # found, entry = self.ST.ReturnSymTabEntry(var_name, p.lineno(1))
         temp_type_list = []
         if p[1].type is None:
             p[1].type = []
@@ -6927,7 +6474,6 @@ class CParser():
         if self.ST.error:
             return
 
-        # print(p[2].variables)
         for token in p[2].variables:
             temp_type = p[2].variables[token]
             if 'Function Name' not in temp_type:
@@ -6960,7 +6506,6 @@ class CParser():
         else:
             self.TAC.emit('retq','$0','','')
         self.TAC.emit('','','','')
-
 
         for var in entry['#scope'][0]:
             if var == '#StructOrUnion':
@@ -7039,7 +6584,6 @@ class CParser():
                         print('Two or more conflicting data types specified for variable at line', param['line'])
                         return
                         
-
     def p_markerFunc2(self, p):
         '''
         markerFunc2 : 
@@ -7054,15 +6598,6 @@ class CParser():
                 function_name = key
                 break
         p[0].variables[key] += p[-3].extraValues + p[-2].extraValues
-
-        # print("This is start of the function in funcpop2")
-        # for key in p[0].variables.keys():
-        #     print("The key is: " + key)
-        #     print(p[0].variables[key])
-        # print('This is end of the function')
-        # Here the function name is a key and has a type "Function Name" in the value list
-        # The first item in the list will be "Function Name" and thereafter the rest of the
-        # items in the list will be return type.
 
         self.ST.ModifySymbol(function_name, 'check', "FUNC", p.lineno(0)) # says that this entry is a function
         param_nums = 0 
@@ -7172,7 +6707,6 @@ class CParser():
 
         self.ST.ModifySymbol(function_name, 'PARAM_NUMS', param_nums)
         self.ST.offset = 0
-        #  <----------------------XXXX------------------>
         if self.ST.error:
             return
 
@@ -7189,19 +6723,6 @@ class CParser():
         if self.ST.error:
             return
         p[0].quad = self.TAC.nextstat
-
-    # def p_declaration_list(self, p):
-    #     '''
-    #     declaration_list : declaration
-    #                     | declaration_list declaration
-    #     '''
-    #     # AST done
-    #     if self.isError :
-    #         return
-    #     if (len(p) == 2):
-    #         p[0] = Node(';',[p[1]])
-    #     elif (len(p) == 3):
-    #         p[0] = Node(';',[p[1],p[2]])
 
     def p_error(self, p):
         print(f'Error found while parsing in line {p.lineno}!')

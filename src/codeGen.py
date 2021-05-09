@@ -44,7 +44,6 @@ class CodeGenerator:
 
     def request_register(self, reg=None, instr=None):
         if not self.register_stack:
-            print("ERROR! No register available")
             return None
 
         if reg is not None:
@@ -62,11 +61,7 @@ class CodeGenerator:
                 return reg_idx
             return None
         
-        # self.emit_code('yay', str(self.register_stack))
         register = self.register_stack.pop()
-        # self.emit_code('yay', str(self.register_stack))
-        # self.emit_code('yay', register)
-        # self.emit_code('yay', '#' + str(register))
         return register
 
     def free_register(self, reg_idx, start=None):
@@ -140,10 +135,8 @@ class CodeGenerator:
                 reg2_idx = self.request_register(req_reg2)
                 # self.emit_code("hello",reg1_idx, reg2_idx)
                 # self.emit_code("hello",'#'+str(reg1_idx), '#'+str(reg2_idx))
-            # print("in here")
             if reg2_idx is None:
                 return False
-            # print("in here")
             if src2[0] == "(":
                 self.move_var(src2[1:-1],reg2_idx)
                 if one_byte is not None:
@@ -334,19 +327,15 @@ class CodeGenerator:
                 self.emit_code("movzbl", instruction[2], "%eax")
                 self.emit_code("movb", "%al", instruction[1])
 
-                # print(self.reverse_mapping["%eax"])
                 self.free_register("%eax")
-                # print(instruction[1], instruction[2], instruction[1][1:-1],instruction[2][1:-1])
                 if instruction[1][0]=='%':
                     self.free_register(instruction[1])
                 elif instruction[1][0]=='(' and instruction[1][1] =='%':
-                    # print(self.reverse_mapping[instruction[1][1:-1]])
                     self.free_register(instruction[1][1:-1])
 
                 if instruction[2][0]=='%':
                     self.free_register(instruction[2])
                 elif instruction[2][0]=='(' and instruction[2][1] =='%':
-                    # print(self.reverse_mapping[instruction[2][1:-1]])
                     self.free_register(instruction[2][1:-1])
         else:
             self.check_type(instruction)
@@ -554,7 +543,6 @@ class CodeGenerator:
             self.free_register(instruction[3])
     
     def op_shl(self,instruction):
-        ## DOO THIS FOR CHAR: IMPORTANT
         '''
         This function is currently only implemented
         for integer left bit shift
@@ -580,7 +568,6 @@ class CodeGenerator:
             self.free_register(instruction[3], True)
 
     def op_shr(self,instruction):
-        ## DOO THIS FOR CHAR: IMPORTANT
         '''
         This function is currently only implemented
         for integer right bit shift
@@ -713,9 +700,6 @@ class CodeGenerator:
             
             self.free_register(register)
             
-
-
-
         # self.op_sub(["-_int","%esp","%ebp","$20"])
         
         # self.final_code.append("pop %edi")
@@ -980,7 +964,6 @@ class CodeGenerator:
             self.free_register(reg)
         elif instruction[0][2:6]=='char' or instruction[0][3:7]=='char':
             self.check_type(instruction, "%eax", "%ecx", False, False, True)
-            # reg1 = self.request_register("")
             self.emit_code("cmpl",instruction[3],instruction[2])
             
             reg = self.request_register("%edx")
@@ -1104,27 +1087,6 @@ class CodeGenerator:
             self.free_register(instruction[2])
             self.free_register(instruction[3])
             self.free_register(reg)
-
-    # def op_logical(self, instruction):
-    #     self.check_type(instruction, "%edx", "%ecx")
-    #     reg = self.request_register("%eax")
-    #     reg = self.register_mapping[reg]
-    #     self.emit_code("movl", "$0", reg)
-    #     self.emit_code("testl", instruction[2], instruction[2])
-    #     self.emit_code("setne", self.eight_bit_register["%eax"])
-    #     self.emit_code("movl", "$0", instruction[2])
-    #     self.emit_code("testl", instruction[3], instruction[3])
-    #     self.emit_code("setne", self.eight_bit_register["%edx"])
-
-    #     if instruction[0][0:2] == "&&":
-    #         self.emit_code("andl",instruction[2],reg)
-    #     elif instruction[0][0:2] == "||":
-    #         self.emit_code("orl",instruction[2],reg)
-    #     self.emit_code("movl", reg, instruction[1])
-
-    #     self.free_register(instruction[2])
-    #     self.free_register(instruction[3])
-    #     self.free_register(reg)
 
     def op_logical_not(self, instruction):
         if instruction[0][7:] == 'int':
@@ -1314,10 +1276,6 @@ class CodeGenerator:
     def op_cast(self, instruction):
         # type[0] is dest, types[1] is src, instruction[1] is dest, instruction[2] is src
         types = instruction[3].split(',')
-        # if '*' in types[0].split('_'):
-        #     types[0] = 'unsigned_int'
-        # if '*' in types[1].split('_'):
-        #     types[1] = 'unsigned_int'
         instruction[1] = self.deref(instruction[1], None, "%ecx")
         instruction[2] = self.deref(instruction[2], None, "%edx")
 
@@ -1374,9 +1332,7 @@ class CodeGenerator:
         elif instruction[2][0]=='(' and instruction[2][1] =='%':
             self.free_register(instruction[2][1:-1])
 
-    
     def gen_code(self, instruction):
-        # print("begin",self.register_stack)
         if not instruction:
             return
         # Currently these instructions only work for int
@@ -1395,8 +1351,6 @@ class CodeGenerator:
             self.op_shr(instruction)
         elif instruction[0][0:2] == "<=" or instruction[0][0:2] == ">=" or instruction[0][0:2] == "==" or instruction[0][0:2] == "!=" or instruction[0][0] == "<" or instruction[0][0] == ">":
             self.op_comparator(instruction)
-        # elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
-        #     self.op_logical(instruction)
         elif instruction[0][0] == "=" or instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
             if instruction[0][0:6] == "UNARY+" or instruction[0][0:6] == "UNARY*":
                 instruction[0] = "=" + instruction[0][6:]
@@ -1432,10 +1386,6 @@ class CodeGenerator:
             self.op_logical_not(instruction)
         elif instruction[0][0:6] == "UNARY&":
             self.op_amp(instruction)
-        # elif instruction[0][0:5] == "PRE++":
-        #     self.op_pre_inc(instruction)
-        # elif instruction[0][0:5] == "PRE--":
-        #     self.op_pre_dec(instruction)
         elif instruction[0][0:4] == "ifnz" and instruction[1][0:4] == "goto":
             self.op_ifnz_goto(instruction)
         elif instruction[0][0:4] == "goto":
@@ -1460,7 +1410,6 @@ class CodeGenerator:
             self.op_cast(instruction)
         else:
             self.final_code.append(' '.join(instruction))
-        # print("end",self.register_stack)
 
 def main(file,code):
     codegen = CodeGenerator()
