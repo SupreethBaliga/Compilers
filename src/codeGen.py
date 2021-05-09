@@ -1338,9 +1338,21 @@ class CodeGenerator:
             self.emit_code("movl", "%eax", instruction[1])
             self.free_register(reg)
         elif types[0]=='char' and types[1]=='float':
-            'have to understand how'
+            reg = self.request_register("%eax")
+            self.emit_code("flds", instruction[2])
+            self.emit_code("subl", "$4", "%esp")
+            self.emit_code("fisttpl", "0(%esp)")
+            self.emit_code("movl", "0(%esp)", reg)
+            self.emit_code("movb", "%al", instruction[1])
+            self.emit_code("addl", "$4", "%esp")
+            self.free_register(reg, True)
         elif types[0]=='float' and types[1]=='char':
-            'have to understand how'
+            reg = self.request_register("%eax")
+            self.emit_code("movsbl", instruction[2], "%eax")
+            self.emit_code("push", "%eax")
+            self.emit_code("filds", "0(%esp)")
+            self.emit_code("fstps", instruction[1])
+            self.emit_code("pop", "%eax")
         elif types[1] == 'char':
             reg = self.request_register("%eax")
             self.emit_code("movzbl", instruction[2], "%eax")
