@@ -5291,6 +5291,7 @@ class CParser():
                     self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*sizes["void"], p.lineno(0))
             else:
                 self.ST.ModifySymbol(var_name, "sizeAllocInBytes", 0, p.lineno(0))
+
     def p_declarator(self, p):
         '''
         declarator : direct_declarator
@@ -6725,7 +6726,10 @@ class CParser():
         p[0].quad = self.TAC.nextstat
 
     def p_error(self, p):
-        print(f'Error found while parsing in line {p.lineno}!')
+        if p is not None:
+            print(f'Error found while parsing in line {p.lineno}!')
+        else:
+            print("Given file is empty")
         self.isError = 1
     
     def printTree(self):

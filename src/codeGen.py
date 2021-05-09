@@ -110,7 +110,6 @@ class CodeGenerator:
 
         if reg1_idx is None:
             return False
-
         reg2_idx = None
         if src1[0] == "%" and len(src1) > 4:
             offset = int(src1[4:])
@@ -855,7 +854,7 @@ class CodeGenerator:
             self.emit_code("negl",instruction[2])
             self.emit_code("movl",instruction[2],instruction[1])
             self.free_register(instruction[2])
-        if instruction[0][7:] =='char':
+        elif instruction[0][7:] =='char':
             self.check_type(instruction, "%eax", None, False, False, True)
             self.emit_code("negl",instruction[2])
             self.emit_code("movb","%al", instruction[1])
