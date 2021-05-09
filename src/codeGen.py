@@ -527,7 +527,6 @@ class CodeGenerator:
             register = self.register_mapping[register]
             self.emit_code("movl","8(%ebp)",register)
             # instruction[2] is the size
-            # currently works only in offset of 4
             # instruction[1] has the return variable address
             nVariables = int(instruction[2])
             tempInstruction = copy.deepcopy(instruction[1])
@@ -552,6 +551,23 @@ class CodeGenerator:
                     self.move_var(src,reg2)
                     self.move_var(reg2,dst)
                     self.free_register(reg2)
+                
+                val = val + nVariables - nVariables%4
+                for i in range(int(nVariables%4)):
+                    address = val + i
+                    if address == 0:
+                        address = f'({reg1})'
+                    else:
+                        address = str(address) + f'({reg1})'
+                    src = address
+                    dst = "(" + str(register) + ")"
+                    val = nVariables - nVariables%4
+                    if val != 0 or i != 0:
+                        dst = str(val + i) + dst
+                    reg2 = self.register_mapping[self.request_register("%ebx")]
+                    self.emit_code("movzbl",src,reg2)
+                    self.emit_code("movb","%bl",dst)
+                    self.free_register(reg2, True)
 
                 self.free_register(reg1)
             else:
@@ -570,6 +586,23 @@ class CodeGenerator:
                     self.move_var(src,reg2)
                     self.move_var(reg2,dst)
                     self.free_register(reg2)
+                
+                val = val + nVariables - nVariables%4
+                for i in range(int(nVariables%4)):
+                    address = val + i
+                    if address == 0:
+                        address = "(%ebp)"
+                    else:
+                        address = str(address) + "(%ebp)"
+                    src = address
+                    dst = "(" + str(register) + ")"
+                    val = nVariables - nVariables%4
+                    if val != 0 or i != 0:
+                        dst = str(val + i) + dst
+                    reg2 = self.register_mapping[self.request_register("%ebx")]
+                    self.emit_code("movzbl",src,reg2)
+                    self.emit_code("movb","%bl",dst)
+                    self.free_register(reg2, True)
             
             self.free_register(register)
             
@@ -589,6 +622,8 @@ class CodeGenerator:
 
     def op_param(self,instruction):
         if(len(instruction) == 2):
+            # This is the case for printf only.
+            # printf for char is handled separately
             instruction[1] = self.deref(instruction[1])
             if instruction[1][0] == "%" and len(instruction[1]) > 4:
                 offset = int(instruction[1][4:])
@@ -713,7 +748,7 @@ class CodeGenerator:
         self.emit_code("push ",register)
         self.free_register(register)
         self.emit_code("call ", instruction[2])
-        self.op_add(["+_int","%esp","%esp","$" + str((int(instruction[3]) + 1)*4)])
+        # self.op_add(["+_int","%esp","%esp","$" + str((int(instruction[3]) + 1)*4)])
 
     def op_neg(self, instruction):
         '''

@@ -1692,6 +1692,7 @@ class CParser():
                         else:
                             req_type = ' '.join(new_p2_list)
                             if req_type in sizes:
+                                # Change here
                                 self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
                             else:
                                 self.ST.error = 1
@@ -2221,7 +2222,10 @@ class CParser():
                         else:
                             self.ST.ModifySymbol(p[0].temp, 'temp', f'{-found["offset"] - found["sizeAllocInBytes"] }(%ebp)')
                     p[0].temp = found['temp']
-                self.TAC.emit(p[0].label, p[0].temp, p2.temp)
+                try:
+                    self.TAC.emit(p[0].label, p[0].temp, p2.temp)
+                except:
+                    self.TAC.emit(p[0].label, p[0].temp, p[2].temp)
 
                 if p[1].label == 'UNARY*':
                     p[0].temp = f'({p[0].temp})'
@@ -4634,7 +4638,7 @@ class CParser():
                     elif 'char' in data_struc['vars'][var]['type']:
                         self.TAC.emit('=_char', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
-                            currOffset += 4
+                            currOffset += 1
                     elif 'float' in data_struc['vars'][var]['type']:
                         self.TAC.emit('=_float', left_new_temp, right_new_temp)
                         if p0label=='=_struct': 
