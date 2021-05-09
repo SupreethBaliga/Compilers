@@ -1541,14 +1541,15 @@ class CParser():
                             if elem != 'arr' and elem[0] != '[' and elem[-1] != ']':
                                 new_p2_list = new_p2_list + elem.split(' ')
                         req_type = 'void'
-                        if '*' in new_p2_list:
-                            req_type = 'PTR'
-                        elif 'char' in arg[1]:
+                        if 'char' in arg[1]:
                             self.TAC.emit('push_char', arg[0])
                         else:
-                            req_type = ' '.join(new_p2_list)
+                            if '*' in new_p2_list:
+                                req_type = 'PTR'
+                            else:
+                                req_type = ' '.join(new_p2_list)
                             if req_type in sizes:
-                                if 'struct' in new_p2_list:
+                                if 'struct' in new_p2_list and '*' not in new_p2_list:
                                     to_print = self.recurse_struct(new_p2_list, arg[0])
                                     to_print.reverse()
                                     for item in to_print:
