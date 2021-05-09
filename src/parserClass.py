@@ -1548,8 +1548,16 @@ class CParser():
                         else:
                             req_type = ' '.join(new_p2_list)
                             if req_type in sizes:
-                                # Change here NIKHILAG
-                                self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
+                                if 'struct' in new_p2_list:
+                                    to_print = self.recurse_struct(new_p2_list, arg[0])
+                                    to_print.reverse()
+                                    for item in to_print:
+                                        if item[0] == 1:
+                                            self.TAC.emit('push_char', item[1])
+                                        else:
+                                            self.TAC.emit('param', item[1], '$4')
+                                else:
+                                    self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
                             else:
                                 self.ST.error = 1
                                 print(f'Invalid type given in line number {p.lineno(4)}')
@@ -1726,6 +1734,24 @@ class CParser():
                         self.TAC.emit('goto','','','') 
 
                 p[0].addr = p[1].addr         
+
+    def recurse_struct(self, new_p2_list, arg):
+        to_print = []
+        new_p2_list.remove('struct')
+        found = self.ST.TT.ReturnTypeTabEntry(new_p2_list[0], 'struct')
+        curr_offset = int(arg.split('(')[0])
+        if found:
+            for item in found["vars"]:
+                if 'struct' in found['vars'][item]['type'] and '*' not in found['vars'][item]['type']:
+                    ret_list = self.recurse_struct(found['vars'][item]['type'], f'{curr_offset}(%ebp)')
+                    to_print.extend(ret_list)
+                    curr_offset += found['vars'][item]['sizeAllocInBytes']
+                else:
+                    if '*' in found['vars'][item]['type']:
+                        to_print.append([4, f'{curr_offset}(%ebp)'])
+                    to_print.append([found['vars'][item]['sizeAllocInBytes'], f'{curr_offset}(%ebp)'])
+                    curr_offset += found['vars'][item]['sizeAllocInBytes']
+            return to_print
 
     def p_argument_expression_list(self,p):
         '''

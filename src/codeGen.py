@@ -654,9 +654,9 @@ class CodeGenerator:
                         address = str(address) + f'({reg1})'
                     src = address
                     dst = "(" + str(register) + ")"
-                    val = nVariables - nVariables%4
-                    if val != 0 or i != 0:
-                        dst = str(val + i) + dst
+                    val2 = nVariables - nVariables%4
+                    if val2 != 0 or i != 0:
+                        dst = str(val2 + i) + dst
                     reg2 = self.register_mapping[self.request_register("%ebx")]
                     self.emit_code("movzbl",src,reg2)
                     self.emit_code("movb","%bl",dst)
@@ -689,9 +689,9 @@ class CodeGenerator:
                         address = str(address) + "(%ebp)"
                     src = address
                     dst = "(" + str(register) + ")"
-                    val = nVariables - nVariables%4
-                    if val != 0 or i != 0:
-                        dst = str(val + i) + dst
+                    val2 = nVariables - nVariables%4
+                    if val2 != 0 or i != 0:
+                        dst = str(val2 + i) + dst
                     reg2 = self.register_mapping[self.request_register("%ebx")]
                     self.emit_code("movzbl",src,reg2)
                     self.emit_code("movb","%bl",dst)
@@ -1099,7 +1099,7 @@ class CodeGenerator:
             self.emit_code("movl", instruction[2], instruction[1])
             self.free_register(instruction[2])
             self.free_register("%edx")
-        if instruction[0][7:] == 'char':
+        elif instruction[0][7:] == 'char':
             self.check_type(instruction, "%eax", None, False, False, True)
             self.emit_code("cmpl", "$0", instruction[2])
             reg = self.request_register("%edx")
