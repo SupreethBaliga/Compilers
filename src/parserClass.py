@@ -1117,6 +1117,8 @@ class CParser():
                     self.TAC.emit('callq_struct', p[0].temp, p[1].label , '0')
                 elif found["type"] == ['void']:
                     self.TAC.emit('callq', '', p[1].label, '0')
+                elif (("char" in found["type"]) and ("*" not in found["type"])):
+                    self.TAC.emit('callq_char', p[0].temp, p[1].label , '0')
                 else:
                     self.TAC.emit('callq', p[0].temp, p[1].label , '0')
                     p[0].truelist.append(self.TAC.nextstat)
@@ -1703,6 +1705,8 @@ class CParser():
                     self.TAC.emit('callq_struct', p[0].temp, p[1].label, len(p[3].arglist))
                 elif found["type"] == ['void']:
                     self.TAC.emit('callq', '', p[1].label, len(p[3].arglist))
+                elif (("char" in found["type"]) and ("*" not in found["type"])):
+                    self.TAC.emit('callq_char', p[0].temp, p[1].label, len(p[3].arglist))
                 else:
                     self.TAC.emit('callq', p[0].temp, p[1].label , len(p[3].arglist))
                     p[0].truelist.append(self.TAC.nextstat)

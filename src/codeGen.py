@@ -715,7 +715,10 @@ class CodeGenerator:
             if instruction[2] in math_func_list:
                 self.emit_code('fstps', instruction[1])
                 self.emit_code('addl', '$16', '%esp')
-            else:   
+            else:
+                if (instruction[0] == 'callq_char'):
+                    self.emit_code("movb", "%al", instruction[1])
+                    return
                 self.emit_code("movl", "%eax", instruction[1])
                 # if instruction[2] =='malloc':
                 #     self.emit_code("addl", '$16', '%esp')
@@ -1219,6 +1222,10 @@ class CodeGenerator:
             self.op_add(instruction)
         elif(instruction[0][0] == "-"):
             self.op_sub(instruction)
+        elif(instruction[0][0:2] == "<<"):
+            self.op_shl(instruction)
+        elif(instruction[0][0:2] == ">>"):
+            self.op_shr(instruction)
         elif instruction[0][0:2] == "<=" or instruction[0][0:2] == ">=" or instruction[0][0:2] == "==" or instruction[0][0:2] == "!=" or instruction[0][0] == "<" or instruction[0][0] == ">":
             self.op_comparator(instruction)
         # elif instruction[0][0:2] == "&&" or instruction[0][0:2] == "||":
@@ -1235,15 +1242,11 @@ class CodeGenerator:
             self.op_xor(instruction)
         elif(instruction[0][0] == "&"):
             self.op_and(instruction)
-        elif(instruction[0][0:2] == "<<"):
-            self.op_shl(instruction)
-        elif(instruction[0][0:2] == ">>"):
-            self.op_shr(instruction)
         elif((len(instruction)  == 1) and (instruction[0][-1] == ':') and (instruction[0][0] != '.') and ('.' not in instruction[0])):
             self.op_function_start(instruction)
         elif(instruction[0] == "param"):
             self.op_param(instruction)
-        elif(instruction[0] == "callq"):
+        elif(instruction[0] == "callq" or instruction[0] == "callq_char"):
             self.op_function_call(instruction)
         elif(instruction[0] == "callq_struct"):
             self.op_function_call_struct(instruction)
