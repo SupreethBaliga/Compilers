@@ -8,7 +8,7 @@ venvcompiler/
 src/__pycache__
 
 # ignore some old files
-primitiveParser/parserOld.py
+primitiveParser/
 
 # Ignore parser dump files
 tmp/

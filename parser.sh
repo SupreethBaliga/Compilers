@@ -71,6 +71,16 @@ do
     then
       mkdir dot
     fi
+
+    if [ ! -d "./assembly" ];
+    then
+      mkdir assembly
+    fi
+
+    if [ ! -d "./executable" ];
+    then
+      mkdir executable
+    fi
     
     python3 src/parserClass.py $file
  
@@ -83,9 +93,9 @@ do
     else
         echo "Success"
         dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
-        python src/codeGen.py TAC/$fileNameCore.txt > $fileNameCore.s 
-        gcc -m32 $fileNameCore.s -lm
-    fi;
+        python src/codeGen.py TAC/$fileNameCore.txt > assembly/$fileNameCore.s 
+        gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s -lm
+    fi; 
 
 
     echo "<----------------------------------------------------------------------->"
