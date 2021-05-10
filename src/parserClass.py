@@ -2697,29 +2697,37 @@ class CParser():
                 p[0].node.attr['label'] = p[0].label
                 
             elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0  and p[3].type[0] in iit:
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].label = p[0].label + '_' + p[1].type[0]
-                p[0].label = p[0].label.replace(" ", "_")
-                p[0].node.attr['label'] = p[0].label
-                p[0].type = p[1].type
-                p1 = p[1]
-                p3 = p[3]
-                try:
-                    p[0].vars = p[1].vars
-                except:
-                    pass       
+                self.ST.error = 1
+                print(f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
+
+                # p[0] = Node(str(p[2]),[p[1],p[3]])
+                # p[0].label = p[0].label + '_' + p[1].type[0]
+                # p[0].label = p[0].label.replace(" ", "_")
+                # p[0].node.attr['label'] = p[0].label
+                # p[0].type = p[1].type
+                # p1 = p[1]
+                # p3 = p[3]
+                # try:
+                #     p[0].vars = p[1].vars
+                # except:
+                #     pass   
+                    
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='+':
-                p[0] = Node(str(p[2]),[p[1],p[3]])
-                p[0].label = p[0].label + '_' + p[1].type[0]
-                p[0].label = p[0].label.replace(" ", "_")
-                p[0].node.attr['label'] = p[0].label
-                p[0].type = p[3].type
-                p1 = p[1]
-                p3 = p[3]
-                try:
-                    p[0].vars = p[1].vars
-                except:
-                    pass
+                self.ST.error = 1
+                print(f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
+                
+                # p[0] = Node(str(p[2]),[p[1],p[3]])
+                # p[0].label = p[0].label + '_' + p[1].type[0]
+                # p[0].label = p[0].label.replace(" ", "_")
+                # p[0].node.attr['label'] = p[0].label
+                # p[0].type = p[3].type
+                # p1 = p[1]
+                # p3 = p[3]
+                # try:
+                #     p[0].vars = p[1].vars
+                # except:
+                #     pass
+                
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='-':
                 self.ST.error = 1
                 print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
