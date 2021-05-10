@@ -11,19 +11,15 @@
 ```bash
 source venvcompiler/bin/activate
 ```
-### Milestone - 1:
-* To use the lexer execute lex.sh and provide the test file(s) as command line arguments
-
-### Milestone - 2:
-* To use the parser execute parser.sh and provide the test file(s) as command line arguments
-* The available flags can be listed with *-h/--help* (We have added the -l flag which displays the lexer token table)
-* Note that we have already added the corresponding dot files and ps files for the provided non-trivial testcases
-
-### Milestone - 3:
-* To use the parser execute parser.sh and provide the test file(s) as command line arguments
-* The available flags can be listed with *-h/--help* (We have added the -l flag which displays the lexer token table)
-* The corresponding dot files go in dot folder, the correspoing AST go in ASTgraphs, the symbol tables go in ST folder
-
+* To use the compiler execute `smallc` and provide the test file(s) as command line arguments
+```bash
+bash smallc file1 file2 file3
+```
+* The available flags can be listed with *-h/--help*
+```bash
+bash smallc -h
+```
+* The compiler generates the executable in *executable* folder with the name of the executable being the name of the corresponding file (without the file extension)
 # Final Project:
 ## Directory Structure
 * src - Contains all the python code files for
@@ -32,7 +28,7 @@ source venvcompiler/bin/activate
 * PDFs - Submission files for the different milestones
 * ST - Symbol Table in json format
 * TAC - 3 Address Code (Intermediate Language Code) of the corresponding test
-* tests - Contains the tests for the different Milestones
+* tests - Contains the tests for the different Milestones and the final project
 
 
 ## Features
@@ -78,6 +74,22 @@ int a[3] = {1,2,3}; /* This is not allowed*/
 ```
 * We are not using gcc for pre processing hence, any `#define` will not work. So, in place of `NULL` use `(void*)0`
 
+## Milestone Breakdown
+### Milestone - 1:
+* To use the lexer execute lex.sh and provide the test file(s) as command line arguments
+
+### Milestone - 2:
+* To use the parser execute parser.sh and provide the test file(s) as command line arguments
+* The available flags can be listed with *-h/--help* (We have added the -l flag which displays the lexer token table)
+* Note that we have already added the corresponding dot files and ps files for the provided non-trivial testcases
+
+### Milestone - 3:
+* To use the parser execute parser.sh and provide the test file(s) as command line arguments
+* The available flags can be listed with *-h/--help* (We have added the -l flag which displays the lexer token table)
+* The corresponding dot files go in dot folder, the correspoing AST go in ASTgraphs, the symbol tables go in ST folder
+### Milestone - 4:
+* To use the parser execute parser.sh and provide the test file(s) as command line arguments
+* The corresponding Three Address Code is generated in TAC folder
 ## Group Members :boy:
 
 | Name | Roll Number |
