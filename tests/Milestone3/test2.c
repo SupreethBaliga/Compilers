@@ -7,7 +7,7 @@ int func1(int s, int r){
 }
 
 int func2(int k, int l) {
-    int arr[4] = {1,2,3,4};
+    int arr[4];
     {
         int s;
     }

@@ -1889,16 +1889,21 @@ class CParser():
                     print(f'Invalid type given in line number {p.lineno(1)}')
                     return
                 new_p2_list = []
+                multiplier = 1
                 for elem in p[2].type:
                     if elem != 'arr' and elem[0] != '[' and elem[-1] != ']':
                         new_p2_list = new_p2_list + elem.split(' ')
+
+                    elif elem[0] == '[' and elem[-1] == ']':
+                        multiplier *= int(elem[1:-1])
+                
                 req_type = 'void'
                 if '*' in new_p2_list:
                     req_type = 'PTR'
                 else:
                     req_type = ' '.join(new_p2_list)
                 if req_type in sizes:
-                    self.TAC.emit('=_int', p[0].temp, f'${sizes[req_type]}')
+                    self.TAC.emit('=_int', p[0].temp, f'${multiplier*sizes[req_type]}')
                 else:
                     self.ST.error = 1
                     print(f'Invalid type given in line number {p.lineno(1)}')
