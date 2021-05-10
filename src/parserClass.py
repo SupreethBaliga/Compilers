@@ -218,7 +218,7 @@ class CParser():
 
     def build(self):
         # Debug is kept true only while testing
-        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp',debug=True)
+        self.parser = yacc.yacc(module=self, start='start', outputdir='./tmp',debug=False)
 
     def p_primary_expression_1(self,p):
         '''
@@ -4975,7 +4975,11 @@ class CParser():
                 self.ST.error = 1
                 return
             elif "static" in p[1].type:
-                if p[3].label.isnumeric():
+                if (len(p[1].type) != 2) or ("int" not in p[1].type):
+                    print("Static Variables can only be of type int")
+                    self.ST.error = 1
+                    return
+                elif p[3].label.isnumeric():
                     found, entry = self.ST.ReturnSymTabEntry(p[0].temp)
                     found["temp"] = found["temp"] + "." + str(self.TAC.staticCounter)
                     self.TAC.staticCounter += 1
@@ -4994,6 +4998,10 @@ class CParser():
                     found, entry = self.ST.ReturnSymTabEntry(var_name)
                     self.TAC.globalSymbols.append([p[1].temp,found["sizeAllocInBytes"]])
                 elif "static" in p[0].variables[var_name]:
+                    if (len(p[0].variables[var_name]) != 2) or ("int" not in p[0].variables[var_name]):
+                        print("Static Variables can only be of type int")
+                        self.ST.error = 1
+                        return
                     found, entry = self.ST.ReturnSymTabEntry(var_name)
                     found["temp"] = found["temp"] + "." + str(self.TAC.staticCounter)
                     self.TAC.staticCounter += 1

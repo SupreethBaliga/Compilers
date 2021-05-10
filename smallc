@@ -1,0 +1,126 @@
+#!/bin/bash
+
+STATUS=0
+count=0
+
+if [ $# -eq 0 ] || ([ $# -eq 1 ] && ([ "$1" == "-h" ] || [ "$1" == "--help" ]));
+then
+    echo "Usage : bash $0 /path/to/test1.c /path/to/test2.c ... "
+    echo "-l : enable printing the scanner table"
+    echo "-d : prevent removal of dump files of the parser"
+    echo "-s : incldue string functions"
+    echo "-h / --help : prints this message"
+    exit 0
+fi
+
+files=()
+lexer=false
+dump=false
+string=false
+
+for i in "$@"
+do
+    if [ ${i:0:1} = "-" ]; 
+    then
+        if [ ${i:1:2} = "l" ]; 
+        then
+            lexer=true
+        elif [ ${i:1:2} = "d" ]; 
+        then
+            dump=true
+        elif [ ${i:1:2} = "s" ]; 
+        then
+            string=true
+        fi
+    else
+        files+=($i)
+    fi
+done
+
+if [ -d "./tmp" ] && [ ! -z "$(ls -A ./tmp)" ];
+then
+    echo "Removing older dump files"
+    rm -v tmp/*
+fi;
+
+for file in ${files[@]};
+do
+    count=$((count+1))
+    echo "$count. $file"
+    fileNameCore="${file%%.*}"
+    fileNameCore=${fileNameCore##*/}
+
+    if [ $lexer = true ]; 
+    then
+        export lex_env=1
+    else
+        export lex_env=0
+    fi
+
+    if [ ! -d "./tmp" ];
+    then
+      mkdir tmp
+    fi
+
+    if [ ! -d "./ST" ];
+    then
+      mkdir ST
+    fi
+
+    if [ ! -d "./ASTgraphs" ];
+    then
+      mkdir ASTgraphs
+    fi
+
+    if [ ! -d "./dot" ];
+    then
+      mkdir dot
+    fi
+
+    if [ ! -d "./TAC" ];
+    then
+      mkdir TAC
+    fi
+
+    if [ ! -d "./assembly" ];
+    then
+      mkdir assembly
+    fi
+
+    if [ ! -d "./executable" ];
+    then
+      mkdir executable
+    fi
+    
+    python3 src/parserClass.py $file
+ 
+    RETVAL=$?
+
+    if [ $RETVAL -ne 0 ]; 
+    then
+        echo "Failure"
+        STATUS=$RETVAL
+    else
+        echo "Success"
+        dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
+        python src/codeGen.py TAC/$fileNameCore.txt > assembly/$fileNameCore.s
+        if [ $string = true ]; 
+        then
+            echo "String is true"
+            gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s src/helpers/libstring.a -lm
+        else
+            echo "String is false"
+            gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s -lm
+        fi
+    fi; 
+
+    echo "<----------------------------------------------------------------------->"
+done
+
+if [ $dump = false ] && [ ! -z "$(ls -A ./tmp)" ]; 
+then
+    # echo "Removing parser dump files"
+    rm -r tmp/
+fi;
+
+exit $STATUS
