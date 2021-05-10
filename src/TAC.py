@@ -145,3 +145,13 @@ class TAC():
             else:
                 self.emit(f'.comm','',str(val[0]) + ','+str(val[2]),'')
 
+    # def optimise(self):
+    #     # Types of operands
+    #     # x(%ebp)
+    #     # (x(%ebp))
+    #     # %ebp+x
+    #     alive_dict = {}
+    #     for line in reversed(self.final_code):
+
+
+

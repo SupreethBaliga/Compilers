@@ -48,31 +48,22 @@ class CLexer(object):
 
 
     reserved_keywords = {
-        'auto'      : 'AUTO',
-        'bool'      : 'BOOL',
         'break'     : 'BREAK',
         'case'      : 'CASE',
         'char'      : 'CHAR',
         'continue'  : 'CONTINUE',
         'default'   : 'DEFAULT',
         'do'        : 'DO',
-        'double'    : 'DOUBLE',
         'else'      : 'ELSE',
         'float'     : 'FLOAT',
         'for'       : 'FOR',
-        'goto'      : 'GOTO',
         'if'        : 'IF',
         'int'       : 'INT',
-        'long'      : 'LONG',
-        'register'  : 'REGISTER',
         'return'    : 'RETURN',
-        'short'     : 'SHORT',
-        'signed'    : 'SIGNED',
         'sizeof'    : 'SIZEOF',
         'static'    : 'STATIC',
         'struct'    : 'STRUCT',
         'switch'    : 'SWITCH',
-        'union'     : 'UNION',
         'unsigned'  : 'UNSIGNED',
         'void'      : 'VOID',
         'while'     : 'WHILE'
@@ -88,11 +79,9 @@ class CLexer(object):
         'FLOAT_CONSTANT',
         'INT_CONSTANT',
         'STRING_LITERAL',
-        # 'CONSTANT',
         'ERROR',         #to denote any kind of scanning error
         
         # Operators
-        # 'ELLIPSIS',      # "..."
         'RIGHT_ASSIGN',  # ">>="
         'LEFT_ASSIGN',   # "<<="
         'ADD_ASSIGN',    # "+="
@@ -118,7 +107,6 @@ class CLexer(object):
 
     # Regular expression rules for simple tokens
 
-    # t_ELLIPSIS      = r'\.\.\.'
     t_RIGHT_ASSIGN  = r'>>='
     t_LEFT_ASSIGN   = r'<<='
     t_ADD_ASSIGN    = r'\+='
@@ -150,24 +138,17 @@ class CLexer(object):
 
     # Regular expression rules for complex tokens
 
-    # @TOKEN(r'\{')
-    # def t_LBRACE(self, t):
-    #     self.on_lbrace_func()
-    #     t.type = '{'
-    #     return t
-
-    # @TOKEN(r'\}')
-    # def t_RBRACE(self, t):
-    #     self.on_rbrace_func()
-    #     t.type = '}'
-    #     return t
-
     # Character Constants 
     char_const = r'(\'(\\.|[^\\\'])+\')'
     @TOKEN(char_const)
     def t_CHAR1_CONSTANT(self, t):
         t.type = 'CHAR_CONSTANT'
-        t.value = ord(t.value[1])
+        if len(t.value) == 3:
+            t.value = ord(t.value[1])
+        else:
+            if t.value[1:-1] == str('\\0'):
+                t.value = 0
+            # addmore here
         return t
 
     # Floating constants
@@ -271,13 +252,8 @@ class CLexer(object):
         msg = "Illegal token found"
         self._error(msg, t)
 
-        
-
     ###############################################################
     # END OF TOKENIZING RULES
-
-
-
 
 # clex = CLexer(self.error_func, on_lbrace, on_rbrace, self.type_lookup_func)
 isError = 0

@@ -209,8 +209,8 @@ class SymbolTable() :
                 if field == "sizeAllocInBytes":
                     if len(self.Table) > 0:
                         self.TopScope[iden]["offset"] = self.offset
-                        val = (val + 3) // 4
-                        val = val * 4
+                        # val = (val + 3) // 4
+                        # val = val * 4
                         self.offset += val
                 elif field == "vars":
                     if len(self.Table) > 0:
@@ -227,8 +227,8 @@ class SymbolTable() :
                     if field == "sizeAllocInBytes":
                         if len(self.Table) > 0:
                             self.TopScope[iden]["offset"] = self.offset
-                            val = (val + 3) // 4
-                            val = val * 4          
+                            # val = (val + 3) // 4
+                            # val = val * 4          
                             self.offset += val
                     elif field == "vars":
                         if len(self.Table) > 0:
