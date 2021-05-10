@@ -5,6 +5,7 @@ We have changed the grammar to allow the mixing of declarations as well as state
 */
 
 int main() {
+    printf("TC to demonstrate the feature of mixing of declarations and statements\n",0);
     int a, b;
     a = 9 + 67%4;
     b = a*a - a+a;

@@ -9,6 +9,7 @@ Test 19: File I/O
 
 // TC Credits: tutorialspoint.com
 int main() {
+    printf("TC for file pointer\n",0);
     FILE *fp;
     fp = fopen("/tmp/test.txt", "w+");
     fprintf(fp, "This is testing for fprintf...\n");

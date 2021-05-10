@@ -12,8 +12,8 @@ float floatops(float a, float b) {
     // float a7 = a & b; //will not work
     // float a8 = a | b; //will not work
     // float a9 = a ^ b; //will not work
-    // float a11 = ~a; //will not work
     float a10 = !a;
+    // float a11 = ~a; //will not work
     float a12 = a && b;
     float a13 = a || b;
     printf("a1 = %f\n", a1);
@@ -29,8 +29,11 @@ float floatops(float a, float b) {
 
 
 int main() {
+    printf("TC to demonstrate the float operations\n *INPUT NEEDED*\n",0);
     float a,b;
+    printf("Input the value of a: ", 0);
     scanf("%f", &a);
+    printf("Input the value of b: ", 0);
     scanf("%f", &b);
     float ans = floatops(a,b);
     printf("ans = %f\n", ans);

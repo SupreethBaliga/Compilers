@@ -31,6 +31,7 @@ void inorder(struct BTNode* node) {
 }
 
 int main() {
+    printf("TC for binary tree traversal\n",0);
     struct BTNode* root = (void*)0;
     root = insert(root, 10);
     root = insert(root, 11);

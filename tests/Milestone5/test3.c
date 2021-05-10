@@ -7,8 +7,9 @@ Test 3: Fibonacci
 int main(){
     int a = 0 , b = 1;
     int n;
+    printf("TC for Fibonacci Numbers\n *INPUT NEEDED*\n",0);
+    printf("Input the number of Fibonacci Terms: ",0);
     scanf("%d",&n);
-    printf("Testcase for first %d fibonacci numbers : \n", n);
     for(int i = 0 ; i < n ; ++i){
         if(i < 2){
             if(i == 0){

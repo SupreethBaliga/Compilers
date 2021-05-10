@@ -4,6 +4,7 @@ Test 5: Nested Ifs => avoid multiple labels (Backpatching)
 
 
 int main() {
+    printf("TC for nested ifs\n",0);
     int a=9, b=10, c=11;
     if (a==11) {
         printf("This won't be printed\n",0);

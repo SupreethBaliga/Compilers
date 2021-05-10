@@ -5,6 +5,7 @@ TC to display the use of string functions
 */
 
 int main() {
+    printf("TC to display the usage of string functions\n\n",0);
     char *init = "Hey this is the beginning. ";
     printf("init: %s\n", init);
     char arr[100];

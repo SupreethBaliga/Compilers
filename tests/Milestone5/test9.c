@@ -18,6 +18,7 @@ void odd(int k) {
 }
 
 int main() {
+    printf("TC for Odd Even Recursion:\n")
     int k;
     scanf("%d", &k);
     if (k%2) odd(k);

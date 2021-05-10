@@ -38,6 +38,7 @@ void newtonRaphson(float x)
 // Driver program to test above
 int main()
 {
+    printf("TC for Newton-Raphson\n",0);
     EPSILON = 0.001;
     float x0 = -58; // Initial values assumed
     newtonRaphson(x0);

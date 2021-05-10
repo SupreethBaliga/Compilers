@@ -36,6 +36,7 @@ float f(float s) {
 
 
 int main() {
+    printf("TC for displaying math libraries\n",0);
     float s=2.5;
     float m = 7.7;
     float k = f(s+m);

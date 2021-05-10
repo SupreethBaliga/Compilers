@@ -16,6 +16,7 @@ void func() {
 }
 
 int main() {
+    printf("TC to display the use of static int variables\n",0);
     int i = 5;
     while(i--) {
         func();

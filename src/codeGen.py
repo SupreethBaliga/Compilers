@@ -373,7 +373,6 @@ class CodeGenerator:
             if not edx or not eax:
                 return
             self.check_type(instruction, "%ecx", "%ebx", False, False, True)
-            print(eax, edx, instruction[2], instruction[3])
             self.emit_code("movl", instruction[2], "%eax")
             self.emit_code("cltd")
             self.emit_code("idivl", instruction[3])

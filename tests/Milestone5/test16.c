@@ -26,6 +26,7 @@ void print_node(struct tmp node) {
 }
 
 int main() {
+    printf("TC for struct/struct data type as function parameter and return\n",0);
     global_count = 1;
     for(int i=0;i<10;i++) {
         struct tmp node = new_node();

@@ -4,6 +4,7 @@ This is to depict the use of scopes
 int b;
 
 int main() {
+    printf("TC to demonstrate the use of multi scopes\n",0);
     b = 10;
     int b;
     b = 19; // move this line above to show that local b is being used

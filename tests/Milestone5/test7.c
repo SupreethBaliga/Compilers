@@ -39,15 +39,19 @@ void quickSort(int arr[], int low, int high)
 } 
 
 int main(){
+    printf("TC For quicksort\n *Input needed*\n",0);
+    printf("Input the number of terms to sort (<50 for now): ",0);
     int a[50]; 
     int n ;
     scanf("%d", &n);
+    printf("Enter each term of the input:\n",0);
     for(int i = 0 ; i < n ; ++i){
         scanf("%d", &(a[i]));
     }
 
     quickSort(a, 0 , n - 1);
 
+    printf("Sorted output is:\n",0);
     for(int i = 0 ; i < n ; ++i){
         printf("%d ", a[i]);
     }

@@ -22,10 +22,14 @@ int binSearch(int arr[50], int elem, int l , int r){
 int main(){
     int arr[50];
     int n , elem;
+    printf("TC For BinSearch\n *Input needed*\n",0);
+    printf("Input the number of terms to search among (<50 for now): ",0);
     scanf("%d", &n);
+    printf("Enter each term of the input:\n",0);
     for(int i = 0 ; i < n ; ++i){
         scanf("%d", &(arr[i]));
     }
+    printf("Enter the element to search for from the input\n",0);
     scanf("%d", &elem);
 
     printf("binSearch() = %d" , binSearch(arr, elem, 0, n -1));

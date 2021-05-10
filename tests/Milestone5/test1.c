@@ -3,6 +3,7 @@ Test 1: Unary Minus vs Binary Minus
 */
 
 int main(){
+    printf("This test is for checking Unary Minus vs Binary Minus\n",0);
     int a = -1 - 2;
     int b = -1 - a;
     int c = -a - 1;

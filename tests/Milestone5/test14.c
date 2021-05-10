@@ -41,6 +41,7 @@ void print_list(struct node *adj[10]) {
 }
 
 int main() {
+    printf("TC for adjacency list of a graph\n",0);
     struct node* adj[10];
     for(int i=0;i<10;i++) {
         adj[i] = new_node(i);

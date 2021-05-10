@@ -4,6 +4,7 @@ Test 2: Operators Type Checking
 
 
 int main() {
+    printf("This TC for displaying the type checking of operators\n",0);
     int a = 5;
     int b = 9;
     float k = 9.6;

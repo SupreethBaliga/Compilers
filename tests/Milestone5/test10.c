@@ -3,9 +3,12 @@ Test 10: Bubblesort (array + nested loop)
 */
 
 int main(){
+    printf("TC For bubblesort\n *Input needed*\n",0);
     int a[50]; 
     int n ;
+    printf("Input the number of terms to sort (<50 for now): ",0);
     scanf("%d", &n);
+    printf("Enter each term of the input:\n",0);
     for(int i = 0 ; i < n ; ++i){
         scanf("%d", &(a[i]));
     }
@@ -20,6 +23,7 @@ int main(){
         }
     }
 
+    printf("Sorted output is:\n",0);
     for(int i = 0 ; i < n ; ++i){
         printf("%d ", a[i]);
     }
