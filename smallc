@@ -106,10 +106,8 @@ do
         python src/codeGen.py TAC/$fileNameCore.txt > assembly/$fileNameCore.s
         if [ $string = true ]; 
         then
-            echo "String is true"
             gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s src/helpers/libstring.a -lm
         else
-            echo "String is false"
             gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s -lm
         fi
     fi; 
