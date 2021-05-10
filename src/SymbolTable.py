@@ -36,7 +36,7 @@ class SymbolTable() :
             if not found:
                 found = self.FindSymbolInTable(iden,1)
                 if found:
-                    print("Warning:", iden, "on line", line_num, "is already declared at line", found[1]["line"])
+                    print("Please Note:", iden, "on line", line_num, "is already declared at line", found[1]["line"])
                 self.TopScope[iden] = OrderedDict()
                 self.TopScope[iden]['line'] = line_num
             else:

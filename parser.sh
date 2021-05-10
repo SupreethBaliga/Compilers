@@ -94,7 +94,7 @@ do
         echo "Success"
         dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
         python src/codeGen.py TAC/$fileNameCore.txt > assembly/$fileNameCore.s 
-        gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s -lm
+        gcc -m32 -o executable/$fileNameCore assembly/$fileNameCore.s src/helpers/libstring.a -lm
     fi; 
 
 
