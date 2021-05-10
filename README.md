@@ -11,13 +11,13 @@
 ```bash
 source venvcompiler/bin/activate
 ```
-* To use the compiler execute `smallc` and provide the test file(s) as command line arguments
+* To use the compiler execute `c--` and provide the test file(s) as command line arguments
 ```bash
-bash smallc file1 file2 file3
+bash c-- file1 file2 file3
 ```
 * The available flags can be listed with *-h/--help*
 ```bash
-bash smallc -h
+bash c-- -h
 ```
 * The compiler generates the executable in *executable* folder with the name of the executable being the name of the corresponding file (without the file extension)
 # Final Project:

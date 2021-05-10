@@ -12,3 +12,10 @@ primitiveParser/
 
 # Ignore parser dump files
 tmp/
+assembly/
+ASTgraphs/
+dot/
+executable/
+ST/
+TAC/
+
