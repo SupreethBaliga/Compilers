@@ -1,4 +1,4 @@
-# Compiler Project
+# C--
 
 **Source Language :-** `C`
 **Implementation Language:-** `Python 3`
@@ -23,12 +23,17 @@ bash c-- -h
 # Final Project:
 ## Directory Structure
 * src - Contains all the python code files for
+* PDFs - Submission files for the different milestones
+* tests - Contains the tests for the different Milestones and the final project
+
+The following folders are created on the execution of compiler program :
+
 * dot - Contains dot files for AST
 * ASTgraphs - Contains AST produced in PDF format
-* PDFs - Submission files for the different milestones
 * ST - Symbol Table in json format
 * TAC - 3 Address Code (Intermediate Language Code) of the corresponding test
-* tests - Contains the tests for the different Milestones and the final project
+* assembly - Generated assembly code
+* executable - Contains the executable for the test case
 
 
 ## Features
@@ -73,6 +78,7 @@ int f(int a, int b){
 int a[3] = {1,2,3}; /* This is not allowed*/
 ```
 * We are not using gcc for pre processing hence, any `#define` will not work. So, in place of `NULL` use `(void*)0`
+* While using char arrays, explicity put `'\0'` at the end for the proper usage of string functions
 
 ## Milestone Breakdown
 ### Milestone - 1:
@@ -90,6 +96,9 @@ int a[3] = {1,2,3}; /* This is not allowed*/
 ### Milestone - 4:
 * To use the parser execute parser.sh and provide the test file(s) as command line arguments
 * The corresponding Three Address Code is generated in TAC folder
+### Milestone - 5:
+* This is the complete project. To execute the compiler program refer to the *Instructions* mentioned above
+
 ## Group Members :boy:
 
 | Name | Roll Number |
