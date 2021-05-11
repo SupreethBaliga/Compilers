@@ -22,7 +22,7 @@ bash c-- -h
 * The compiler generates the executable in *executable* folder with the name of the executable being the name of the corresponding file (without the file extension)
 # Final Project:
 ## Directory Structure
-* src - Contains all the python code files for
+* src - Contains all the python code files
 * PDFs - Submission files for the different milestones
 * tests - Contains the tests for the different Milestones and the final project
 
