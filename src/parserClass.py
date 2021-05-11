@@ -992,7 +992,13 @@ class CParser():
 
             elif p[2] == '(':
                 p[0] = Node('FuncCall',[p[1]])
-                if p[1].type is None:
+                
+                if p[1] is None:
+                    self.ST.error = 1
+                    print(f'Cannot call non-function at line {p.lineno(2)}')
+                    return
+                                
+                if p[1].type is None:   
                     p[1].type = []
                 
                 if 'func' not in p[1].type:
