@@ -918,7 +918,13 @@ class CParser():
                     return
 
                 p[0].varname = p[1].varname + [p3val]
-                found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                try:
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                except:
+                    self.ST.error = 1
+                    print(f'Invalid usage of \'.\' operator at line {p.lineno(2)}')
+                    return
+
                 if found is not None :
                     if p[0].varname[1] in found["vars"].keys():
                         ptr_flag = 0
@@ -1221,7 +1227,13 @@ class CParser():
                 #     strtype = 'union'
                 # found = self.ST.TT.ReturnTypeTabEntry(p[1].type[1], strtype)
 
-                found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                try:
+                    found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
+                except:
+                    self.ST.error = 1
+                    print(f'Invalid usage of \'->\' operator at line {p.lineno(2)}')
+                    return
+
                 if found is not False :
                     if p[0].varname[1] in found["vars"].keys():
                         p0_offset = 0
@@ -2073,7 +2085,13 @@ class CParser():
                 self.ST.ModifySymbol(p[0].temp, "check", "TEMP")
 
                 if p[1].label == 'UNARY*':
-                    found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
+                    
+                    try:
+                        found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
+                    except:
+                        self.ST.error = 1
+                        print(f'Invalid usage of UNARY* operator at line {p[1].lineno}')
+                        return
                     var_size = found['sizeAllocInBytes']
                     self.ST.ModifySymbol(p[0].temp, "sizeAllocInBytes", var_size)
                 else:
