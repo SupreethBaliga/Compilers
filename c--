@@ -98,10 +98,10 @@ do
 
     if [ $RETVAL -ne 0 ]; 
     then
-        echo "Failure"
+        echo -e "\033[41mFailure\033[0m"
         STATUS=$RETVAL
     else
-        echo "Success"
+        echo -e "\033[42mSuccess\033[0m"
         dot -Tps dot/$fileNameCore.dot -o ASTgraphs/$fileNameCore.ps
         python src/codeGen.py TAC/$fileNameCore.txt > assembly/$fileNameCore.s
         if [ $string = true ]; 
