@@ -15,6 +15,7 @@ source venvcompiler/bin/activate
 ```bash
 bash c-- file1 file2 file3
 ```
+* To use the string functions provide the `-s` flag
 * The available flags can be listed with *-h/--help*
 ```bash
 bash c-- -h
