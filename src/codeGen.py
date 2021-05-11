@@ -1125,7 +1125,6 @@ class CodeGenerator:
         This function is currently only implemented
         for integer assignment operators
         '''
-        reg = self.request_register()
         instruction.insert(1, instruction[1])
         instruction[1] = self.deref(instruction[1])
 
@@ -1334,6 +1333,10 @@ class CodeGenerator:
             return
         # Currently these instructions only work for int
         #Add cases for lengths
+        if len(self.register_stack) !=6:
+            for reg in self.register_list:
+                self.free_register(reg)
+        
         if instruction[0][0:2] == "*=" or instruction[0][0:2] == "/=" or instruction[0][0:2] == "%=" or instruction[0][0:2] == "+=" or instruction[0][0:2] == "-=" or instruction[0][0:2] == "&=" or instruction[0][0:2] == "^=" or instruction[0][0:2] == "|=":
             self.op_assgn(instruction)
         elif len(instruction[0]) > 2 and (instruction[0][0:3] == "<<=" or instruction[0][0:3] == ">>="):
