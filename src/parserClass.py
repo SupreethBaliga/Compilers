@@ -6668,6 +6668,10 @@ class CParser():
         p[0].variables = p[-2].variables
         function_name = str()
         for key in p[0].variables.keys():
+            if p[0].variables[key] is None or p[0].variables[key] == []:
+                self.isError = 1
+                print(rederror, f'Invalid syntax')
+                return 
             if(p[0].variables[key][0] == "Function Name"):
                 function_name = key
                 break
