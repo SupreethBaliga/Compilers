@@ -5,6 +5,7 @@ Test 9: Odd and Even (mutual recursion)
 // Won't work since function declarations are not there in our grammar
 // SORRY :-(
 
+void odd(int);
 void even(int k) {
     if (k==0) return;
     printf("In even with %d\n",k);

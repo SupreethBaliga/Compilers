@@ -25,7 +25,7 @@ int main(){
     printf("TC For BinSearch\n *Input needed*\n",0);
     printf("Input the number of terms to search among (<50 for now): ",0);
     scanf("%d", &n);
-    printf("Enter each term of the input:\n",0);
+    printf("Enter each term of the input in sorted manner:\n",0);
     for(int i = 0 ; i < n ; ++i){
         scanf("%d", &(arr[i]));
     }
