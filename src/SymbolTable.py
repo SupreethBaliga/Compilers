@@ -36,11 +36,11 @@ class SymbolTable() :
             if not found:
                 found = self.FindSymbolInTable(iden,1)
                 if found:
-                    print("Please Note:", iden, "on line", line_num, "is already declared at line", found[1]["line"])
+                    print("\33[33mPlease Note:\033[0m", iden, "on line", line_num, "is already declared at line", found[1]["line"])
                 self.TopScope[iden] = OrderedDict()
                 self.TopScope[iden]['line'] = line_num
             else:
-                print("Error: Redeclaration of existing variable", iden,". Prior declaration is at line", found["line"])
+                print("\033[91mError:\033[0m Redeclaration of existing variable", iden,". Prior declaration is at line", found["line"])
                 self.error = True
         elif self.flag == 1:
             self.TT.InsertSymbol(iden,type_name, line_num, 1)
@@ -260,7 +260,7 @@ class SymbolTable() :
             if found:
                 return found, entry
             else:
-                print(f'Error: The variable {iden} on line {statement_line} is not declared.')
+                print(f'\033[91mError:\033[0m The variable {iden} on line {statement_line} is not declared.')
                 self.error = True
                 return None,None
         

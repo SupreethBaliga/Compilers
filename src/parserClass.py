@@ -157,6 +157,7 @@ sizes = {
     'unsigned int': 4,
     'str': 4 # 'str' is same as int unsigned
 }
+rederror = '\033[91mError:\033[0m'
 class CParser():
     tokens = CLexer.tokens
     tokens.remove("ERROR")
@@ -233,7 +234,7 @@ class CParser():
                 entry['type']
             except:
                 self.ST.error = 1
-                print(f'Self referencing variables not allowed at line {p.lineno(1)}')
+                print(rederror, f'Self referencing variables not allowed at line {p.lineno(1)}')
                 return
 
             if entry['check'] == 'FUNC':
@@ -703,27 +704,27 @@ class CParser():
         elif (len(p) == 3):
             if p[1] == None or p[1].type == None or p[1].type == []:
                 self.ST.error = 1
-                print(f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
+                print(rederror, f'Cannot increase/decrease value of expression at line {p.lineno(2)}')
 
             elif 'const' in p[1].type:
                 self.ST.error = 1
-                print(f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
+                print(rederror, f'Cannot increase/decrease value of read only variable at line {p.lineno(2)}')
 
             elif p[1].type[0] not in iit and p[1].type[0][-1] != '*':
                 self.ST.error = 1
-                print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
+                print(rederror, f'Cannot use increment/decrement operator on non-integral at line {p.lineno(2)}')
 
             elif p[1].isTerminal == False and p[1].isvar == False:
                 self.ST.error = 1
-                print(f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
+                print(rederror, f'Cannot use increment/decrement operator on expression at line {p.lineno(2)}')
 
             elif p[1].isvar == 0 and p[1].type[0][-1] != '*':
                 self.ST.error = 1
-                print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+                print(rederror, f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
 
             elif p[1].type[0][-1] == '*' and 'arr' in p[1].type:
                 self.ST.error = 1
-                print(f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')         
+                print(rederror, f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')         
 
             else:
                 p[0] = Node('POST' + str(p[2]),[p[1]])
@@ -771,19 +772,19 @@ class CParser():
 
                 if p[1] == None or p[1].type == None or p[1].type == []:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
 
                 if 'struct' not in p[1].type and 'union' not in p[1].type:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
                 if not hasattr(p[1], "vars"):
                     self.ST.error = 1
                     return
                 elif p3val not in p[1].vars:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that does not belong to the structure/union at {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that does not belong to the structure/union at {p.lineno(2)}')
                 else:
                     old_type_list = p[1].vars[p3val]['type']
                     isarr = 0
@@ -922,7 +923,7 @@ class CParser():
                     found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
                 except:
                     self.ST.error = 1
-                    print(f'Invalid usage of \'.\' operator at line {p.lineno(2)}')
+                    print(rederror, f'Invalid usage of \'.\' operator at line {p.lineno(2)}')
                     return
 
                 if found is not None :
@@ -995,7 +996,7 @@ class CParser():
                 
                 if p[1] is None:
                     self.ST.error = 1
-                    print(f'Cannot call non-function at line {p.lineno(2)}')
+                    print(rederror, f'Cannot call non-function at line {p.lineno(2)}')
                     return
                                 
                 if p[1].type is None:   
@@ -1003,12 +1004,12 @@ class CParser():
                 
                 if 'func' not in p[1].type:
                     self.ST.error = 1
-                    print(f'Cannot call non-function at line {p.lineno(2)}')
+                    print(rederror, f'Cannot call non-function at line {p.lineno(2)}')
                     return
 
                 elif p[1].param_nums != 0:
                     self.ST.error = 1
-                    print(f'{p[1].param_nums} Parameters required to call function at line {p.lineno(2)} ')
+                    print(rederror, f'{p[1].param_nums} Parameters required to call function at line {p.lineno(2)} ')
                     return
 
                 else:
@@ -1059,7 +1060,7 @@ class CParser():
 
                 if p[1] == None or p[1].type == None or p[1].type == []:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that is not a structure/union at line {p.lineno(2)}')
                     return
                 
                 if p[1].type is None:
@@ -1067,10 +1068,10 @@ class CParser():
 
                 if 'struct *' not in p[1].type and 'union *' not in p[1].type:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that is not a pointer to a structure or union at line {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that is not a pointer to a structure or union at line {p.lineno(2)}')
                 elif p3val not in p[1].vars:
                     self.ST.error = 1
-                    print(f'Invalid request for member of object that does not belong to the structure or union at {p.lineno(2)}')
+                    print(rederror, f'Invalid request for member of object that does not belong to the structure or union at {p.lineno(2)}')
                 else:
                     old_type_list = p[1].vars[p3val]['type']
                     isarr = 0
@@ -1237,7 +1238,7 @@ class CParser():
                     found, entry = self.ST.ReturnSymTabEntry(p[0].varname[0], p.lineno(1))
                 except:
                     self.ST.error = 1
-                    print(f'Invalid usage of \'->\' operator at line {p.lineno(2)}')
+                    print(rederror, f'Invalid usage of \'->\' operator at line {p.lineno(2)}')
                     return
 
                 if found is not False :
@@ -1283,17 +1284,17 @@ class CParser():
                 p[0] = Node('FuncCall',[p[1],p[3]])
                 if p[1] is None or p[1].type is None or p[1].param_nums is None or p[3] is None or p[3].param_nums is None or p[1].type == [] or p[1].params is None:
                     self.ST.error = 1
-                    print(f'Cannot perform function call at line {p.lineno(2)}')
+                    print(rederror, f'Cannot perform function call at line {p.lineno(2)}')
                     return               
 
                 elif 'func' not in p[1].type:
                     self.ST.error = 1
-                    print(f'Cannot call non-function at line {p.lineno(2)}')
+                    print(rederror, f'Cannot call non-function at line {p.lineno(2)}')
                     return
 
                 elif p[3].param_nums != p[1].param_nums:
                     self.ST.error = 1
-                    print(f'Incorrect number of parameters (given: {p[3].param_nums}, required: {p[1].param_nums}) at line  {p.lineno(2)}')
+                    print(rederror, f'Incorrect number of parameters (given: {p[3].param_nums}, required: {p[1].param_nums}) at line  {p.lineno(2)}')
                     return
                 else:
                     ctr = -1
@@ -1415,43 +1416,43 @@ class CParser():
 
                         if p[3] is None or paramtype is None or p[3].params[ctr] is None or paramtype == [] or p[3].params[ctr] == []:
                             self.ST.error = 1
-                            print(f'Cannot call function at line {p.lineno(2)}')
+                            print(rederror, f'Cannot call function at line {p.lineno(2)}')
                             return
 
                         if ('struct' in paramtype or 'union' in paramtype) and ('struct' not in p[3].params[ctr] and 'union' not in p[3].params[ctr]):
                             self.ST.error = 1;
-                            print(f'Need struct/union value {paramtype} to call function but got non- struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
+                            print(rederror, f'Need struct/union value {paramtype} to call function but got non- struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
                             return
 
                         if ('struct' not in paramtype and 'union' not in paramtype) and ('struct'  in p[3].params[ctr] or 'union'  in p[3].params[ctr]):
                             self.ST.error = 1;
-                            print(f'Need non-struct/union value {paramtype} to call function but got struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
+                            print(rederror, f'Need non-struct/union value {paramtype} to call function but got struct/union type {p[3].params[ctr]} at line {p.lineno(2)}')
                             return
 
                         if 'struct' in paramtype and 'struct' in p[3].params[ctr] and paramtype[1] != p[3].params[ctr][1]:
                             self.ST.error = 1;
-                            print(f'Incompatible struct types to call function at line {p.lineno(2)}')
+                            print(rederror, f'Incompatible struct types to call function at line {p.lineno(2)}')
                             return
                         
                         if 'union' in paramtype and 'union' in p[3].params[ctr] and paramtype[1] != p[3].params[ctr][1]:
                             self.ST.error = 1;
-                            print(f'Incompatible union types to call function at line {p.lineno(2)}')
+                            print(rederror, f'Incompatible union types to call function at line {p.lineno(2)}')
                             return
                         
                         if paramtype[0] in aat and p[3].params[ctr][0] not in aat and p[3].params[ctr][0][-1] != '*':
                             self.ST.error = 1
-                            print(f'Invalid parameter type to call function at line {p.lineno(2)}')
+                            print(rederror, f'Invalid parameter type to call function at line {p.lineno(2)}')
                             return
 
                         if paramtype[0] not in aat and paramtype[0][-1] != '*' and p[3].params[ctr][0] in aat:
                             self.ST.error = 1
-                            print(f'Invalid parameter type to call function at line {p.lineno(2)}')
+                            print(rederror, f'Invalid parameter type to call function at line {p.lineno(2)}')
                             return
 
                         
                         if paramtype[0][-1] == '*' and p[3].params[ctr][0] not in iit and p[3].params[ctr][0][-1] != '*' and 'str' not in p[3].params[ctr]:    
                             self.ST.error = 1
-                            print(f'Incompatible assignment between pointer and {p[3].params[ctr]} at line {p.lineno(2)}')
+                            print(rederror, f'Incompatible assignment between pointer and {p[3].params[ctr]} at line {p.lineno(2)}')
                             return
 
                         if self.ST.error:
@@ -1579,7 +1580,7 @@ class CParser():
                                     self.TAC.emit('param', arg[0], f'${sizes[req_type]}')
                             else:
                                 self.ST.error = 1
-                                print(f'Invalid type given in line number {p.lineno(4)}')
+                                print(rederror, f'Invalid type given in line number {p.lineno(4)}')
 
                 found, entry = self.ST.ReturnSymTabEntry(p[1].label)
                 if (("struct" in found["type"]) and ("*" not in found["type"])):
@@ -1598,7 +1599,7 @@ class CParser():
 
                 if p[3] is None or p[3].type is None or p[3].type == [] or p[1] is None or p[1].type is None or p[1].type == []:
                     self.ST.error = 1
-                    print(f'Invalid call to access array element at line {p.lineno(2)}')
+                    print(rederror, f'Invalid call to access array element at line {p.lineno(2)}')
                     return
 
                 flag = 0
@@ -1607,12 +1608,12 @@ class CParser():
 
                 if flag==0:
                     self.ST.error = 1
-                    print(f'Invalid array subscript of type {p[3].type} at line {p.lineno(2)}')
+                    print(rederror, f'Invalid array subscript of type {p[3].type} at line {p.lineno(2)}')
                     return
                 else:
                     if p[1].type[0][-1] != '*':
                         self.ST.error = 1
-                        print(f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
+                        print(rederror, f'Expression of type {p[1].type} not an array at line {p.lineno(2)}')
                         return
                     else:        
 
@@ -1819,22 +1820,22 @@ class CParser():
             if p[1] == '++' or p[1] == '--':
                 if p[2] is None or p[2].type is None or p[2].type == []:
                     self.ST.error = 1
-                    print(f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
+                    print(rederror, f'Cannot increase/decrease value of expression at line {p.lineno(1)}')
                 elif 'const' in p[2].type:
                     self.ST.error = 1
-                    print(f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
+                    print(rederror, f'Cannot increase/decrease value of read only variable at line {p.lineno(1)}')
                 elif p[2].type[0] not in iit and p[2].type[0][-1] != '*':
                     self.ST.error = 1
-                    print(f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
+                    print(rederror, f'Cannot use increment/decrement operator on non-integral at line {p.lineno(1)}')
                 elif p[2].isTerminal == False and p[2].isvar==False:
                     self.ST.error = 1
-                    print(f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
+                    print(rederror, f'Cannot use increment/decrement operator on expression at line {p.lineno(1)}')
                 elif p[2].isvar == 0 and p[2].type[0][-1] != '*':
                     self.ST.error = 1
-                    print(f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
+                    print(rederror, f'Cannot use increment/decrement operator on constant at line {p.lineno(2)}')
                 elif p[2].type[0][-1] == '*' and 'arr' in p[2].type:
                     self.ST.error = 1
-                    print(f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')  
+                    print(rederror, f'Cannot use increment/decrement operator on array type at line {p.lineno(2)}')  
                 else:
                     p[0] = Node('PRE' + str(p[1]),[p[2]])
                     if p[2].type is None:
@@ -1904,7 +1905,7 @@ class CParser():
                 p[0].varname = p[2].varname
                 if p[2].type is None or p[2].type == []:
                     self.ST.error = 1
-                    print(f'Invalid type given in line number {p.lineno(1)}')
+                    print(rederror, f'Invalid type given in line number {p.lineno(1)}')
                     return
                 new_p2_list = []
                 multiplier = 1
@@ -1924,7 +1925,7 @@ class CParser():
                     self.TAC.emit('=_int', p[0].temp, f'${multiplier*sizes[req_type]}')
                 else:
                     self.ST.error = 1
-                    print(f'Invalid type given in line number {p.lineno(1)}')
+                    print(rederror, f'Invalid type given in line number {p.lineno(1)}')
                 return
                 p[0].truelist.append(self.TAC.nextstat)
                 p[0].falselist.append(self.TAC.nextstat+1)
@@ -1937,7 +1938,7 @@ class CParser():
 
                     if p[2].type is None or p[2].type == []:
                         self.ST.error = 1
-                        print(f'Cannot perform unary operation at line {p[1].lineno}')
+                        print(rederror, f'Cannot perform unary operation at line {p[1].lineno}')
                         return
 
                     if p[1].label[-1] in ['+', '-', '!']:
@@ -1966,7 +1967,7 @@ class CParser():
 
                         else:
                             self.ST.error = 1
-                            print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+                            print(rederror, f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
 
                     elif p[1].label[-1] == '~':
@@ -1993,19 +1994,19 @@ class CParser():
 
                         else:
                             self.ST.error = 1
-                            print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+                            print(rederror, f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
 
                     elif p[1].label[-1] == '*':
 
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
-                            print(f'Cannot perform unary operation * at line {p[1].lineno}')
+                            print(rederror, f'Cannot perform unary operation * at line {p[1].lineno}')
                             return              
 
                         elif len(p[2].type)>0 and p[2].type[0][-1] != '*' and ('*' not in p[2].type):
                             self.ST.error = 1
-                            print(f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
+                            print(rederror, f'Invalid Unary operator for operand type {p[2].type} at line {p[1].lineno}')
                             return
                         else:
                             p[0].isvar = 1
@@ -2022,12 +2023,12 @@ class CParser():
 
                         if p[2] is None or p[2].type is None or p[2].type ==[]:
                             self.ST.error = 1
-                            print(f'Cannot perform unary operation * at line {p[1].lineno}')
+                            print(rederror, f'Cannot perform unary operation * at line {p[1].lineno}')
                             return        
 
                         elif len(p[2].type)>0 and 'struct' != p[2].type[0] and 'union' != p[2].type[0] and p[2].isvar==0:
                             self.ST.error = 1
-                            print(f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
+                            print(rederror, f'Cannot find pointer for non variable {p[2].type} at line {p[1].lineno}')
                             return
                         elif len(p[2].type)>0 and 'struct' == p[2].type[0] or 'union' == p[2].type[0]:
                             p[0].type = p[2].type
@@ -2096,7 +2097,7 @@ class CParser():
                         found, entry = self.ST.ReturnSymTabEntry(p[2].varname[0])
                     except:
                         self.ST.error = 1
-                        print(f'Invalid usage of UNARY* operator at line {p[1].lineno}')
+                        print(rederror, f'Invalid usage of UNARY* operator at line {p[1].lineno}')
                         return
                     var_size = found['sizeAllocInBytes']
                     self.ST.ModifySymbol(p[0].temp, "sizeAllocInBytes", var_size)
@@ -2162,7 +2163,7 @@ class CParser():
 
             if p[3].type is None or p[3].type == []:
                 self.ST.error = 1
-                print(f'Invalid type given in line number {p.lineno(1)}')
+                print(rederror, f'Invalid type given in line number {p.lineno(1)}')
                 return
             req_type = 'void'
             if '*' in p[3].type:
@@ -2174,7 +2175,7 @@ class CParser():
                 self.TAC.emit('=_int', p[0].temp, f'${sizes[req_type]}')
             else:
                 self.ST.error = 1
-                print(f'Invalid type given in line number {p.lineno(1)}')
+                print(rederror, f'Invalid type given in line number {p.lineno(1)}')
                 return
             p[0].truelist.append(self.TAC.nextstat)
             p[0].falselist.append(self.TAC.nextstat+1)
@@ -2209,7 +2210,7 @@ class CParser():
             p[0] = Node('CAST',[p[2],p[4]])
             if p[2] is None or p[2].type is None or p[2].type == [] or p[4] is None or p[4].type is None or p[4].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform casting at line {p.lineno(1)}')
+                print(rederror, f'Cannot perform casting at line {p.lineno(1)}')
                 return
             temp_type_list = []
             temp2_type_list = []
@@ -2222,25 +2223,25 @@ class CParser():
                 if len(single_type)>0 and single_type[0] == '[' and single_type[-1] == ']':
                     if single_type[1:-1] == '':
                         self.ST.error = 1
-                        print('Cannot have empty indices for array declarations at line', p.lineno(1))
+                        print(rederror, 'Cannot have empty indices for array declarations at line', p.lineno(1))
                         return
                     elif int(single_type[1:-1]) <= 0:
                         self.ST.error = 1
-                        print('Cannot have non-positive integers for array declarations at line', p.lineno(1))
+                        print(rederror, 'Cannot have non-positive integers for array declarations at line', p.lineno(1))
                         return
 
             if len(temp2_type_list) != len(set(temp2_type_list)):
                 self.ST.error = 1
-                print('variables cannot have duplicating type of declarations at line', p.lineno(1))
+                print(rederror, 'variables cannot have duplicating type of declarations at line', p.lineno(1))
                 return
 
             if 'long' in p[2].type and 'short' in p[2].type:
                 self.ST.error = 1
-                print('variable cannot be both long and short at line', p.lineno(1))
+                print(rederror, 'variable cannot be both long and short at line', p.lineno(1))
                 return
             elif 'unsigned' in p[2].type and 'signed' in p[2].type:
                 self.ST.error = 1
-                print('variable cannot be both signed and unsigned at line', p.lineno(1))
+                print(rederror, 'variable cannot be both signed and unsigned at line', p.lineno(1))
                 return
             else:
                 data_type_count = 0
@@ -2265,12 +2266,12 @@ class CParser():
                     data_type_count += 1
                 if data_type_count > 1:    
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for variable at line', p.lineno(1)) 
+                    print(rederror, 'Two or more conflicting data types specified for variable at line', p.lineno(1)) 
                     return
                 if 'long' in p[2].type:
                     if 'char' in p[2].type or 'bool' in  p[2].type or 'float' in  p[2].type or 'void' in  p[2].type:
                         self.ST.error = 1
-                        print('Two or more conflicting data types specified for variable at line', p.lineno(1))
+                        print(rederror, 'Two or more conflicting data types specified for variable at line', p.lineno(1))
                         return
 
             isarr = 0
@@ -2393,31 +2394,31 @@ class CParser():
 
             if p[2].type is None or p[4].type is None or p[0].type is None:
                 self.ST.error = 1
-                print(f'Cannot perform casting at line {p.lineno(1)}')
+                print(rederror, f'Cannot perform casting at line {p.lineno(1)}')
 
             elif 'struct' in p[2].type and '*' not in p[2].type and 'struct' not in p[4].type:
                 self.ST.error = 1
-                print(f'Cannot cast non-struct value {p[4].type} to struct type {p[2].type} at line {p.lineno(1)}')
+                print(rederror, f'Cannot cast non-struct value {p[4].type} to struct type {p[2].type} at line {p.lineno(1)}')
 
             elif 'struct' in p[2].type and 'struct' in p[4].type and p[4].type[1] not in p[2].type:
                 self.ST.error = 1
-                print(f'Incompatible struct types to perform casting at line {p.lineno(1)}')
+                print(rederror, f'Incompatible struct types to perform casting at line {p.lineno(1)}')
 
             elif 'union' in p[2].type and '*' not in p[2].type and 'union' not in p[4].type:
                 self.ST.error = 1
-                print(f'Cannot cast non-union value {p[4].type} to union type {p[2].type} at line {p.lineno(1)}')
+                print(rederror, f'Cannot cast non-union value {p[4].type} to union type {p[2].type} at line {p.lineno(1)}')
 
             elif 'union' in p[2].type and 'union' in p[4].type and p[4].type[1] not in p[2].type:
                 self.ST.error = 1
-                print(f'Incompatible union types to perform casting at line {p.lineno(1)}')
+                print(rederror, f'Incompatible union types to perform casting at line {p.lineno(1)}')
 
             elif p[0].type[0] in aat and p[4].type[0] not in aat and p[4].type[0][-1] != '*':
                 self.ST.error = 1
-                print(f'Type mismatch while casting value at line {p.lineno(1)}')
+                print(rederror, f'Type mismatch while casting value at line {p.lineno(1)}')
             
             elif '*' in p[2].type and p[4].type[0] not in iit and p[4].type[0][-1] != '*':    
                 self.ST.error = 1
-                print(f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
+                print(rederror, f'Incompatible casting between pointer and {p[4].type} at line {p.lineno(1)}')
 
             p[4].totype = p[0].type
             
@@ -2470,13 +2471,13 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform multiplicative operation between expressions on line {p.lineno(2)}')
                 return
 
             elif str(p[2]) == '%':
                 if p[1].type[0] not in iit or p[3].type[0] not in iit:
                     self.ST.error = 1
-                    print(f'Cannot perform modulo operation between expressions of type {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                    print(rederror, f'Cannot perform modulo operation between expressions of type {p[1].type} and {p[3].type} on line {p.lineno(2)}')
                     return
 
                 p0type = ['int']
@@ -2565,7 +2566,7 @@ class CParser():
                 p[0].node.attr['label'] = p[0].label
             else :
                 self.ST.error = 1
-                print(f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Multiplictaive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
             
             if self.ST.error:
                 return
@@ -2675,7 +2676,7 @@ class CParser():
             
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform additive operation between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat:
                 p0type = []
@@ -2722,7 +2723,7 @@ class CParser():
                 
             elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0  and p[3].type[0] in iit:
                 self.ST.error = 1
-                print(f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
+                print(rederror, f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
 
                 # p[0] = Node(str(p[2]),[p[1],p[3]])
                 # p[0].label = p[0].label + '_' + p[1].type[0]
@@ -2738,7 +2739,7 @@ class CParser():
                     
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='+':
                 self.ST.error = 1
-                print(f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
+                print(rederror, f'Pointer Arithmetic not allowed at line {p.lineno(2)}')
                 
                 # p[0] = Node(str(p[2]),[p[1],p[3]])
                 # p[0].label = p[0].label + '_' + p[1].type[0]
@@ -2754,11 +2755,11 @@ class CParser():
                 
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in iit and str(p[2])=='-':
                 self.ST.error = 1
-                print(f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Invalid binary - operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             else :
                 self.ST.error = 1
-                print(f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Additive operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             if self.ST.error:
                 return
@@ -2866,7 +2867,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform bitshift operation between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = []
@@ -2917,7 +2918,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Bitshift operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
             
             if self.ST.error:
                 return
@@ -3026,7 +3027,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform relational operation between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat :
                 p0type = ['int']
@@ -3085,11 +3086,11 @@ class CParser():
 
             elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0 and p[3].type[0] in dft:
                 self.ST.error = 1
-                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in dft:
                 self.ST.error = 1
-                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*') or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
                 p[1].totype = ['int', 'unsigned']
@@ -3104,7 +3105,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             if self.ST.error:
                 return
@@ -3210,7 +3211,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform Equality check operation between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in aat and len(p[3].type)>0 and p[3].type[0] in aat :
                 p0type = ['int']
@@ -3271,11 +3272,11 @@ class CParser():
 
             elif len(p[1].type)>0 and p[1].type[0][-1] == '*' and len(p[3].type)>0 and p[3].type[0] in dft:
                 self.ST.error = 1
-                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif len(p[3].type)>0 and p[3].type[0][-1] == '*' and len(p[1].type)>0 and p[1].type[0] in dft:
                 self.ST.error = 1
-                print(f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Relational operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             elif ((len(p[1].type)>0 and p[1].type[0][-1] == '*' ) or (len(p[3].type)>0 and p[3].type[0][-1] == '*')) and 'struct' not in p[1].type and 'struct' not in p[3].type and 'union' not in p[1].type and 'union' not in p[3].type:
 
@@ -3292,7 +3293,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Equality check operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             if self.ST.error:
                 return
@@ -3398,7 +3399,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform bitwise and between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
@@ -3447,7 +3448,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Bitwise and operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             if self.ST.error:
                 return
@@ -3551,7 +3552,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform bitwise xor between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
@@ -3601,7 +3602,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Bitwise xor operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
     
             if self.ST.error:
                 return
@@ -3707,7 +3708,7 @@ class CParser():
         elif (len(p) == 4):
             if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform bitwise or between expressions on line {p.lineno(2)}')
 
             elif len(p[1].type)>0 and p[1].type[0] in iit and len(p[3].type)>0 and p[3].type[0] in iit:
                 p0type = ['int']
@@ -3757,7 +3758,7 @@ class CParser():
 
             else:
                 self.ST.error = 1
-                print(f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
+                print(rederror, f'Bitwise or operation between incompatible types {p[1].type} and {p[3].type} on line {p.lineno(2)}')
 
             if self.ST.error:
                 return
@@ -3863,10 +3864,10 @@ class CParser():
         elif (len(p) == 6):
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform logical and between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform logical and between expressions on line {p.lineno(2)}')
             elif 'struct' in p[1].type or 'union' in p[1].type or 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
-                print(f'Need scalars to perform logical operation at line {p.lineno(2)}')
+                print(rederror, f'Need scalars to perform logical operation at line {p.lineno(2)}')
 
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
@@ -3921,10 +3922,10 @@ class CParser():
         elif (len(p) == 6):
             if p[1] is None or p[4] is None or p[1].type is None or p[4].type is None or p[1].type == [] or p[4].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform logical or between expressions on line {p.lineno(2)}')
+                print(rederror, f'Cannot perform logical or between expressions on line {p.lineno(2)}')
             elif 'struct' in p[1].type or 'union' in p[1].type or 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
-                print(f'Need scalars to perform logical operation at line {p.lineno(2)}')
+                print(rederror, f'Need scalars to perform logical operation at line {p.lineno(2)}')
             else:
                 p[0] = Node(str(p[2]),[p[1],p[4]])
                 p[0].type = ['int']
@@ -3979,66 +3980,66 @@ class CParser():
         elif (len(p) == 9):
             if p[1] is None or p[1].type is None or p[1].type == []:
                 self.ST.error = 1
-                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
             if 'struct' in p[1].type or 'union' in p[1].type:
                 self.ST.error = 1
-                print(f'Struct / Union type variable not allowed as first operand of ternary operator')
+                print(rederror, f'Struct / Union type variable not allowed as first operand of ternary operator')
                 return
 
             elif p[4] is None or p[7] is None:
                 self.ST.error = 1
-                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
             elif p[4].type in [None, []] or p[7].type in [None, []] :
                 self.ST.error = 1
-                print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Cannot perform conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'struct' in p[4].type and 'struct' not in p[7].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'struct' in p[7].type and 'struct' not in p[4].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'struct' in p[4].type and 'struct' in p[7].type and p[4].type[1] != p[7].type[1]:
                 self.ST.error = 1
-                print(f'Incompatible struct types to perform conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Incompatible struct types to perform conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'union' in p[4].type and 'union' not in p[7].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'union' in p[7].type and 'union' not in p[4].type:
                 self.ST.error = 1
-                print(f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Type mismatch between {p[4].type} and {p[7].type} for conditional operation at line {p.lineno(2)}')
                 return
 
             elif 'union' in p[4].type and 'union' in p[7].type and p[4].type[1] != p[7].type[1]:
                 self.ST.error = 1
-                print(f'Incompatible union types to perform conditional operation at line {p.lineno(2)}')  
+                print(rederror, f'Incompatible union types to perform conditional operation at line {p.lineno(2)}')  
                 return 
             elif p[4].type[0] not in aat and p[4].type[0][-1] != '*' and p[7].type[0] in aat:
                 self.ST.error = 1
-                print(f'Type mismatch while performing conditional operation at line {p.lineno(2)}')
+                print(rederror, f'Type mismatch while performing conditional operation at line {p.lineno(2)}')
                 return
             
             elif p[4].type[0][-1] == '*' and p[7].type[0][-1] != '*' and p[7].type[0]  not in iit :    
                 self.ST.error = 1
-                print(f'Incompatible conditional operation between pointer and {p[7].type} at line {p.lineno(2)}')
+                print(rederror, f'Incompatible conditional operation between pointer and {p[7].type} at line {p.lineno(2)}')
                 return
 
             elif p[7].type[0][-1] == '*' and p[4].type[0][-1] != '*' and p[4].type[0]  not in iit :    
                 self.ST.error = 1
-                print(f'Incompatible conditional operation between pointer and {p[4].type} at line {p.lineno(2)}')
+                print(rederror, f'Incompatible conditional operation between pointer and {p[4].type} at line {p.lineno(2)}')
                 return
 
             isError = False
@@ -4204,7 +4205,7 @@ class CParser():
                 return
 
             self.ST.error = 1
-            print(f'Cannot perform conditional operation at line {p.lineno(2)}')
+            print(rederror, f'Cannot perform conditional operation at line {p.lineno(2)}')
 
     def p_assignment_expression(self, p):
         '''
@@ -4223,51 +4224,51 @@ class CParser():
                     
                     if p[1].type in [None, []] or p[3].type in [None, []]:
                         self.ST.error = 1;
-                        print(f'Cannot perform assignment at line {p[2].lineno}')
+                        print(rederror, f'Cannot perform assignment at line {p[2].lineno}')
 
                     elif p[1].type[0][-1] == '*' and 'arr' in p[1].type and p[1].arrlvl > 0:
                         self.ST.error = 1
-                        print(f'Cannot perform assignment to array type at line {p[2].lineno}')
+                        print(rederror, f'Cannot perform assignment to array type at line {p[2].lineno}')
 
                     elif p[1].isvar == 0 and 'struct' not  in p[1].type[0] and 'union' not in p[1].type[0]:
                         self.ST.error = 1
-                        print(f'Left hand side has to be a variable at line {p[2].lineno}')
+                        print(rederror, f'Left hand side has to be a variable at line {p[2].lineno}')
 
                     elif 'const' in p[1].type:
                         self.ST.error = 1
-                        print(f'Cannot assign value to read only variable at line {p[2].lineno}')
+                        print(rederror, f'Cannot assign value to read only variable at line {p[2].lineno}')
 
                     elif 'struct' in p[1].type and 'struct' not in p[3].type:
                         self.ST.error = 1;
-                        print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p[2].lineno}')
+                        print(rederror, f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p[2].lineno}')
 
                     elif 'struct' in p[1].type and 'struct' in p[3].type and p[1].type[1] != p[3].type[1]:
                         self.ST.error = 1;
-                        print(f'Incompatible struct types to perform assignment at line {p[2].lineno}')
+                        print(rederror, f'Incompatible struct types to perform assignment at line {p[2].lineno}')
 
                     elif 'union' in p[1].type and 'union' not in p[3].type:
                         self.ST.error = 1;
-                        print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p[2].lineno}')
+                        print(rederror, f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p[2].lineno}')
 
                     elif 'union' in p[1].type and 'union' in p[3].type and p[1].type[1] != p[3].type[1]:
                         self.ST.error = 1;
-                        print(f'Incompatible union types to perform assignment at line {p[2].lineno}')
+                        print(rederror, f'Incompatible union types to perform assignment at line {p[2].lineno}')
 
                     elif p[1].type in [None, []] or p[3].type in [None, []] :
                         self.ST.error = 1
-                        print(f'Type mismatch while assigning value at line {p[2].lineno}') 
+                        print(rederror, f'Type mismatch while assigning value at line {p[2].lineno}') 
 
                     elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                         self.ST.error = 1
-                        print(f'Type mismatch while assigning value at line {p[2].lineno}')
+                        print(rederror, f'Type mismatch while assigning value at line {p[2].lineno}')
 
                     elif p[1].type[0][-1] == '*' and p[3].type[0][-1] != '*' and p[3].type[0]  not in iit and 'str' not in p[3].type:    
                         self.ST.error = 1
-                        print(f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
+                        print(rederror, f'Incompatible assignment between pointer and {p[3].type} at line {p[2].lineno}')
                     
                     elif p[1].type[0][-1] == '*' and p[3].type[0] in iit and p[2].label[0] not in ['+', '-', '=']: # and p[2] is multiplicative
                         self.ST.error = 1
-                        print(f'Incompatible operands to binary operator {p[2].label}, pointer and {p[3].type} at line {p[2].lineno}')
+                        print(rederror, f'Incompatible operands to binary operator {p[2].label}, pointer and {p[3].type} at line {p[2].lineno}')
 
                     else:
                         p[0].type = p[1].type
@@ -4537,10 +4538,10 @@ class CParser():
 
         if len(p[0].type)>0 and 'struct' in p[0].type and len(p[0].type) >2:
             self.ST.error = 1
-            print(f'Cannot have type specifiers for struct type at line {p[1].line}')
+            print(rederror, f'Cannot have type specifiers for struct type at line {p[1].line}')
         elif len(p[0].type)>0 and 'union' in p[0].type and len(p[0].type) >2:
             self.ST.error = 1
-            print(f'Cannot have type specifiers for union type at line {p[1].line}')
+            print(rederror, f'Cannot have type specifiers for union type at line {p[1].line}')
 
     def p_init_declarator_list(self, p):
         '''
@@ -4634,7 +4635,7 @@ class CParser():
                             struct_size = found['sizeAllocInBytes']
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     else:
-                        print('Struct objects not allowed to be declared globally...')
+                        print(rederror, 'Struct objects not allowed to be declared globally...')
                         self.ST.error = 1
                         return
                 elif 'union' in p[0].variables[var_name]:
@@ -4647,7 +4648,7 @@ class CParser():
                                 found['vars'][var]['offset'] = 0
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     else:
-                        print('Union objects not allowed to be declared globally...')
+                        print(rederror, 'Union objects not allowed to be declared globally...')
                         self.ST.error = 1
                         return
                 elif 'long' in p[0].variables[var_name]:
@@ -4690,29 +4691,29 @@ class CParser():
                 if single_type[0] == '[' and single_type[-1] == ']':
                     if single_type[1:-1] == '':
                         self.ST.error = 1
-                        print('Cannot have empty indices for array declarations at line', entry['line'])
+                        print(rederror, 'Cannot have empty indices for array declarations at line', entry['line'])
                         return
                     elif int(single_type[1:-1]) <= 0:
                         self.ST.error = 1
-                        print('Cannot have non-positive integers for array declarations at line', entry['line'])
+                        print(rederror, 'Cannot have non-positive integers for array declarations at line', entry['line'])
                         return
 
             if len(temp2_type_list) != len(set(temp2_type_list)):
                 self.ST.error = 1
-                print('variables cannot have duplicating type of declarations at line', entry['line'])
+                print(rederror, 'variables cannot have duplicating type of declarations at line', entry['line'])
                 return
 
             if 'long' in entry['type'] and 'short' in entry['type']:
                 self.ST.error = 1
-                print('variable cannot be both long and short at line', entry['line'])
+                print(rederror, 'variable cannot be both long and short at line', entry['line'])
                 return
             elif 'unsigned' in entry['type'] and 'signed' in entry['type']:
                 self.ST.error = 1
-                print('variable cannot be both signed and unsigned at line', entry['line'])
+                print(rederror, 'variable cannot be both signed and unsigned at line', entry['line'])
                 return
             elif 'void' in entry['type'] and '*' not in entry['type']:
                 self.ST.error = 1
-                print('Cannot have a void type variable at line ', entry['line'])
+                print(rederror, 'Cannot have a void type variable at line ', entry['line'])
                 return
             else:
                 data_type_count = 0
@@ -4734,12 +4735,12 @@ class CParser():
                     data_type_count += 1
                 if data_type_count > 1:    
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for variable at line', entry['line']) 
+                    print(rederror, 'Two or more conflicting data types specified for variable at line', entry['line']) 
                     return
                 if 'long' in entry['type']:
                     if 'char' in entry['type'] or 'bool' in  entry['type'] or 'float' in  entry['type'] or 'void' in  entry['type']:
                         self.ST.error = 1
-                        print('Two or more conflicting data types specified for variable at line', entry['line'])
+                        print(rederror, 'Two or more conflicting data types specified for variable at line', entry['line'])
                         return
 
             if (len(p) == 4):
@@ -4863,46 +4864,46 @@ class CParser():
                     p[1].type = temp_type
                 if p[1] is None or p[3] is None or p[1].type is None or p[3].type is None or p[1].type == [] or p[3].type == []:
                     self.ST.error = 1
-                    print(f'Cannot perform assignment at line {p.lineno(2)}')
+                    print(rederror, f'Cannot perform assignment at line {p.lineno(2)}')
                     return
 
                 if 'struct' in p[1].type[0] or 'union' in p[1].type[0]:
                     p[1].vars = entry['vars']
                     if 'arr' in p[1].type and 'init_list' not in p[3].type:
                         self.ST.error = 1
-                        print(f'Invalid array initialization at line {p.lineno(2)}')
+                        print(rederror, f'Invalid array initialization at line {p.lineno(2)}')
 
                 if 'struct' in p[1].type and 'struct' not in p[3].type:
                     self.ST.error = 1;
-                    print(f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p.lineno(2)}')
+                    print(rederror, f'Cannot assign non-struct value {p[3].type} to struct type {p[1].type} at line {p.lineno(2)}')
 
                 elif 'struct' in p[1].type and 'struct' in p[3].type and p[1].type[1] != p[3].type[1]:
                     self.ST.error = 1;
-                    print(f'Incompatible struct types to perform assignment at line {p.lineno(2)}')
+                    print(rederror, f'Incompatible struct types to perform assignment at line {p.lineno(2)}')
                 
                 elif 'union' in p[1].type and 'union' not in p[3].type:
                     self.ST.error = 1;
-                    print(f'Cannot assign non-union value {p[3].type} to union type {p[1].type} at line {p.lineno(2)}')
+                    print(rederror, f'Cannot assign non-union value {p[3].type} to union type {p[1].type} at line {p.lineno(2)}')
 
                 elif 'union' in p[1].type and 'union' in p[3].type and p[1].type[1] != p[3].type[1]:
                     self.ST.error = 1;
-                    print(f'Incompatible union types to perform assignment at line {p.lineno(2)}')
+                    print(rederror, f'Incompatible union types to perform assignment at line {p.lineno(2)}')
                 
                 elif p[1].type[0] in aat and p[3].type[0] not in aat and p[3].type[0][-1] != '*':
                     self.ST.error = 1
-                    print(f'Type mismatch while assigning value at line {p.lineno(2)}')
+                    print(rederror, f'Type mismatch while assigning value at line {p.lineno(2)}')
 
                 elif p[1].type[0] not in aat and p[1].type[0][-1] != '*' and p[3].type[0] in aat:
                     self.ST.error = 1
-                    print(f'Type mismatch while assigning value at line {p.lineno(2)}')
+                    print(rederror, f'Type mismatch while assigning value at line {p.lineno(2)}')
 
                 elif 'arr' in p[1].type and 'init_list' not in p[3].type:
                     self.ST.error = 1
-                    print(f'Invalid array initialization at line {p.lineno(2)}')
+                    print(rederror, f'Invalid array initialization at line {p.lineno(2)}')
                 
                 elif 'arr' not in p[1].type and p[1].type[0][-1] == '*' and p[3].type[0] not in iit and p[3].type[0][-1] != '*' and 'str' not in p[3].type:    
                     self.ST.error = 1
-                    print(f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
+                    print(rederror, f'Incompatible assignment between pointer and {p[3].type} at line {p.lineno(2)}')
 
                 if self.ST.error:
                     return
@@ -5003,12 +5004,12 @@ class CParser():
                 p3.temp = p[3].temp
 
             if self.ST.isGlobal():
-                print("Cannot initialize global variables while declaring")
+                print(rederror, "Cannot initialize global variables while declaring")
                 self.ST.error = 1
                 return
             elif "static" in p[1].type:
                 if (len(p[1].type) != 2) or ("int" not in p[1].type):
-                    print("Static Variables can only be of type int")
+                    print(rederror, "Static Variables can only be of type int")
                     self.ST.error = 1
                     return
                 elif p[3].label.isnumeric():
@@ -5017,7 +5018,7 @@ class CParser():
                     self.TAC.staticCounter += 1
                     self.TAC.staticSymbols.append([found["temp"],p[3].label,None])
                 else:
-                    print("Wrong Initialization of Static Variable")
+                    print(rederror, "Wrong Initialization of Static Variable")
                     self.ST.error = 1
                     return  
             else:
@@ -5031,7 +5032,7 @@ class CParser():
                     self.TAC.globalSymbols.append([p[1].temp,found["sizeAllocInBytes"]])
                 elif "static" in p[0].variables[var_name]:
                     if (len(p[0].variables[var_name]) != 2) or ("int" not in p[0].variables[var_name]):
-                        print("Static Variables can only be of type int")
+                        print(rederror, "Static Variables can only be of type int")
                         self.ST.error = 1
                         return
                     found, entry = self.ST.ReturnSymTabEntry(var_name)
@@ -5194,15 +5195,15 @@ class CParser():
 
         if len(temp_type_list) != len(set(temp_type_list)):
             self.ST.error = 1
-            print('Structure/Union variable cannot have duplicating type of declarations at line', p.lineno(3))
+            print(rederror, 'Structure/Union variable cannot have duplicating type of declarations at line', p.lineno(3))
             return
 
         if 'long' in p[1].type and 'short' in p[1].type:
             self.ST.error = 1
-            print('Structure/Union variable cannot be both long and short at line', p.lineno(3))
+            print(rederror, 'Structure/Union variable cannot be both long and short at line', p.lineno(3))
         elif 'unsigned' in p[1].type and 'signed' in p[1].type:
             self.ST.error = 1
-            print('Structure/Union variable cannot be both signed and unsigned at line', p.lineno(3))
+            print(rederror, 'Structure/Union variable cannot be both signed and unsigned at line', p.lineno(3))
         else:
             data_type_count = 0
             if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type:
@@ -5223,12 +5224,12 @@ class CParser():
                 data_type_count += 1
             if data_type_count > 1:    
                 self.ST.error = 1
-                print('Two or more conflicting data types specified for variable at line', p.lineno(3)) 
+                print(rederror, 'Two or more conflicting data types specified for variable at line', p.lineno(3)) 
 
             if 'long' in p[1].type:
                 if 'char' in p[1].type or 'bool' in  p[1].type or 'float' in  p[1].type or 'void' in  p[1].type:
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for variable at line', p.lineno(3))
+                    print(rederror, 'Two or more conflicting data types specified for variable at line', p.lineno(3))
 
     def p_specifier_qualifier_list(self, p):
         '''
@@ -5320,7 +5321,7 @@ class CParser():
                             struct_size = found['sizeAllocInBytes']
                         else:
                             struct_size = 0
-                            print('Cannot define object of the same struct within itself.')
+                            print(rederror, 'Cannot define object of the same struct within itself.')
                             self.ST.error = 1
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     else:
@@ -5335,7 +5336,7 @@ class CParser():
                                 found['vars'][var]['offset'] = 0
                         else:
                             struct_size = 0
-                            print('Cannot define object of the same union within itself.')
+                            print(rederror, 'Cannot define object of the same union within itself.')
                             self.ST.error = 1
                         self.ST.ModifySymbol(var_name, "sizeAllocInBytes", multiplier*struct_size, p.lineno(1))
                     else:
@@ -5448,7 +5449,7 @@ class CParser():
                     if variable == p[1].label:
                         self.ST.error = 1
                         self.isError = 1
-                        print(f'Cannot have function parameter with same name as function at line {p.lineno(2)}')
+                        print(rederror, f'Cannot have function parameter with same name as function at line {p.lineno(2)}')
                         return
                 p[0].variables = p[4].variables
                 p[0].variables[p[1].label] = ["Function Name"]
@@ -5796,7 +5797,7 @@ class CParser():
             p[0] = Node(str(p[1]).upper(),[p[3],p[6]])
             if p[6].numdef > 1:
                 self.ST.error = 1
-                print(f'Cannot have multiple default labels in a single switch statement at line {p.lineno(1)}')
+                print(rederror, f'Cannot have multiple default labels in a single switch statement at line {p.lineno(1)}')
 
 
             if self.ST.error:
@@ -6063,7 +6064,7 @@ class CParser():
 
                 if functype != ['void']:
                     self.ST.error = 1
-                    print(f'Need an argument to return of type {functype} at line {p.lineno(1)}')
+                    print(rederror, f'Need an argument to return of type {functype} at line {p.lineno(1)}')
 
                 if self.ST.error:
                     return
@@ -6081,20 +6082,20 @@ class CParser():
 
                 if p[2] is None or p[2].type is None or p[2].type == []:
                     self.ST.error = 1
-                    print(f'Cannot return expression at line {p.lineno(1)}')
+                    print(rederror, f'Cannot return expression at line {p.lineno(1)}')
 
 
                 elif '*' in functype and len(p[2].type)>0 and '*' not in p[2].type[0] and p[2].type[0] not in iit :
                     self.ST.error = 1
-                    print(f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
+                    print(rederror, f'Incompatible types while returning {p[2].type} where {functype} was expected at line {p.lineno(1)}')
 
                 elif len(p[2].type)>0 and len(functype)>0 and functype[0] in aat and p[2].type[0] not in aat and p[2].type[0][-1] != '*':
                     self.ST.error = 1
-                    print(f'Type mismatch while returning value at line {p.lineno(1)}')
+                    print(rederror, f'Type mismatch while returning value at line {p.lineno(1)}')
                     
                 elif functype == ['void'] and len(p[2].type)>0 and p[2].type[0] != 'void':
                     self.ST.error = 1
-                    print(f'Cannot return non-void type at line {p.lineno(1)}')
+                    print(rederror, f'Cannot return non-void type at line {p.lineno(1)}')
                 
                 if self.ST.error:
                     return
@@ -6216,7 +6217,7 @@ class CParser():
 
                 if ('struct' in p[0].type or 'union' in p[0].type) and p[0].type != p[2].type:
                     self.ST.error = 1
-                    print(f'Need struct/union of type {p[0].type}, instead got return type {p[2].type} at line {p.lineno(1)}')
+                    print(rederror, f'Need struct/union of type {p[0].type}, instead got return type {p[2].type} at line {p.lineno(1)}')
                     return
 
                 isin = True
@@ -6508,15 +6509,15 @@ class CParser():
 
         if len(temp_type_list) != len(set(temp_type_list)):
             self.ST.error = 1
-            print('Function type cannot have duplicating type of declarations at line', p.lineno(line))
+            print(rederror, 'Function type cannot have duplicating type of declarations at line', p.lineno(line))
             return
 
         if 'long' in p[1].type and 'short' in p[1].type:
             self.ST.error = 1
-            print('Function type cannot be both long and short at line', p.lineno(line))
+            print(rederror, 'Function type cannot be both long and short at line', p.lineno(line))
         elif 'unsigned' in p[1].type and 'signed' in p[1].type:
             self.ST.error = 1
-            print('Function type cannot be both signed and unsigned at line', p.lineno(line))
+            print(rederror, 'Function type cannot be both signed and unsigned at line', p.lineno(line))
         else:
             data_type_count = 0
             if 'int' in p[1].type or 'short' in p[1].type  or 'unsigned' in p[1].type or 'signed' in p[1].type:
@@ -6537,12 +6538,12 @@ class CParser():
                 data_type_count += 1
             if data_type_count > 1:    
                 self.ST.error = 1
-                print('Two or more conflicting data types specified for function at line', p.lineno(line)) 
+                print(rederror, 'Two or more conflicting data types specified for function at line', p.lineno(line)) 
 
             if 'long' in p[1].type:
                 if 'char' in p[1].type or 'bool' in  p[1].type or 'float' in  p[1].type or 'void' in  p[1].type:
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for function at line', p.lineno(line))
+                    print(rederror, 'Two or more conflicting data types specified for function at line', p.lineno(line))
 
         if self.ST.error:
             return
@@ -6557,10 +6558,10 @@ class CParser():
                 for i in range(len(temp_type_arr)):
                     if temp_type_arr[i] == '' and i != 0:
                         self.ST.error = 1
-                        print('Multidimensional array must have bound for all dimensions except first at line ', p.lineno(line))
+                        print(rederror, 'Multidimensional array must have bound for all dimensions except first at line ', p.lineno(line))
                     if temp_type_arr[i] != '' and int(temp_type_arr[i]) <= 0:
                         self.ST.error = 1
-                        print('Array bound cannot be non-positive at line ', p.lineno(line))
+                        print(rederror, 'Array bound cannot be non-positive at line ', p.lineno(line))
         
         if self.ST.error:
             return
@@ -6605,29 +6606,29 @@ class CParser():
                 if single_type[0] == '[' and single_type[-1] == ']':
                     if single_type[1:-1] == '' and ctrpar != 0:
                         self.ST.error = 1
-                        print('Cannot have empty indices for array declarations at line', param['line'])
+                        print(rederror, 'Cannot have empty indices for array declarations at line', param['line'])
                         return
                     elif single_type[1:-1] != '' and int(single_type[1:-1]) <= 0:
                         self.ST.error = 1
-                        print('Cannot have non-positive integers for array declarations at line', param['line'])
+                        print(rederror, 'Cannot have non-positive integers for array declarations at line', param['line'])
                         return
 
             if len(temp2_type_list) != len(set(temp2_type_list)):
                 self.ST.error = 1
-                print('variables cannot have duplicating type of declarations at line', param['line'])
+                print(rederror, 'variables cannot have duplicating type of declarations at line', param['line'])
                 return
 
             if 'long' in param['type'] and 'short' in param['type']:
                 self.ST.error = 1
-                print('variable cannot be both long and short at line', param['line'])
+                print(rederror, 'variable cannot be both long and short at line', param['line'])
                 return
             elif 'unsigned' in param['type'] and 'signed' in param['type']:
                 self.ST.error = 1
-                print('variable cannot be both signed and unsigned at line', param['line'])
+                print(rederror, 'variable cannot be both signed and unsigned at line', param['line'])
                 return
             elif 'void' in param['type'] and '*' not in param['type']:
                 self.ST.error = 1
-                print('Cannot have a void type variable at line ', param['line'])
+                print(rederror, 'Cannot have a void type variable at line ', param['line'])
                 return
             else:
                 data_type_count = 0
@@ -6649,12 +6650,12 @@ class CParser():
                     data_type_count += 1
                 if data_type_count > 1:    
                     self.ST.error = 1
-                    print('Two or more conflicting data types specified for variable at line', param['line']) 
+                    print(rederror, 'Two or more conflicting data types specified for variable at line', param['line']) 
                     return
                 if 'long' in param['type']:
                     if 'char' in param['type'] or 'bool' in  param['type'] or 'float' in  param['type'] or 'void' in  param['type']:
                         self.ST.error = 1
-                        print('Two or more conflicting data types specified for variable at line', param['line'])
+                        print(rederror, 'Two or more conflicting data types specified for variable at line', param['line'])
                         return
                         
     def p_markerFunc2(self, p):
@@ -6799,9 +6800,9 @@ class CParser():
 
     def p_error(self, p):
         if p is not None:
-            print(f'Error found while parsing in line {p.lineno}!')
+            print(rederror, f'Error found while parsing in line {p.lineno}!')
         else:
-            print("Given file is empty")
+            print(rederror, "Given file is empty")
         self.isError = 1
     
     def printTree(self):

@@ -21,7 +21,7 @@ class TypeTable() :
         if path == 1:
             found = self.TopScope.get(iden, False)
             if found:
-                print(f'Error: Redeclaration of existing data structure on {line_num}. Prior declaration at {found["line"]}')
+                print(f'\033[91mError:\033[0m Redeclaration of existing data structure on {line_num}. Prior declaration at {found["line"]}')
                 self.error = True
                 return False
             else:
@@ -37,7 +37,7 @@ class TypeTable() :
             else:
                 strucName = a[-1][0]
                 if iden in self.TopScope[strucName]['vars'].keys():
-                    print(f'Error: Redeclaration of variable {iden} on line {line_num}. Prior declaration at line {self.TopScope[strucName]["vars"][iden]["line"]}')
+                    print(f'\033[91mError:\033[0m Redeclaration of variable {iden} on line {line_num}. Prior declaration at line {self.TopScope[strucName]["vars"][iden]["line"]}')
                     self.error = True
                     return False
                 else: 
@@ -108,7 +108,7 @@ class TypeTable() :
             if found['check'].lower() == type_name:
                 return copy.deepcopy(found)
             else:
-                print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
+                print(f'\033[91mError:\033[0m The data structure {type_name} {iden} on line {statement_line} is not declared.')
                 self.error = True
                 return None
         else:
@@ -117,10 +117,10 @@ class TypeTable() :
                 if found['check'].lower() == type_name:
                     return copy.deepcopy(found)
                 else:
-                    print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
+                    print(f'\033[91mError:\033[0m The data structure {type_name} {iden} on line {statement_line} is not declared.')
                     self.error = True
                     return None
             else:
-                print(f'Error: The data structure {type_name} {iden} on line {statement_line} is not declared.')
+                print(f'\033[91mError:\033[0m The data structure {type_name} {iden} on line {statement_line} is not declared.')
                 self.error = True
                 return None
