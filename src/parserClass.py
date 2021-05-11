@@ -1759,7 +1759,10 @@ class CParser():
         to_print = []
         new_p2_list.remove('struct')
         found = self.ST.TT.ReturnTypeTabEntry(new_p2_list[0], 'struct')
-        curr_offset = int(arg.split('(')[0])
+        if arg[0] == '(':
+            curr_offset = int(arg.split('(')[1])
+        else:
+            curr_offset = int(arg.split('(')[0])
         if found:
             for item in found["vars"]:
                 if 'struct' in found['vars'][item]['type'] and '*' not in found['vars'][item]['type']:
