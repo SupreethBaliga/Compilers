@@ -24,7 +24,9 @@ int main() {
     // for %
     int i7 = a%b; //should work
     int i8 = a%c; //should work
-    int i9 = a%k; //should not work
+    int i9a = a%(int)k; //should work (because typecasted)
+
+    int i9b = a%k; //should not work
     float i10 = k%s; // should not work
     int i11 = d%c; //should work
     char i12 = d%c; //should work

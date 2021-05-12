@@ -8,7 +8,7 @@ then
     echo "Usage : bash $0 /path/to/test1.c /path/to/test2.c ... "
     echo "-l : enable printing the scanner table"
     echo "-d : prevent removal of dump files of the parser"
-    echo "-s : incldue string functions"
+    echo "-s : include string functions"
     echo "-h / --help : prints this message"
     exit 0
 fi

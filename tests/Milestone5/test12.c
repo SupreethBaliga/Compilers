@@ -39,12 +39,15 @@ struct Node* LinSearch(struct Node* head , int elem){
 int main(){
     printf("TC for linear search in a Linked List\n",0);
     struct Node* head = ((void*) 0);
-    head = insertAtStart(head, 1);
     head = insertAtStart(head, 2);
-    head = insertAtStart(head, 3);
+    head = insertAtStart(head, 2);
+    head = insertAtStart(head, 5);
+    head = insertAtStart(head, 8);
+    head = insertAtStart(head, 9);
+
     printList(head);
 
-    struct Node* p = LinSearch(head, 3);
+    struct Node* p = LinSearch(head, 8);
     if(p){
         printf("Found element %d\n" , p->val);
     }else{

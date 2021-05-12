@@ -40,7 +40,7 @@ int main()
 {
     printf("TC for Newton-Raphson\n",0);
     EPSILON = 0.001;
-    float x0 = -58; // Initial values assumed
+    float x0 = 100; // Initial values assumed
     newtonRaphson(x0);
     return 0;
 }
